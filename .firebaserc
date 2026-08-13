@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "metalerp-a86bf"
-  }
+    "default": "stok-takip-f84a2"
+  },
+  "targets": {},
+  "etags": {}
 }
