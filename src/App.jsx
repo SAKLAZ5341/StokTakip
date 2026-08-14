@@ -3540,6 +3540,8 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   const [iceMsg, setIceMsg] = useState("");
   const [duzenlenenId, setDuzenlenenId] = useState(null);
   const [duzenleForm, setDuzenleForm] = useState({ ad: "", yetkili: "", not: "" });
+  const [secililer, setSecililer] = useState(new Set());
+  const [topluDurum, setTopluDurum] = useState("");
   const dosyaRef = useRef(null);
 
   const ekle = async () => {
@@ -3558,6 +3560,22 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     if (!duzenleForm.ad.trim()) return;
     await updateDoc(doc(db, "fason_firmalar", id), { ad: duzenleForm.ad.trim(), yetkili: duzenleForm.yetkili.trim(), not: duzenleForm.not.trim() });
     setDuzenlenenId(null);
+  };
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const secilenleriSil = async () => {
+    if (secililer.size === 0) return;
+    if (!window.confirm(`${secililer.size} firma kalıcı olarak silinecek (bağlı işler ve hareketler silinmez, ama firma bağlantısı kopar). Bu işlem geri alınamaz. Emin misiniz?`)) return;
+    setTopluDurum("Siliniyor…");
+    const idler = [...secililer];
+    for (let i = 0; i < idler.length; i += 400) {
+      const dilim = idler.slice(i, i + 400);
+      const batch = writeBatch(db);
+      dilim.forEach((id) => batch.delete(doc(db, "fason_firmalar", id)));
+      await batch.commit();
+    }
+    setSecililer(new Set());
+    setTopluDurum(`${idler.length} firma silindi.`);
+    setTimeout(() => setTopluDurum(""), 4000);
   };
 
   const iceAktar = async (e) => {
@@ -3592,6 +3610,9 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     return fasonFirmalar.filter((f) => f.ad.toLowerCase().includes(q) || (f.yetkili || "").toLowerCase().includes(q));
   }, [fasonFirmalar, arama]);
 
+  const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((f) => secililer.has(f.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((f) => f.id)));
+
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
@@ -3623,18 +3644,33 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
         </div>
       </div>
 
+      {(secililer.size > 0 || topluDurum) && (
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#c0392b" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{topluDurum || `${secililer.size} firma seçili`}</span>
+          {secililer.size > 0 && !topluDurum && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={secilenleriSil} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={14} /> Seçilenleri Sil
+              </button>
+              <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Firmalar ({filtrelenmis.length})</div>
         {filtrelenmis.length === 0 ? (
           <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Firma bulunamadı.</div>
         ) : (
           <table>
-            <thead><tr><th>Firma Adı</th><th>Yetkili</th><th>İş Sayısı</th><th>Bakiye</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Firma Adı</th><th>Yetkili</th><th>İş Sayısı</th><th>Bakiye</th><th></th></tr></thead>
             <tbody>
               {filtrelenmis.map((f) => {
                 const duzenleniyor = duzenlenenId === f.id;
                 return (
                   <tr key={f.id}>
+                    <td><input type="checkbox" checked={secililer.has(f.id)} onChange={() => birSecToggle(f.id)} /></td>
                     {duzenleniyor ? (
                       <>
                         <td><input className="input" style={{ padding: "5px 8px", fontSize: 13 }} value={duzenleForm.ad} onChange={(e) => setDuzenleForm((s) => ({ ...s, ad: e.target.value }))} autoFocus /></td>
@@ -3677,6 +3713,8 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   const [genisletilen, setGenisletilen] = useState(new Set());
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
   const [iceMsg, setIceMsg] = useState("");
+  const [secililer, setSecililer] = useState(new Set());
+  const [topluDurum, setTopluDurum] = useState("");
   const dosyaRef = useRef(null);
   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -3692,6 +3730,22 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   };
   const durumDegistir = async (id, durum) => { await updateDoc(doc(db, "fason_isler", id), { durum }); };
   const kaliteDegistir = async (id, mevcutKalite, kalite) => { await updateDoc(doc(db, "fason_isler", id), { kaliteDurumu: mevcutKalite === kalite ? "" : kalite }); };
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const secilenleriSil = async () => {
+    if (secililer.size === 0) return;
+    if (!window.confirm(`${secililer.size} iş kalıcı olarak silinecek (bağlı hareketler silinmez ama bağlantısız kalır). Bu işlem geri alınamaz. Emin misiniz?`)) return;
+    setTopluDurum("Siliniyor…");
+    const idler = [...secililer];
+    for (let i = 0; i < idler.length; i += 400) {
+      const dilim = idler.slice(i, i + 400);
+      const batch = writeBatch(db);
+      dilim.forEach((id) => batch.delete(doc(db, "fason_isler", id)));
+      await batch.commit();
+    }
+    setSecililer(new Set());
+    setTopluDurum(`${idler.length} iş silindi.`);
+    setTimeout(() => setTopluDurum(""), 4000);
+  };
 
   const iceAktar = async (e) => {
     const dosya = e.target.files[0];
@@ -3737,6 +3791,17 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
 
   const grupToggle = (key) => setGenisletilen((s) => { const y = new Set(s); if (y.has(key)) y.delete(key); else y.add(key); return y; });
   const hammaddeGonderildiMi = (isId) => fasonHareketler.some((m) => m.isId === isId && m.tip === "giden");
+
+  const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((j) => secililer.has(j.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((j) => j.id)));
+  const grupSecToggle = (isler) => {
+    const hepsi = isler.every((j) => secililer.has(j.id));
+    setSecililer((s) => {
+      const y = new Set(s);
+      isler.forEach((j) => { if (hepsi) y.delete(j.id); else y.add(j.id); });
+      return y;
+    });
+  };
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -3796,13 +3861,27 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
         </div>
       </div>
 
+      {(secililer.size > 0 || topluDurum) && (
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#c0392b" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{topluDurum || `${secililer.size} iş seçili`}</span>
+          {secililer.size > 0 && !topluDurum && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={secilenleriSil} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={14} /> Seçilenleri Sil
+              </button>
+              <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>İşler ({gruplar.reduce((s, g) => s + g.isler.length, 0)})</div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
-            <thead><tr><th></th><th>Proje / Kod</th><th>Firma</th><th>Miktar</th><th>Ücret</th><th>Durum</th><th>Hammadde</th><th>Kalite</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th></th><th>Proje / Kod</th><th>Firma</th><th>Miktar</th><th>Ücret</th><th>Durum</th><th>Hammadde</th><th>Kalite</th><th></th></tr></thead>
             <tbody>
-              {gruplar.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>İş bulunamadı.</td></tr>}
+              {gruplar.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>İş bulunamadı.</td></tr>}
               {gruplar.map((g) => {
                 if (g.isler.length === 1) {
                   const j = g.isler[0];
@@ -3811,6 +3890,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                   const gonderildi = hammaddeGonderildiMi(j.id);
                   return (
                     <tr key={j.id}>
+                      <td><input type="checkbox" checked={secililer.has(j.id)} onChange={() => birSecToggle(j.id)} /></td>
                       <td></td>
                       <td>{j.projeKodu ? `${j.projeKodu} · ` : ""}{j.projeAdi}</td>
                       <td>{firma?.ad || "—"}</td>
@@ -3834,9 +3914,11 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                 const acik = genisletilen.has(g.key);
                 const firma = fasonFirmalar.find((f) => f.id === g.isler[0].firmaId);
                 const sentCount = g.isler.filter((j) => hammaddeGonderildiMi(j.id)).length;
+                const grupHepsiSecili = g.isler.every((j) => secililer.has(j.id));
                 return (
                   <React.Fragment key={g.key}>
                     <tr onClick={() => grupToggle(g.key)} style={{ cursor: "pointer", background: "#16232a" }}>
+                      <td onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={grupHepsiSecili} onChange={() => grupSecToggle(g.isler)} /></td>
                       <td>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
                       <td colSpan={3}><span className="pill">{g.isler[0].projeKodu}</span> <span style={{ color: "#6b7178", fontSize: 12 }}>{g.isler.length} kalem</span></td>
                       <td colSpan={2} style={{ fontSize: 12 }}>{firma?.ad}</td>
@@ -3847,6 +3929,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                       const gonderildi = hammaddeGonderildiMi(j.id);
                       return (
                         <tr key={j.id}>
+                          <td><input type="checkbox" checked={secililer.has(j.id)} onChange={() => birSecToggle(j.id)} /></td>
                           <td></td>
                           <td>{j.projeAdi}</td>
                           <td></td>
