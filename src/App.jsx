@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft } from "lucide-react";
 import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
 import {
-  collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch, query, where, getDocs, getDoc, increment,
+  collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch, query, where, getDocs, getDoc, increment, setDoc, runTransaction,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
@@ -51,6 +51,13 @@ const MENU = [
       { id: "fason-hareketler", label: "Hareketler" },
       { id: "fason-hatirlaticilar", label: "Hatırlatıcılar" },
       { id: "fason-raporu", label: "Fason Takip Raporu" },
+    ],
+  },
+  {
+    id: "satinalma", label: "Satınalma", icon: ShoppingCart,
+    children: [
+      { id: "satinalma-talep", label: "Satınalma Talebi" },
+      { id: "satinalma-siparis", label: "Satınalma Siparişi" },
     ],
   },
   { id: "takimlar", label: "Takımlar", icon: Users },
@@ -286,6 +293,77 @@ const fisGridTd = { padding: 0, borderBottom: "1px solid #24424a", borderRight: 
 const fisHucreInput = { width: "100%", background: "transparent", border: "none", padding: "6px 8px", color: "#e7e5e0", fontSize: 12.5, outline: "none" };
 const fisAltBtn = { display: "flex", alignItems: "center", gap: 6, background: "#1b333c", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 4, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
 const fisAnaBtn = { ...fisAltBtn, background: "#2dd4bf", borderColor: "#2dd4bf", color: "#142a30", fontWeight: 700 };
+
+// ---------- Evrak numaratörü ----------
+// "SEN-0001" -> { onek: "SEN-", sayi: 1, genislik: 4 }
+function evrakNoParcala(no) {
+  const m = /^(.*?)(\d+)\s*$/.exec(String(no || "").trim());
+  if (!m) return null;
+  return { onek: m[1], sayi: Number(m[2]), genislik: m[2].length };
+}
+
+// Son kullanılan numaranın önekini/basamak sayısını örnek alıp bir sonrakini üretir.
+// Kullanıcı "SEN-0001" yazdıysa sonraki fiş otomatik "SEN-0002" olur.
+function sonrakiEvrakNo(kayitlar, varsayilanOnek) {
+  const sirali = [...kayitlar].sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
+  let ornek = null;
+  for (const k of sirali) {
+    const p = evrakNoParcala(k.evrakNo);
+    if (p) { ornek = p; break; }
+  }
+  const onek = ornek ? ornek.onek : varsayilanOnek;
+  const genislik = ornek ? ornek.genislik : 4;
+  let maks = 0;
+  kayitlar.forEach((k) => {
+    const p = evrakNoParcala(k.evrakNo);
+    if (p && p.onek === onek) maks = Math.max(maks, p.sayi);
+  });
+  return `${onek}${String(maks + 1).padStart(genislik, "0")}`;
+}
+
+// Evrak numarasını belge kimliği yaparak aynı numaranın iki kez yazılmasını
+// veritabanı seviyesinde engeller. 10+ kişi aynı anda kaydetse bile
+// yalnızca ilki başarılı olur, diğerleri EVRAK_NO_MEVCUT hatası alır.
+const evrakIdTemizle = (no) => String(no || "").trim().replace(/[/\\.#$[\]]/g, "-");
+
+async function benzersizEvrakKaydet(koleksiyon, evrakNo, veri) {
+  const id = evrakIdTemizle(evrakNo);
+  if (!id) throw new Error("EVRAK_NO_BOS");
+  const ref = doc(db, koleksiyon, id);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists()) throw new Error("EVRAK_NO_MEVCUT");
+    tx.set(ref, veri);
+  });
+  return id;
+}
+
+// ---------- Uyarı penceresi (fişin üstünde açılır) ----------
+function UyariPenceresi({ acik, kapat, baslik, mesaj, ikincilButon }) {
+  if (!acik) return null;
+  return (
+    <div
+      onMouseDown={kapat}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 460, background: "#1b333c", border: "1px solid #5a2a2a", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.65)" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#3a1f1f", borderBottom: "1px solid #5a2a2a", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
+          <AlertTriangle size={15} color="#e07a6b" />
+          <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: "#e07a6b" }}>{baslik}</span>
+          <button onClick={kapat} style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
+        </div>
+        <div style={{ padding: "18px 16px", fontSize: 13.5, lineHeight: 1.6 }}>{mesaj}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", borderRadius: "0 0 4px 4px" }}>
+          {ikincilButon}
+          <button style={fisAnaBtn} onClick={kapat}><Check size={14} /> Tamam</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, genislik = 1080 }) {
   useEffect(() => {
@@ -745,6 +823,9 @@ function Panel({ onCikis, kullanici }) {
   const [fasonHareketler, setFasonHareketler] = useState([]);
   const [fasonHatirlaticilar, setFasonHatirlaticilar] = useState([]);
   const [kullanicilar, setKullanicilar] = useState([]);
+  const [satinalmaTalepler, setSatinalmaTalepler] = useState([]);
+  const [satinalmaSiparisler, setSatinalmaSiparisler] = useState([]);
+  const [siparisTaslak, setSiparisTaslak] = useState(null);
 
   // Firestore canlı dinleme - herkes aynı anda güncel veriyi görür
   useEffect(() => {
@@ -787,7 +868,13 @@ function Panel({ onCikis, kullanici }) {
     const unsub13 = onSnapshot(collection(db, "kullanicilar"), (snap) =>
       setKullanicilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); unsub8(); unsub9(); unsub10(); unsub11(); unsub12(); unsub13(); };
+    const unsub14 = onSnapshot(collection(db, "satinalma_talepler"), (snap) =>
+      setSatinalmaTalepler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+    const unsub15 = onSnapshot(collection(db, "satinalma_siparisler"), (snap) =>
+      setSatinalmaSiparisler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); unsub8(); unsub9(); unsub10(); unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); };
   }, []);
 
   const secimYap = (id) => {
@@ -830,6 +917,8 @@ function Panel({ onCikis, kullanici }) {
     if (tab === "stok-sil") return "Üretim Kayıtları Sil";
     if (tab === "hammadde-sil") return "Hammadde Kayıtları Sil";
     if (tab === "depo-sil") return "Depo Stok Sil";
+    if (tab === "satinalma-talep") return "Satınalma Talebi";
+    if (tab === "satinalma-siparis") return "Satınalma Siparişi";
     if (tab === "takimlar") return "Takımlar";
     if (tab === "makineler") return "Makineler";
     if (tab === "kullanicilar") return "Kullanıcılar";
@@ -970,6 +1059,15 @@ function Panel({ onCikis, kullanici }) {
             {tab === "stok-sil" && <StokSilme records={records} />}
             {tab === "hammadde-sil" && <HammaddeSilme hammaddeler={hammaddeler} />}
             {tab === "depo-sil" && <DepoSilme depoStok={depoStok} />}
+            {tab === "satinalma-talep" && <SatinalmaTalep
+              satinalmaTalepler={satinalmaTalepler} depoStok={depoStok} kullanici={kullanici}
+              siparisOlustur={(talep) => { setSiparisTaslak(talep); secimYap("satinalma-siparis"); }}
+            />}
+            {tab === "satinalma-siparis" && <SatinalmaSiparis
+              satinalmaSiparisler={satinalmaSiparisler} satinalmaTalepler={satinalmaTalepler}
+              depoStok={depoStok} kullanici={kullanici}
+              taslak={siparisTaslak} taslakTemizle={() => setSiparisTaslak(null)}
+            />}
             {tab === "takimlar" && <ListeYonetimi title="Takım" baslikCogul="Takımlar" koleksiyon="teams" placeholder="Örn: Kesim Takım 1" items={teams} icon={Users} />}
             {tab === "makineler" && <ListeYonetimi title="Makine" baslikCogul="Makineler" koleksiyon="machines" placeholder="Makine listesini buradan ekleyin" items={machines} icon={Cog} />}
             {tab === "kullanicilar" && <KullaniciYonetimi mevcutKullanici={kullanici} />}
@@ -4539,6 +4637,664 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
             );
           })
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Satınalma ----------
+const TALEP_DURUM = {
+  bekliyor: { label: "Bekliyor", renk: "#e8a33d" },
+  onaylandi: { label: "Onaylandı", renk: "#2dd4bf" },
+  siparise_donustu: { label: "Siparişe Dönüştü", renk: "#4b8f5e" },
+  iptal: { label: "İptal", renk: "#e07a6b" },
+};
+const SIPARIS_DURUM = {
+  acik: { label: "Açık", renk: "#e8a33d" },
+  kismi: { label: "Kısmi Teslim", renk: "#2dd4bf" },
+  tamamlandi: { label: "Tamamlandı", renk: "#4b8f5e" },
+  iptal: { label: "İptal", renk: "#e07a6b" },
+};
+
+const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", teslimTarihi: "", aciklama: "" });
+const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "" });
+
+const satirToplam = (r) => (Number(String(r.miktar || "").replace(",", ".")) || 0) * (Number(String(r.birimFiyat || "").replace(",", ".")) || 0);
+
+// ---------- Satınalma Talebi ----------
+function SatinalmaTalep({ satinalmaTalepler, depoStok, kullanici, siparisOlustur }) {
+  const [fisAcik, setFisAcik] = useState(false);
+  const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), talepEden: "", departman: "", proje: "", aciklama: "" });
+  const [satirlar, setSatirlar] = useState([bosTalepSatiri()]);
+  const [msg, setMsg] = useState("");
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [uyari, setUyari] = useState(null);
+  const [f, setF] = useState({ arama: "", durum: "" });
+  const [secililer, setSecililer] = useState(new Set());
+  const [topluDurum, setTopluDurum] = useState("");
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  const yeniNo = () => sonrakiEvrakNo(satinalmaTalepler, "TAL-");
+  const numarayiGuncelle = () => {
+    const no = yeniNo();
+    setBaslik((s) => ({ ...s, evrakNo: no }));
+    setMsg(`Numara güncellendi: ${no}`);
+    setTimeout(() => setMsg(""), 2500);
+  };
+  const fisiTemizle = () => {
+    setBaslik({ evrakNo: yeniNo(), belgeNo: "", tarih: todayISO(), talepEden: kullanici?.email || "", departman: "", proje: "", aciklama: "" });
+    setSatirlar([bosTalepSatiri()]);
+    setMsg("");
+  };
+  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+
+  const satirGuncelle = (key, alan, deger) => setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, [alan]: deger } : r)));
+  const satirEkle = () => setSatirlar((s) => [...s, bosTalepSatiri()]);
+  const satirSil = (key) => setSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+  const stokSec = (key, stokKodu) => {
+    const stok = depoStok.find((s) => s.stokKodu === stokKodu);
+    setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, stokKodu, stokAdi: stok ? stok.stokAdi : r.stokAdi, birim: stok?.birim || r.birim } : r)));
+  };
+
+  const kaydet = async () => {
+    if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
+    const gecerli = satirlar.filter((r) => r.stokAdi.trim());
+    if (gecerli.length === 0) { setMsg("En az bir satıra Malzeme / Stok Adı girin."); setTimeout(() => setMsg(""), 3000); return; }
+    setKaydediliyor(true);
+    try {
+      await benzersizEvrakKaydet("satinalma_talepler", baslik.evrakNo, {
+        evrakNo: baslik.evrakNo.trim(), belgeNo: baslik.belgeNo.trim(), tarih: baslik.tarih,
+        talepEden: baslik.talepEden.trim(), departman: baslik.departman.trim(),
+        proje: baslik.proje.trim(), aciklama: baslik.aciklama.trim(),
+        satirlar: gecerli.map(({ key, ...r }) => r),
+        durum: "bekliyor", siparisEvrakNo: "",
+        olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
+      });
+      setMsg(`${baslik.evrakNo} kaydedildi (${gecerli.length} satır).`);
+      setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+    } catch (err) {
+      if (err?.message === "EVRAK_NO_MEVCUT") {
+        setUyari({
+          baslik: "Aynı Numaradan Zaten Var",
+          mesaj: `"${baslik.evrakNo}" numaralı bir satınalma talebi zaten kayıtlı. Muhtemelen aynı anda başka bir kullanıcı bu numarayı kaydetti. Numarayı güncelleyip tekrar kaydedin.`,
+        });
+      } else {
+        setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
+        setTimeout(() => setMsg(""), 5000);
+      }
+    }
+    setKaydediliyor(false);
+  };
+
+  const sil = async (t) => {
+    if (!window.confirm(`${t.evrakNo} numaralı talep silinecek. Emin misiniz?`)) return;
+    await deleteDoc(doc(db, "satinalma_talepler", t.id));
+  };
+  const durumDegistir = async (id, durum) => { await updateDoc(doc(db, "satinalma_talepler", id), { durum }); };
+
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const secilenleriSil = async () => {
+    if (secililer.size === 0) return;
+    if (!window.confirm(`${secililer.size} talep kalıcı olarak silinecek. Emin misiniz?`)) return;
+    setTopluDurum("Siliniyor…");
+    const idler = [...secililer];
+    for (let i = 0; i < idler.length; i += 400) {
+      const batch = writeBatch(db);
+      idler.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "satinalma_talepler", id)));
+      await batch.commit();
+    }
+    setSecililer(new Set());
+    setTopluDurum(`${idler.length} talep silindi.`);
+    setTimeout(() => setTopluDurum(""), 4000);
+  };
+
+  const disaAktar = () => excelIndir(
+    satinalmaTalepler.flatMap((t) => (t.satirlar || []).map((r) => ({
+      "Evrak No": t.evrakNo, "Belge No": t.belgeNo, "Tarih": t.tarih, "Talep Eden": t.talepEden,
+      "Departman": t.departman, "Proje": t.proje, "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi,
+      "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi, "Satır Açıklama": r.aciklama,
+      "Durum": TALEP_DURUM[t.durum]?.label || "", "Sipariş No": t.siparisEvrakNo || "",
+    }))), "satinalma-talepleri.xlsx", "Talepler"
+  );
+
+  const filtrelenmis = useMemo(() => {
+    const q = f.arama.trim().toLowerCase();
+    return [...satinalmaTalepler].filter((t) => {
+      if (f.durum && t.durum !== f.durum) return false;
+      if (q && !(
+        (t.evrakNo || "").toLowerCase().includes(q) ||
+        (t.belgeNo || "").toLowerCase().includes(q) ||
+        (t.proje || "").toLowerCase().includes(q) ||
+        (t.talepEden || "").toLowerCase().includes(q) ||
+        (t.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q))
+      )) return false;
+      return true;
+    }).sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
+  }, [satinalmaTalepler, f]);
+
+  const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((t) => secililer.has(t.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((t) => t.id)));
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <UyariPenceresi
+        acik={!!uyari} kapat={() => setUyari(null)}
+        baslik={uyari?.baslik} mesaj={uyari?.mesaj}
+        ikincilButon={
+          <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
+            <RefreshCw size={14} /> Numarayı Güncelle
+          </button>
+        }
+      />
+
+      <EvrakPenceresi
+        acik={fisAcik} kapat={() => setFisAcik(false)}
+        baslik="Satınalma Talep Fişi" ikon={FileText} genislik={1060}
+        butonlar={
+          <>
+            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
+            <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
+            <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
+            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+          </>
+        }
+      >
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "0 26px" }}>
+          <div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Evrak No</span>
+              <input style={fisInput} value={baslik.evrakNo} onChange={(e) => setBaslik((s) => ({ ...s, evrakNo: e.target.value }))} placeholder="Örn: SEN-0001" />
+              <button onClick={numarayiGuncelle} title="Sıradaki boş numarayı al" style={{ ...fisAltBtn, padding: "5px 9px", flexShrink: 0 }}><RefreshCw size={13} /></button>
+            </div>
+            <div style={fisSatir}><span style={fisEtiket}>Belge No</span><input style={fisInput} value={baslik.belgeNo} onChange={(e) => setBaslik((s) => ({ ...s, belgeNo: e.target.value }))} /></div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={baslik.tarih} onChange={(e) => setBaslik((s) => ({ ...s, tarih: e.target.value }))} /></div>
+          </div>
+          <div>
+            <div style={fisSatir}><span style={fisEtiket}>Talep Eden</span><input style={fisInput} value={baslik.talepEden} onChange={(e) => setBaslik((s) => ({ ...s, talepEden: e.target.value }))} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Departman</span><input style={fisInput} value={baslik.departman} onChange={(e) => setBaslik((s) => ({ ...s, departman: e.target.value }))} placeholder="Örn: Üretim" /></div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Proje</span><input style={fisInput} value={baslik.proje} onChange={(e) => setBaslik((s) => ({ ...s, proje: e.target.value }))} /></div>
+          </div>
+          <div>
+            <div style={{ ...fisSatir, alignItems: "flex-start" }}>
+              <span style={{ ...fisEtiket, paddingTop: 6 }}>Açıklama</span>
+              <textarea style={{ ...fisInput, minHeight: 84, resize: "vertical", fontFamily: "inherit" }} value={baslik.aciklama} onChange={(e) => setBaslik((s) => ({ ...s, aciklama: e.target.value }))} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 880 }}>
+              <thead>
+                <tr>
+                  <th style={{ ...fisGridTh, width: 34, textAlign: "center" }}>#</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Stok Kodu</th>
+                  <th style={fisGridTh}>Malzeme / Stok Adı</th>
+                  <th style={{ ...fisGridTh, width: 95 }}>Miktar</th>
+                  <th style={{ ...fisGridTh, width: 95 }}>Birim</th>
+                  <th style={{ ...fisGridTh, width: 145 }}>Teslim Tarihi</th>
+                  <th style={fisGridTh}>Açıklama</th>
+                  <th style={{ ...fisGridTh, width: 34, borderRight: "none" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {satirlar.map((r, i) => (
+                  <tr key={r.key}>
+                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
+                    <td style={fisGridTd}>
+                      <input style={fisHucreInput} list="sa-stok-kodlari" value={r.stokKodu} onChange={(e) => stokSec(r.key, e.target.value)} placeholder="depodan seç / yaz" />
+                    </td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => satirGuncelle(r.key, "stokAdi", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} type="date" value={r.teslimTarihi} onChange={(e) => satirGuncelle(r.key, "teslimTarihi", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} /></td>
+                    <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
+                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td colSpan={8} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
+                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={8} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                    Toplam Kalem: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{satirlar.filter((r) => r.stokAdi.trim()).length}</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <datalist id="sa-stok-kodlari">{depoStok.map((s) => <option key={s.id} value={s.stokKodu}>{s.stokAdi}</option>)}</datalist>
+      </EvrakPenceresi>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Satınalma Talepleri</div>
+          <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+        </div>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <Plus size={16} /> Yeni Talep Fişi Aç
+        </button>
+        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+          Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Evrak No'yu elle değiştirirsen sonraki fiş onu takip eder (SEN-0001 → SEN-0002).
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1", position: "relative" }}>
+            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, proje, malzeme, talep eden ara…" value={f.arama} onChange={setF2("arama")} />
+          </div>
+          <div>
+            <label className="field-label">Durum</label>
+            <select className="input" value={f.durum} onChange={setF2("durum")}>
+              <option value="">Tümü</option>
+              {Object.entries(TALEP_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {(secililer.size > 0 || topluDurum) && (
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#c0392b" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{topluDurum || `${secililer.size} talep seçili`}</span>
+          {secililer.size > 0 && !topluDurum && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={secilenleriSil} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={14} /> Seçilenleri Sil
+              </button>
+              <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Talepler ({filtrelenmis.length})</div>
+        <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
+          <table>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Talep Eden</th><th>Proje</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
+            <tbody>
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
+              {filtrelenmis.map((t) => {
+                const donustu = t.durum === "siparise_donustu";
+                return (
+                  <tr key={t.id}>
+                    <td><input type="checkbox" checked={secililer.has(t.id)} onChange={() => birSecToggle(t.id)} /></td>
+                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{t.evrakNo}</td>
+                    <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
+                    <td style={{ fontSize: 12.5 }}>{t.talepEden || "—"}</td>
+                    <td style={{ fontSize: 12.5 }}>{t.proje || "—"}</td>
+                    <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
+                    <td>
+                      <select className="input" style={{ padding: "4px 6px", fontSize: 11.5 }} value={t.durum || "bekliyor"} onChange={(e) => durumDegistir(t.id, e.target.value)}>
+                        {Object.entries(TALEP_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.siparisEvrakNo || "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <button
+                        onClick={() => siparisOlustur(t)}
+                        disabled={donustu}
+                        title={donustu ? "Bu talep zaten siparişe dönüştürüldü" : "Tek tıkla siparişe çevir"}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: donustu ? "transparent" : "#2dd4bf", color: donustu ? "#3a4a50" : "#142a30", border: donustu ? "1px solid #2a4b52" : "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: donustu ? "default" : "pointer", marginRight: 6 }}
+                      >
+                        <ArrowRightLeft size={12} /> Siparişe Çevir
+                      </button>
+                      <button onClick={() => sil(t)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Satınalma Siparişi ----------
+function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, kullanici, taslak, taslakTemizle }) {
+  const [fisAcik, setFisAcik] = useState(false);
+  const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), tedarikci: "", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "" });
+  const [satirlar, setSatirlar] = useState([bosSiparisSatiri()]);
+  const [msg, setMsg] = useState("");
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [uyari, setUyari] = useState(null);
+  const [f, setF] = useState({ arama: "", durum: "" });
+  const [secililer, setSecililer] = useState(new Set());
+  const [topluDurum, setTopluDurum] = useState("");
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  const yeniNo = () => sonrakiEvrakNo(satinalmaSiparisler, "SIP-");
+  const numarayiGuncelle = () => {
+    const no = yeniNo();
+    setBaslik((s) => ({ ...s, evrakNo: no }));
+    setMsg(`Numara güncellendi: ${no}`);
+    setTimeout(() => setMsg(""), 2500);
+  };
+  const fisiTemizle = () => {
+    setBaslik({ evrakNo: yeniNo(), belgeNo: "", tarih: todayISO(), tedarikci: "", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "" });
+    setSatirlar([bosSiparisSatiri()]);
+    setMsg("");
+  };
+  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+
+  // Talep sayfasından "Siparişe Çevir" ile gelindiğinde fiş otomatik dolar ve açılır.
+  useEffect(() => {
+    if (!taslak) return;
+    setBaslik({
+      evrakNo: sonrakiEvrakNo(satinalmaSiparisler, "SIP-"),
+      belgeNo: taslak.belgeNo || "", tarih: todayISO(), tedarikci: "",
+      teslimTarihi: "", odemeSekli: "", aciklama: taslak.aciklama || "",
+      talepId: taslak.id, talepEvrakNo: taslak.evrakNo || "",
+    });
+    setSatirlar(
+      (taslak.satirlar || []).length
+        ? taslak.satirlar.map((r) => ({ ...bosSiparisSatiri(), ...r, birimFiyat: "" }))
+        : [bosSiparisSatiri()]
+    );
+    setMsg("");
+    setFisAcik(true);
+    taslakTemizle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taslak]);
+
+  const satirGuncelle = (key, alan, deger) => setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, [alan]: deger } : r)));
+  const satirEkle = () => setSatirlar((s) => [...s, bosSiparisSatiri()]);
+  const satirSil = (key) => setSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+  const stokSec = (key, stokKodu) => {
+    const stok = depoStok.find((s) => s.stokKodu === stokKodu);
+    setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, stokKodu, stokAdi: stok ? stok.stokAdi : r.stokAdi, birim: stok?.birim || r.birim } : r)));
+  };
+  const genelToplam = satirlar.reduce((t, r) => t + satirToplam(r), 0);
+
+  const kaydet = async () => {
+    if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
+    if (!baslik.tedarikci.trim()) { setMsg("Tedarikçi zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
+    const gecerli = satirlar.filter((r) => r.stokAdi.trim());
+    if (gecerli.length === 0) { setMsg("En az bir satıra Malzeme / Stok Adı girin."); setTimeout(() => setMsg(""), 3000); return; }
+    setKaydediliyor(true);
+    try {
+      await benzersizEvrakKaydet("satinalma_siparisler", baslik.evrakNo, {
+        evrakNo: baslik.evrakNo.trim(), belgeNo: baslik.belgeNo.trim(), tarih: baslik.tarih,
+        tedarikci: baslik.tedarikci.trim(), teslimTarihi: baslik.teslimTarihi,
+        odemeSekli: baslik.odemeSekli.trim(), aciklama: baslik.aciklama.trim(),
+        talepId: baslik.talepId || "", talepEvrakNo: baslik.talepEvrakNo || "",
+        satirlar: gecerli.map(({ key, ...r }) => ({ ...r, satirTutar: satirToplam(r) })),
+        genelToplam: gecerli.reduce((t, r) => t + satirToplam(r), 0),
+        durum: "acik",
+        olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
+      });
+      // Kaynak talebi "siparişe dönüştü" olarak işaretle
+      if (baslik.talepId) {
+        try {
+          await updateDoc(doc(db, "satinalma_talepler", baslik.talepId), {
+            durum: "siparise_donustu", siparisEvrakNo: baslik.evrakNo.trim(),
+          });
+        } catch (e) { console.error("Talep durumu güncellenemedi:", e); }
+      }
+      setMsg(`${baslik.evrakNo} kaydedildi (${gecerli.length} satır).`);
+      setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+    } catch (err) {
+      if (err?.message === "EVRAK_NO_MEVCUT") {
+        setUyari({
+          baslik: "Aynı Numaradan Zaten Var",
+          mesaj: `"${baslik.evrakNo}" numaralı bir satınalma siparişi zaten kayıtlı. Muhtemelen aynı anda başka bir kullanıcı bu numarayı kaydetti. Numarayı güncelleyip tekrar kaydedin.`,
+        });
+      } else {
+        setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
+        setTimeout(() => setMsg(""), 5000);
+      }
+    }
+    setKaydediliyor(false);
+  };
+
+  const sil = async (s) => {
+    if (!window.confirm(`${s.evrakNo} numaralı sipariş silinecek. Emin misiniz?`)) return;
+    await deleteDoc(doc(db, "satinalma_siparisler", s.id));
+  };
+  const durumDegistir = async (id, durum) => { await updateDoc(doc(db, "satinalma_siparisler", id), { durum }); };
+
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const secilenleriSil = async () => {
+    if (secililer.size === 0) return;
+    if (!window.confirm(`${secililer.size} sipariş kalıcı olarak silinecek. Emin misiniz?`)) return;
+    setTopluDurum("Siliniyor…");
+    const idler = [...secililer];
+    for (let i = 0; i < idler.length; i += 400) {
+      const batch = writeBatch(db);
+      idler.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "satinalma_siparisler", id)));
+      await batch.commit();
+    }
+    setSecililer(new Set());
+    setTopluDurum(`${idler.length} sipariş silindi.`);
+    setTimeout(() => setTopluDurum(""), 4000);
+  };
+
+  const disaAktar = () => excelIndir(
+    satinalmaSiparisler.flatMap((s) => (s.satirlar || []).map((r) => ({
+      "Evrak No": s.evrakNo, "Belge No": s.belgeNo, "Tarih": s.tarih, "Tedarikçi": s.tedarikci,
+      "Talep No": s.talepEvrakNo || "", "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi,
+      "Miktar": r.miktar, "Birim": r.birim, "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar,
+      "Teslim Tarihi": r.teslimTarihi, "Durum": SIPARIS_DURUM[s.durum]?.label || "",
+    }))), "satinalma-siparisleri.xlsx", "Siparişler"
+  );
+
+  const filtrelenmis = useMemo(() => {
+    const q = f.arama.trim().toLowerCase();
+    return [...satinalmaSiparisler].filter((s) => {
+      if (f.durum && s.durum !== f.durum) return false;
+      if (q && !(
+        (s.evrakNo || "").toLowerCase().includes(q) ||
+        (s.belgeNo || "").toLowerCase().includes(q) ||
+        (s.tedarikci || "").toLowerCase().includes(q) ||
+        (s.talepEvrakNo || "").toLowerCase().includes(q) ||
+        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q))
+      )) return false;
+      return true;
+    }).sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
+  }, [satinalmaSiparisler, f]);
+
+  const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((s) => secililer.has(s.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((s) => s.id)));
+  const bekleyenTalepler = satinalmaTalepler.filter((t) => t.durum !== "siparise_donustu" && t.durum !== "iptal");
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <UyariPenceresi
+        acik={!!uyari} kapat={() => setUyari(null)}
+        baslik={uyari?.baslik} mesaj={uyari?.mesaj}
+        ikincilButon={
+          <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
+            <RefreshCw size={14} /> Numarayı Güncelle
+          </button>
+        }
+      />
+
+      <EvrakPenceresi
+        acik={fisAcik} kapat={() => setFisAcik(false)}
+        baslik={baslik.talepEvrakNo ? `Satınalma Sipariş Fişi — ${baslik.talepEvrakNo} talebinden` : "Satınalma Sipariş Fişi"}
+        ikon={ShoppingCart} genislik={1120}
+        butonlar={
+          <>
+            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
+            <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
+            <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
+            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+          </>
+        }
+      >
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "0 26px" }}>
+          <div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Evrak No</span>
+              <input style={fisInput} value={baslik.evrakNo} onChange={(e) => setBaslik((s) => ({ ...s, evrakNo: e.target.value }))} placeholder="Örn: SEN-0001" />
+              <button onClick={numarayiGuncelle} title="Sıradaki boş numarayı al" style={{ ...fisAltBtn, padding: "5px 9px", flexShrink: 0 }}><RefreshCw size={13} /></button>
+            </div>
+            <div style={fisSatir}><span style={fisEtiket}>Belge No</span><input style={fisInput} value={baslik.belgeNo} onChange={(e) => setBaslik((s) => ({ ...s, belgeNo: e.target.value }))} /></div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={baslik.tarih} onChange={(e) => setBaslik((s) => ({ ...s, tarih: e.target.value }))} /></div>
+          </div>
+          <div>
+            <div style={fisSatir}><span style={fisEtiket}>Tedarikçi</span><input style={fisInput} value={baslik.tedarikci} onChange={(e) => setBaslik((s) => ({ ...s, tedarikci: e.target.value }))} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Teslim Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => setBaslik((s) => ({ ...s, teslimTarihi: e.target.value }))} /></div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Ödeme Şekli</span><input style={fisInput} value={baslik.odemeSekli} onChange={(e) => setBaslik((s) => ({ ...s, odemeSekli: e.target.value }))} placeholder="Örn: 30 gün vadeli" /></div>
+          </div>
+          <div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Kaynak Talep</span>
+              <select
+                style={fisInput}
+                value={baslik.talepId}
+                onChange={(e) => {
+                  const t = satinalmaTalepler.find((x) => x.id === e.target.value);
+                  if (!t) { setBaslik((s) => ({ ...s, talepId: "", talepEvrakNo: "" })); return; }
+                  setBaslik((s) => ({ ...s, talepId: t.id, talepEvrakNo: t.evrakNo || "" }));
+                  setSatirlar((t.satirlar || []).length ? t.satirlar.map((r) => ({ ...bosSiparisSatiri(), ...r, birimFiyat: "" })) : [bosSiparisSatiri()]);
+                }}
+              >
+                <option value="">Yok (doğrudan sipariş)</option>
+                {bekleyenTalepler.map((t) => <option key={t.id} value={t.id}>{t.evrakNo} — {t.proje || t.talepEden || "—"}</option>)}
+              </select>
+            </div>
+            <div style={{ ...fisSatir, alignItems: "flex-start", marginBottom: 0 }}>
+              <span style={{ ...fisEtiket, paddingTop: 6 }}>Açıklama</span>
+              <textarea style={{ ...fisInput, minHeight: 52, resize: "vertical", fontFamily: "inherit" }} value={baslik.aciklama} onChange={(e) => setBaslik((s) => ({ ...s, aciklama: e.target.value }))} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
+              <thead>
+                <tr>
+                  <th style={{ ...fisGridTh, width: 34, textAlign: "center" }}>#</th>
+                  <th style={{ ...fisGridTh, width: 160 }}>Stok Kodu</th>
+                  <th style={fisGridTh}>Malzeme / Stok Adı</th>
+                  <th style={{ ...fisGridTh, width: 90 }}>Miktar</th>
+                  <th style={{ ...fisGridTh, width: 85 }}>Birim</th>
+                  <th style={{ ...fisGridTh, width: 110 }}>Birim Fiyat</th>
+                  <th style={{ ...fisGridTh, width: 120 }}>Tutar</th>
+                  <th style={{ ...fisGridTh, width: 140 }}>Teslim Tarihi</th>
+                  <th style={{ ...fisGridTh, width: 34, borderRight: "none" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {satirlar.map((r, i) => (
+                  <tr key={r.key}>
+                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
+                    <td style={fisGridTd}><input style={fisHucreInput} list="sa-stok-kodlari-sip" value={r.stokKodu} onChange={(e) => stokSec(r.key, e.target.value)} placeholder="depodan seç / yaz" /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => satirGuncelle(r.key, "stokAdi", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.birimFiyat} onChange={(e) => satirGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: "#2dd4bf" }}>{paraTR(satirToplam(r))}</td>
+                    <td style={fisGridTd}><input style={fisHucreInput} type="date" value={r.teslimTarihi} onChange={(e) => satirGuncelle(r.key, "teslimTarihi", e.target.value)} /></td>
+                    <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
+                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td colSpan={9} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
+                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={9} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{paraTR(genelToplam)}</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <datalist id="sa-stok-kodlari-sip">{depoStok.map((s) => <option key={s.id} value={s.stokKodu}>{s.stokAdi}</option>)}</datalist>
+      </EvrakPenceresi>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Satınalma Siparişleri</div>
+          <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+        </div>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <Plus size={16} /> Yeni Sipariş Fişi Aç
+        </button>
+        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+          Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Talep sayfasındaki "Siparişe Çevir" ile gelen fişler otomatik dolar.
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1", position: "relative" }}>
+            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, tedarikçi, malzeme, talep no ara…" value={f.arama} onChange={setF2("arama")} />
+          </div>
+          <div>
+            <label className="field-label">Durum</label>
+            <select className="input" value={f.durum} onChange={setF2("durum")}>
+              <option value="">Tümü</option>
+              {Object.entries(SIPARIS_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {(secililer.size > 0 || topluDurum) && (
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#c0392b" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{topluDurum || `${secililer.size} sipariş seçili`}</span>
+          {secililer.size > 0 && !topluDurum && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={secilenleriSil} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={14} /> Seçilenleri Sil
+              </button>
+              <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Siparişler ({filtrelenmis.length})</div>
+        <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
+          <table>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+            <tbody>
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
+              {filtrelenmis.map((s) => (
+                <tr key={s.id}>
+                  <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{s.evrakNo}</td>
+                  <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
+                  <td style={{ fontSize: 12.5 }}>{s.tedarikci || "—"}</td>
+                  <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
+                  <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
+                  <td style={{ fontFamily: "monospace", color: "#2dd4bf" }}>{paraTR(s.genelToplam || 0)}</td>
+                  <td>
+                    <select className="input" style={{ padding: "4px 6px", fontSize: 11.5 }} value={s.durum || "acik"} onChange={(e) => durumDegistir(s.id, e.target.value)}>
+                      {Object.entries(SIPARIS_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
+                    </select>
+                  </td>
+                  <td><button onClick={() => sil(s)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
