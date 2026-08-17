@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer } from "lucide-react";
 import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
 import {
-  collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch, query, where, getDocs, getDoc, increment, setDoc, runTransaction,
+  collection, onSnapshot, doc, query, where, getDocs, getDoc, increment,
+  addDoc as _addDoc, deleteDoc as _deleteDoc, updateDoc as _updateDoc,
+  writeBatch as _writeBatch, setDoc as _setDoc, runTransaction as _runTransaction,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
@@ -69,6 +71,81 @@ const MENU = [
   { id: "kullanicilar", label: "Kullanıcılar", icon: UserPlus },
   { id: "yardim", label: "Yardım", icon: HelpCircle },
 ];
+
+// ---------- Kullanıcı Yetkilendirme ----------
+// Sahip e-postası her zaman yöneticidir; bu kilit hiçbir şekilde kırılamaz.
+const SAHIP_EPOSTA = "fatihsak.lyoness@gmail.com";
+const YETKI_SEVIYELERI = [
+  { id: "yok", label: "Yetki Yok", renk: "#6b7178" },
+  { id: "goruntule", label: "Görüntüle", renk: "#e8a33d" },
+  { id: "duzenle", label: "Düzenle", renk: "#2dd4bf" },
+];
+// Menüde ayrı grup olarak görünmeyen ama Ana Sayfa kartlarından açılan ekranlar
+const EK_YETKI_GRUPLARI = [
+  {
+    id: "uretim", label: "Üretim",
+    children: [
+      { id: "stok-kayit", label: "Üretim Kaydı" },
+      { id: "stok-raporu", label: "Üretim Raporu" },
+      { id: "stok-sil", label: "Üretim Kayıtlarını Sil" },
+    ],
+  },
+];
+// Yetki ekranında gösterilecek ağaç: tek başına duran menüler de tek çocuklu grup olur
+const YETKI_AGACI = [
+  ...EK_YETKI_GRUPLARI,
+  ...MENU.filter((m) => m.id !== "ana-sayfa" && m.id !== "yardim").map((m) =>
+    m.children
+      ? { id: m.id, label: m.label, children: m.children.map((c) => ({ id: c.id, label: c.label })) }
+      : { id: m.id, label: m.label, children: [{ id: m.id, label: m.label }] }
+  ),
+];
+const TUM_EKRANLAR = YETKI_AGACI.flatMap((g) => g.children.map((c) => c.id));
+// Bu ekranlar herkese açıktır (Ana Sayfa olmadan programa girilemez, Yardım zararsızdır)
+const HERKESE_ACIK = ["ana-sayfa", "yardim"];
+
+function yoneticiMi(kayit, eposta) {
+  if (String(eposta || "").trim().toLowerCase() === SAHIP_EPOSTA) return true;
+  return !!(kayit && kayit.yonetici === true);
+}
+function sahipMi(eposta) {
+  return String(eposta || "").trim().toLowerCase() === SAHIP_EPOSTA;
+}
+function ekranYetkisi(kayit, eposta, ekranId) {
+  if (yoneticiMi(kayit, eposta)) return "duzenle";
+  if (HERKESE_ACIK.includes(ekranId)) return "duzenle";
+  if (ekranId === "kullanicilar") return "yok"; // yetki dağıtımı sadece yöneticide
+  const s = ((kayit && kayit.yetkiler) || {})[ekranId];
+  return s === "duzenle" || s === "goruntule" ? s : "yok";
+}
+function verilenYetkiSayisi(kayit) {
+  const y = (kayit && kayit.yetkiler) || {};
+  return TUM_EKRANLAR.filter((id) => y[id] === "goruntule" || y[id] === "duzenle").length;
+}
+
+// Yazma koruması: aktif ekranda "Düzenle" yetkisi yoksa hiçbir kayıt işlemi veritabanına gitmez.
+let YAZMA_IZNI = { izin: true, mesaj: "" };
+function yazmaIzniAyarla(izin, mesaj) { YAZMA_IZNI = { izin: !!izin, mesaj: mesaj || "" }; }
+function yazmaIzniVarMi() { return YAZMA_IZNI.izin; }
+function yazmaKontrol() {
+  if (YAZMA_IZNI.izin) return;
+  const mesaj = YAZMA_IZNI.mesaj || "Bu bölümde sadece görüntüleme yetkiniz var. Kayıt, düzenleme ve silme yapamazsınız.";
+  if (typeof window !== "undefined" && typeof window.alert === "function") window.alert(mesaj);
+  const hata = new Error("YETKI_YOK");
+  hata.yetkiHatasi = true;
+  throw hata;
+}
+const addDoc = (...a) => { yazmaKontrol(); return _addDoc(...a); };
+const deleteDoc = (...a) => { yazmaKontrol(); return _deleteDoc(...a); };
+const updateDoc = (...a) => { yazmaKontrol(); return _updateDoc(...a); };
+const setDoc = (...a) => { yazmaKontrol(); return _setDoc(...a); };
+const runTransaction = (...a) => { yazmaKontrol(); return _runTransaction(...a); };
+const writeBatch = (...a) => {
+  const b = _writeBatch(...a);
+  const asilCommit = b.commit.bind(b);
+  b.commit = (...x) => { yazmaKontrol(); return asilCommit(...x); };
+  return b;
+};
 
 // ---------- Excel yardımcıları ----------
 function dosyaOku(dosya) {
@@ -1033,6 +1110,30 @@ export default function App() {
   return <Panel onCikis={() => signOut(auth)} kullanici={kullanici} />;
 }
 
+function KilitliEkran({ baslik }) {
+  return (
+    <div className="card" style={{ padding: 40, textAlign: "center", display: "grid", gap: 12, justifyItems: "center" }}>
+      <div style={{ width: 54, height: 54, borderRadius: 14, background: "#24424a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Lock size={24} color="#8b929a" />
+      </div>
+      <div style={{ fontWeight: 700, fontSize: 16 }}>Bu bölüme erişim yetkiniz yok</div>
+      <div style={{ fontSize: 13, color: "#8b929a", maxWidth: 460, lineHeight: 1.6 }}>
+        {baslik ? `"${baslik}" ekranını görüntüleme yetkiniz bulunmuyor. ` : ""}
+        Yetki almak için yöneticinize başvurun. Yönetici, Kullanıcılar ekranından size görüntüleme veya düzenleme yetkisi verebilir.
+      </div>
+    </div>
+  );
+}
+
+function SaltOkunurSerit() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#332a16", border: "1px solid #6b5220", color: "#e8a33d", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+      <Lock size={14} />
+      <span>Sadece görüntüleme yetkiniz var — bu bölümde kayıt, düzenleme ve silme işlemleri kapalıdır.</span>
+    </div>
+  );
+}
+
 function Panel({ onCikis, kullanici }) {
   const [tab, setTab] = useState("ana-sayfa");
   const [acikGruplar, setAcikGruplar] = useState(new Set(["uretim"]));
@@ -1066,8 +1167,10 @@ function Panel({ onCikis, kullanici }) {
   const [fasonHareketler, setFasonHareketler] = useState([]);
   const [fasonHatirlaticilar, setFasonHatirlaticilar] = useState([]);
   const [kullanicilar, setKullanicilar] = useState([]);
+  const [kullanicilarYuklendi, setKullanicilarYuklendi] = useState(false);
   const [satinalmaTalepler, setSatinalmaTalepler] = useState([]);
   const [satinalmaSiparisler, setSatinalmaSiparisler] = useState([]);
+  const [siparislerYuklendi, setSiparislerYuklendi] = useState(false);
   const [satinalmaProjeler, setSatinalmaProjeler] = useState([]);
   const [satinalmaDepolar, setSatinalmaDepolar] = useState([]);
   const [formAyarlari, setFormAyarlari] = useState(null);
@@ -1111,15 +1214,17 @@ function Panel({ onCikis, kullanici }) {
     const unsub12 = onSnapshot(collection(db, "fason_hatirlaticilar"), (snap) =>
       setFasonHatirlaticilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub13 = onSnapshot(collection(db, "kullanicilar"), (snap) =>
-      setKullanicilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    const unsub13 = onSnapshot(collection(db, "kullanicilar"), (snap) => {
+      setKullanicilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setKullanicilarYuklendi(true);
+    });
     const unsub14 = onSnapshot(collection(db, "satinalma_talepler"), (snap) =>
       setSatinalmaTalepler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub15 = onSnapshot(collection(db, "satinalma_siparisler"), (snap) =>
-      setSatinalmaSiparisler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
+    const unsub15 = onSnapshot(collection(db, "satinalma_siparisler"), (snap) => {
+      setSatinalmaSiparisler(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setSiparislerYuklendi(true);
+    });
     const unsub16 = onSnapshot(collection(db, "satinalma_projeler"), (snap) =>
       setSatinalmaProjeler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
@@ -1132,7 +1237,23 @@ function Panel({ onCikis, kullanici }) {
     return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); unsub8(); unsub9(); unsub10(); unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16(); unsub17(); unsub18(); };
   }, []);
 
+  // ---- Yetki hesabı ----
+  const benimKayit = useMemo(() => {
+    const e = String(kullanici?.email || "").trim().toLowerCase();
+    if (!e) return null;
+    return (kullanicilar || []).find((k) => String(k.emailKucuk || k.email || "").toLowerCase() === e) || null;
+  }, [kullanicilar, kullanici]);
+  const yonetici = yoneticiMi(benimKayit, kullanici?.email);
+  const yetki = (id) => ekranYetkisi(benimKayit, kullanici?.email, id);
+  const aktifYetki = yetki(tab);
+  // Yazma korumasını render sırasında kur ki alt bileşenler çalışmadan önce geçerli olsun
+  yazmaIzniAyarla(
+    !kullanicilarYuklendi || aktifYetki === "duzenle",
+    "Bu bölümde sadece görüntüleme yetkiniz var. Kayıt, düzenleme ve silme yapamazsınız."
+  );
+
   const secimYap = (id) => {
+    if (kullanicilarYuklendi && yetki(id) === "yok") return;
     window.history.pushState({ uretimTakipTab: id }, "");
     setTab(id);
     setMobilMenuAcik(false);
@@ -1208,6 +1329,8 @@ function Panel({ onCikis, kullanici }) {
         .navsub { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 8px 12px 8px 38px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #9aa0a8; }
         .navsub:hover { background: #274852; color: #c7cbd1; }
         .navsub.active { background: #3a3220; color: #2dd4bf; }
+        .navbtn.kilitli, .navsub.kilitli { opacity: 0.38; cursor: not-allowed; }
+        .navbtn.kilitli:hover, .navsub.kilitli:hover { background: transparent; color: inherit; }
         .mobil-menu-btn { display: none; }
         @media (max-width: 820px) {
           .mobil-menu-btn { display: flex; }
@@ -1262,26 +1385,36 @@ function Panel({ onCikis, kullanici }) {
                     <span style={{ flex: 1 }}>{item.label}</span>
                     {acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </button>
-                  {acik && item.children.map((c) => (
-                    <button
-                      key={c.id}
-                      className={`navsub${tab === c.id ? " active" : ""}`}
-                      onClick={() => secimYap(c.id)}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
+                  {acik && item.children.map((c) => {
+                    const kilitli = kullanicilarYuklendi && yetki(c.id) === "yok";
+                    return (
+                      <button
+                        key={c.id}
+                        className={`navsub${tab === c.id ? " active" : ""}${kilitli ? " kilitli" : ""}`}
+                        onClick={() => { if (!kilitli) secimYap(c.id); }}
+                        disabled={kilitli}
+                        title={kilitli ? "Bu bölüm için yetkiniz yok" : undefined}
+                      >
+                        <span style={{ flex: 1 }}>{c.label}</span>
+                        {kilitli && <Lock size={11} />}
+                      </button>
+                    );
+                  })}
                 </div>
               );
             }
+            const kilitli = kullanicilarYuklendi && yetki(item.id) === "yok";
             return (
               <button
                 key={item.id}
-                className={`navbtn${tab === item.id ? " active" : ""}`}
-                onClick={() => secimYap(item.id)}
+                className={`navbtn${tab === item.id ? " active" : ""}${kilitli ? " kilitli" : ""}`}
+                onClick={() => { if (!kilitli) secimYap(item.id); }}
+                disabled={kilitli}
+                title={kilitli ? "Bu bölüm için yetkiniz yok" : undefined}
               >
                 <Icon size={16} />
-                <span>{item.label}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {kilitli && <Lock size={11} />}
               </button>
             );
           })}
@@ -1289,8 +1422,14 @@ function Panel({ onCikis, kullanici }) {
 
         <main style={{ flex: 1, padding: 24, overflowY: "auto", minWidth: 0 }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            {!kullanicilarYuklendi && (
+              <div style={{ color: "#2dd4bf", fontFamily: "monospace", fontSize: 13, letterSpacing: 1, padding: 40, textAlign: "center" }}>YETKİLER YÜKLENİYOR…</div>
+            )}
+            {kullanicilarYuklendi && aktifYetki === "yok" && <KilitliEkran baslik={aktifBaslik()} />}
+            {kullanicilarYuklendi && aktifYetki === "goruntule" && <SaltOkunurSerit />}
+            {kullanicilarYuklendi && aktifYetki !== "yok" && <>
             {tab === "ana-sayfa" && <AnaSayfa
-              kullanici={kullanici} git={secimYap} kullanicilar={kullanicilar}
+              kullanici={kullanici} git={secimYap} yetki={kullanicilarYuklendi ? yetki : undefined} kullanicilar={kullanicilar}
               teams={teams} machines={machines} records={records}
               hammaddeler={hammaddeler} depoStok={depoStok} depoHareketler={depoHareketler}
               metalTalepler={metalTalepler}
@@ -1320,6 +1459,7 @@ function Panel({ onCikis, kullanici }) {
             {tab === "depo-sil" && <DepoSilme depoStok={depoStok} />}
             {tab === "satinalma-talep" && <SatinalmaTalep
               satinalmaTalepler={satinalmaTalepler}
+              satinalmaSiparisler={satinalmaSiparisler} siparislerYuklendi={siparislerYuklendi}
               satinalmaProjeler={satinalmaProjeler} satinalmaDepolar={satinalmaDepolar}
               depoStok={depoStok} kullanicilar={kullanicilar} kullanici={kullanici} formAyarlari={formAyarlari}
               siparisOlustur={(talep) => { setSiparisTaslak(talep); secimYap("satinalma-siparis"); }}
@@ -1347,8 +1487,9 @@ function Panel({ onCikis, kullanici }) {
             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
             {tab === "takimlar" && <ListeYonetimi title="Takım" baslikCogul="Takımlar" koleksiyon="teams" placeholder="Örn: Kesim Takım 1" items={teams} icon={Users} />}
             {tab === "makineler" && <ListeYonetimi title="Makine" baslikCogul="Makineler" koleksiyon="machines" placeholder="Makine listesini buradan ekleyin" items={machines} icon={Cog} />}
-            {tab === "kullanicilar" && <KullaniciYonetimi mevcutKullanici={kullanici} />}
+            {tab === "kullanicilar" && <KullaniciYonetimi mevcutKullanici={kullanici} yonetici={yonetici} />}
             {tab === "yardim" && <YardimEkrani git={secimYap} />}
+            </>}
           </div>
         </main>
       </div>
@@ -1357,7 +1498,7 @@ function Panel({ onCikis, kullanici }) {
 }
 
 // ---------- Ana Sayfa (Kontrol Paneli) ----------
-function AnaSayfa({ kullanici, git, kullanicilar, teams, machines, records, hammaddeler, depoStok, depoHareketler, metalTalepler, fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlaticilar }) {
+function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, records, hammaddeler, depoStok, depoHareketler, metalTalepler, fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlaticilar }) {
   const bugun = todayISO();
   const buAy = bugun.slice(0, 7);
 
@@ -1454,13 +1595,16 @@ function AnaSayfa({ kullanici, git, kullanicilar, teams, machines, records, hamm
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {modulKartlari.map((k) => {
             const Icon = k.icon;
+            const kilitli = typeof yetki === "function" && yetki(k.id) === "yok";
             return (
-              <button key={k.id} onClick={() => git(k.id)} className="card" style={{ padding: 20, textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
+              <button key={k.id} onClick={() => { if (!kilitli) git(k.id); }} disabled={kilitli}
+                title={kilitli ? "Bu bölüm için yetkiniz yok" : undefined}
+                className="card" style={{ padding: 20, textAlign: "left", cursor: kilitli ? "not-allowed" : "pointer", opacity: kilitli ? 0.38 : 1, display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 9, background: "#113330", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Icon size={18} color="#2dd4bf" />
                   </div>
-                  <ChevronRight size={16} color="#6b7178" />
+                  {kilitli ? <Lock size={14} color="#6b7178" /> : <ChevronRight size={16} color="#6b7178" />}
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14.5 }}>{k.baslik}</div>
@@ -4937,6 +5081,33 @@ const SIPARIS_DURUM = {
   iptal: { label: "İptal", renk: "#e07a6b" },
 };
 
+// Talep durumu manuel değil, TÜRETİLMİŞTİR: bağlı sipariş fiilen duruyorsa "Siparişe Dönüştü",
+// sipariş silinmişse otomatik "Bekliyor"a düşer ve Siparişe Çevir yeniden aktif olur.
+function bagliSiparisBul(talep, siparisler) {
+  if (!talep) return null;
+  const liste = siparisler || [];
+  return (
+    liste.find((s) => s.talepId && s.talepId === talep.id) ||
+    (talep.siparisEvrakNo
+      ? liste.find((s) => String(s.evrakNo || "") === String(talep.siparisEvrakNo))
+      : null) ||
+    null
+  );
+}
+// Kullanıcının elle seçebileceği talep durumları (siparise_donustu otomatik olduğu için burada yok)
+const TALEP_ELLE_DURUM = ["bekliyor", "onaylandi", "iptal"];
+function talepEtkinDurum(talep, siparisler) {
+  if (!talep) return "bekliyor";
+  if (talep.durum === "iptal") return "iptal";
+  if (bagliSiparisBul(talep, siparisler)) return "siparise_donustu";
+  if (talep.durum === "siparise_donustu") return "bekliyor"; // sipariş silinmiş → serbest
+  return talep.durum || "bekliyor";
+}
+function talepSiparisNo(talep, siparisler) {
+  const s = bagliSiparisBul(talep, siparisler);
+  return s ? s.evrakNo || "" : "";
+}
+
 const CINS_SECENEKLERI = ["Stok", "Hizmet", "Masraf", "Demirbaş", "Diğer"];
 const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), cinsi: "Stok", kodu: "", ismi: "", projeKodu: "", miktar: "", birim: "Adet", teslimTarihi: "" });
 const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "" });
@@ -5310,7 +5481,7 @@ function SatinalmaKartYonetimi({ baslikMetni, tekilAd, koleksiyon, kayitlar, iko
 }
 
 // ---------- Satınalma Talebi ----------
-function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar, depoStok, kullanicilar, kullanici, formAyarlari, siparisOlustur }) {
+function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYuklendi, satinalmaProjeler, satinalmaDepolar, depoStok, kullanicilar, kullanici, formAyarlari, siparisOlustur }) {
   // Giriş yapan kullanıcının görünen adı — Talep eden personel alanına otomatik gelir
   const girisYapanAd = useMemo(() => {
     const eposta = String(kullanici?.email || "").toLowerCase();
@@ -5338,6 +5509,22 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
   const [topluDurum, setTopluDurum] = useState("");
   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const setB = (k) => (v) => setBaslik((s) => ({ ...s, [k]: v }));
+
+  // Bağlı siparişi silinmiş talepleri otomatik "Bekliyor"a çek ve veritabanını da düzelt.
+  const onarilanlar = useRef(new Set());
+  useEffect(() => {
+    if (!siparislerYuklendi || !yazmaIzniVarMi()) return;
+    (satinalmaTalepler || []).forEach((t) => {
+      if (bagliSiparisBul(t, satinalmaSiparisler)) { onarilanlar.current.delete(t.id); return; }
+      if (t.durum !== "siparise_donustu" && !t.siparisEvrakNo) return;
+      if (onarilanlar.current.has(t.id)) return;
+      onarilanlar.current.add(t.id);
+      updateDoc(doc(db, "satinalma_talepler", t.id), {
+        durum: t.durum === "iptal" ? "iptal" : "bekliyor",
+        siparisEvrakNo: "",
+      }).catch((e) => console.error("Talep serbest bırakılamadı:", e));
+    });
+  }, [satinalmaTalepler, satinalmaSiparisler, siparislerYuklendi]);
 
   // Fiş gezinme sırası (Önceki / Sonraki)
   const sirali = useMemo(
@@ -5489,7 +5676,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
       .filter((r) => String(r.ismi || "").trim() || String(r.kodu || "").trim());
     const projeAdi = (projeler.find((p) => p.kod === b.proje) || {}).ad || "";
     const depoAdi = (depolar.find((d) => d.kod === b.depo) || {}).ad || "";
-    const durum = kaynak ? (TALEP_DURUM[kaynak.durum]?.label || "") : "Bekliyor";
+    const durum = kaynak ? (TALEP_DURUM[talepEtkinDurum(kaynak, satinalmaSiparisler)]?.label || "") : "Bekliyor";
 
     satinalmaFormYazdir({
       ayarlar: formAyarlari,
@@ -5545,7 +5732,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
       "Proje Kodu": t.proje, "Depo": t.depo, "Talep Eden Personel": t.talepEdenPersonel,
       "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi, "Satır Proje Kodu": r.projeKodu,
       "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
-      "Durum": TALEP_DURUM[t.durum]?.label || "", "Sipariş No": t.siparisEvrakNo || "",
+      "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
     }))), "satinalma-talepleri.xlsx", "Talepler"
   );
 
@@ -5603,7 +5790,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
   const filtrelenmis = useMemo(() => {
     const q = f.arama.trim().toLowerCase();
     return [...satinalmaTalepler].filter((t) => {
-      if (f.durum && t.durum !== f.durum) return false;
+      if (f.durum && talepEtkinDurum(t, satinalmaSiparisler) !== f.durum) return false;
       if (q && !(
         (t.evrakNo || "").toLowerCase().includes(q) ||
         (t.belgeNo || "").toLowerCase().includes(q) ||
@@ -5614,7 +5801,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
       )) return false;
       return true;
     }).sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
-  }, [satinalmaTalepler, f]);
+  }, [satinalmaTalepler, satinalmaSiparisler, f]);
 
   const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((t) => secililer.has(t.id));
   const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((t) => t.id)));
@@ -5848,7 +6035,10 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
             <tbody>
               {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
               {filtrelenmis.map((t) => {
-                const donustu = t.durum === "siparise_donustu";
+                const bagliSiparis = bagliSiparisBul(t, satinalmaSiparisler);
+                const etkinDurum = talepEtkinDurum(t, satinalmaSiparisler);
+                const donustu = !!bagliSiparis;
+                const iptalli = etkinDurum === "iptal";
                 const duzenlendi = (t.guncellemeSayisi || 0) > 0;
                 return (
                   <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
@@ -5863,18 +6053,32 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
                     <td style={{ fontSize: 12.5 }}>{t.depo || "—"}</td>
                     <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
                     <td>
-                      <select className="input" style={{ padding: "4px 6px", fontSize: 11.5 }} value={t.durum || "bekliyor"} onChange={(e) => durumDegistir(t.id, e.target.value)}>
-                        {Object.entries(TALEP_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
-                      </select>
+                      {donustu ? (
+                        <span
+                          className="pill"
+                          title={`${bagliSiparis.evrakNo} numaralı siparişe bağlı. Sipariş silinince bu talep otomatik "Bekliyor"a döner.`}
+                          style={{ background: "transparent", color: TALEP_DURUM.siparise_donustu.renk, borderColor: TALEP_DURUM.siparise_donustu.renk, whiteSpace: "nowrap" }}
+                        >
+                          Siparişe Dönüştü
+                        </span>
+                      ) : (
+                        <select
+                          className="input" style={{ padding: "4px 6px", fontSize: 11.5 }}
+                          value={etkinDurum} onChange={(e) => durumDegistir(t.id, e.target.value)}
+                          title="Siparişe Dönüştü durumu otomatiktir, elle seçilemez."
+                        >
+                          {TALEP_ELLE_DURUM.map((k) => <option key={k} value={k}>{TALEP_DURUM[k].label}</option>)}
+                        </select>
+                      )}
                     </td>
-                    <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.siparisEvrakNo || "—"}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: 12 }}>{bagliSiparis ? bagliSiparis.evrakNo : "—"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button onClick={() => fisiYukle(t)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
                       <button
                         onClick={() => siparisOlustur(t)}
-                        disabled={donustu}
-                        title={donustu ? "Bu talep zaten siparişe dönüştürüldü" : "Tek tıkla siparişe çevir"}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: donustu ? "transparent" : "#2dd4bf", color: donustu ? "#3a4a50" : "#142a30", border: donustu ? "1px solid #2a4b52" : "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: donustu ? "default" : "pointer", marginRight: 6 }}
+                        disabled={donustu || iptalli}
+                        title={donustu ? `Bu talep ${bagliSiparis.evrakNo} siparişine bağlı. Sipariş silinirse buton tekrar aktif olur.` : iptalli ? "İptal edilmiş talep siparişe çevrilemez" : "Tek tıkla siparişe çevir"}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: (donustu || iptalli) ? "transparent" : "#2dd4bf", color: (donustu || iptalli) ? "#3a4a50" : "#142a30", border: (donustu || iptalli) ? "1px solid #2a4b52" : "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: (donustu || iptalli) ? "default" : "pointer", marginRight: 6 }}
                       >
                         <ArrowRightLeft size={12} /> Siparişe Çevir
                       </button>
@@ -6212,7 +6416,9 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, fasonFirmala
 
   const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((s) => secililer.has(s.id));
   const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((s) => s.id)));
-  const bekleyenTalepler = satinalmaTalepler.filter((t) => t.durum !== "siparise_donustu" && t.durum !== "iptal");
+  const bekleyenTalepler = satinalmaTalepler.filter(
+    (t) => talepEtkinDurum(t, satinalmaSiparisler) === "bekliyor" || talepEtkinDurum(t, satinalmaSiparisler) === "onaylandi"
+  );
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -6466,7 +6672,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
     const q = f.arama.trim().toLowerCase();
     return [...satinalmaTalepler].filter((t) => {
       if (!tarihUygun(t.tarih)) return false;
-      if (f.durum && t.durum !== f.durum) return false;
+      if (f.durum && talepEtkinDurum(t, satinalmaSiparisler) !== f.durum) return false;
       if (f.proje && t.proje !== f.proje) return false;
       if (f.depo && t.depo !== f.depo) return false;
       if (q && !(
@@ -6498,7 +6704,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
   const talepKalem = talepler.reduce((t, x) => t + (x.satirlar || []).length, 0);
   const siparisKalem = siparisler.reduce((t, x) => t + (x.satirlar || []).length, 0);
   const siparisTutar = siparisler.reduce((t, x) => t + (x.genelToplam || 0), 0);
-  const bekleyenTalep = talepler.filter((t) => t.durum === "bekliyor").length;
+  const bekleyenTalep = talepler.filter((t) => talepEtkinDurum(t, satinalmaSiparisler) === "bekliyor").length;
   const acikSiparis = siparisler.filter((s) => s.durum === "acik").length;
 
   // Tedarikçi bazlı özet
@@ -6518,7 +6724,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Proje Kodu": t.proje, "Depo": t.depo,
       "Talep Eden": t.talepEdenPersonel, "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi,
       "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
-      "Durum": TALEP_DURUM[t.durum]?.label || "", "Sipariş No": t.siparisEvrakNo || "",
+      "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
       "Düzenlendi": (t.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
     }))), "satinalma-talep-raporu.xlsx", "Talep Raporu"
   );
@@ -6552,7 +6758,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
         { baslik: "Depo", gen: "22mm", al: (r) => r.depo },
         { baslik: "Talep Eden", al: (r) => r.talepEdenPersonel },
         { baslik: "Kalem", gen: "14mm", hiza: "sag", al: (r) => (r.satirlar || []).length },
-        { baslik: "Durum", gen: "26mm", al: (r) => TALEP_DURUM[r.durum]?.label || "" },
+        { baslik: "Durum", gen: "26mm", al: (r) => TALEP_DURUM[talepEtkinDurum(r, satinalmaSiparisler)]?.label || "" },
         { baslik: "Sipariş No", gen: "24mm", al: (r) => r.siparisEvrakNo || "" },
       ] : [
         { baslik: "Evrak No", gen: "24mm", al: (r) => r.evrakNo },
@@ -6591,7 +6797,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
               {(detay.tip === "talep"
                 ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
                    ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
-                   ["Durum", TALEP_DURUM[detay.kayit.durum]?.label], ["Sipariş No", detay.kayit.siparisEvrakNo]]
+                   ["Durum", TALEP_DURUM[talepEtkinDurum(detay.kayit, satinalmaSiparisler)]?.label], ["Sipariş No", talepSiparisNo(detay.kayit, satinalmaSiparisler)]]
                 : [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
                    ["Tedarikçi", detay.kayit.tedarikci], ["Teslim Tarihi", detay.kayit.teslimTarihi], ["Ödeme Şekli", detay.kayit.odemeSekli],
                    ["Talep No", detay.kayit.talepEvrakNo], ["Durum", SIPARIS_DURUM[detay.kayit.durum]?.label],
@@ -6723,7 +6929,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
             <Stat label="Talep Fişi" value={talepler.length} highlight />
             <Stat label="Toplam Kalem" value={talepKalem} />
             <Stat label="Bekleyen" value={bekleyenTalep} />
-            <Stat label="Siparişe Dönüşen" value={talepler.filter((t) => t.durum === "siparise_donustu").length} />
+            <Stat label="Siparişe Dönüşen" value={talepler.filter((t) => talepEtkinDurum(t, satinalmaSiparisler) === "siparise_donustu").length} />
           </>
         ) : (
           <>
@@ -6779,8 +6985,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                         <td style={{ fontSize: 12.5 }}>{t.depo || "—"}</td>
                         <td style={{ fontSize: 12.5 }}>{t.talepEdenPersonel || "—"}</td>
                         <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
-                        <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[t.durum]?.renk || "#8b929a", borderColor: TALEP_DURUM[t.durum]?.renk || "#2a4b52" }}>{TALEP_DURUM[t.durum]?.label || "—"}</span></td>
-                        <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.siparisEvrakNo || "—"}</td>
+                        <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#8b929a", borderColor: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#2a4b52" }}>{TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "—"}</span></td>
+                        <td style={{ fontFamily: "monospace", fontSize: 12 }}>{talepSiparisNo(t, satinalmaSiparisler) || "—"}</td>
                         <td><button onClick={() => setDetay({ tip: "talep", kayit: t })} style={duzenleButonu}><Search size={12} /> Görüntüle</button></td>
                       </tr>
                     );
@@ -6947,7 +7153,7 @@ function YardimEkrani({ git }) {
 }
 
 // ---------- Kullanıcı Yönetimi ----------
-function KullaniciYonetimi({ mevcutKullanici }) {
+function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
   const [kullanicilar, setKullanicilar] = useState([]);
   const [sifreliAcik, setSifreliAcik] = useState(false);
   const [googleAcik, setGoogleAcik] = useState(false);
@@ -7040,6 +7246,55 @@ function KullaniciYonetimi({ mevcutKullanici }) {
 
   const listedenKaldir = async (id) => { await deleteDoc(doc(db, "kullanicilar", id)); };
 
+  // ---- Yetki penceresi ----
+  const [yetkiKisi, setYetkiKisi] = useState(null);
+  const [yetkiTaslak, setYetkiTaslak] = useState({});
+  const [yetkiYonetici, setYetkiYonetici] = useState(false);
+  const [yetkiKaydediliyor, setYetkiKaydediliyor] = useState(false);
+  const [yetkiMsg, setYetkiMsg] = useState("");
+  const benSahipMiyim = sahipMi(mevcutKullanici?.email);
+
+  const yetkiAc = (k) => {
+    setYetkiKisi(k);
+    setYetkiTaslak({ ...(k.yetkiler || {}) });
+    setYetkiYonetici(!!k.yonetici);
+    setYetkiMsg("");
+  };
+  const yetkiSec = (ekranId, seviye) => setYetkiTaslak((s) => ({ ...s, [ekranId]: seviye }));
+  const grubaUygula = (grup, seviye) =>
+    setYetkiTaslak((s) => {
+      const y = { ...s };
+      grup.children.forEach((c) => { y[c.id] = seviye; });
+      return y;
+    });
+  const hepsineUygula = (seviye) => {
+    const y = {};
+    TUM_EKRANLAR.forEach((id) => { y[id] = seviye; });
+    setYetkiTaslak(y);
+  };
+  const yetkiKaydet = async () => {
+    if (!yetkiKisi) return;
+    setYetkiKaydediliyor(true);
+    try {
+      const temiz = {};
+      TUM_EKRANLAR.forEach((id) => {
+        const v = yetkiTaslak[id];
+        if (v === "goruntule" || v === "duzenle") temiz[id] = v;
+      });
+      await updateDoc(doc(db, "kullanicilar", yetkiKisi.id), {
+        yetkiler: temiz,
+        yonetici: benSahipMiyim ? !!yetkiYonetici : !!yetkiKisi.yonetici,
+        yetkiGuncelleme: Date.now(),
+        yetkiVeren: mevcutKullanici?.email || "—",
+      });
+      setYetkiMsg("Yetkiler kaydedildi.");
+      setTimeout(() => { setYetkiKisi(null); setYetkiMsg(""); }, 900);
+    } catch (err) {
+      setYetkiMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
+    }
+    setYetkiKaydediliyor(false);
+  };
+
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
@@ -7108,9 +7363,13 @@ function KullaniciYonetimi({ mevcutKullanici }) {
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table>
-              <thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Tür</th><th>Eklenme Tarihi</th><th></th><th></th></tr></thead>
+              <thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Tür</th><th>Yetki</th><th>Eklenme Tarihi</th><th></th><th></th><th></th></tr></thead>
               <tbody>
-                {kullanicilar.map((k) => (
+                {kullanicilar.map((k) => {
+                  const oSahip = sahipMi(k.emailKucuk || k.email);
+                  const oYonetici = oSahip || k.yonetici === true;
+                  const sayi = verilenYetkiSayisi(k);
+                  return (
                   <tr key={k.id}>
                     <td>{k.ad || "—"}</td>
                     <td>{k.email}</td>
@@ -7119,7 +7378,18 @@ function KullaniciYonetimi({ mevcutKullanici }) {
                         ? <span className="pill" style={{ background: "#1f2d3a", color: "#7fb0e0", borderColor: "#2c4a63" }}>Google</span>
                         : <span className="pill">Şifreli</span>}
                     </td>
+                    <td>
+                      {oSahip ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Sahip — Tam Yetki</span>
+                        : oYonetici ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Yönetici</span>
+                        : sayi === 0 ? <span className="pill" style={{ background: "#2a2320", color: "#8b929a", borderColor: "#3d3833" }}>Yetki yok</span>
+                        : <span className="pill" style={{ background: "#332a16", color: "#e8a33d", borderColor: "#6b5220" }}>{sayi} / {TUM_EKRANLAR.length} ekran</span>}
+                    </td>
                     <td style={{ fontFamily: "monospace" }}>{k.eklenmeTarihi ? new Date(k.eklenmeTarihi).toLocaleDateString("tr-TR") : "—"}</td>
+                    <td>
+                      {oSahip
+                        ? <span style={{ fontSize: 11.5, color: "#6b7178" }}>Değiştirilemez</span>
+                        : <button onClick={() => yetkiAc(k)} className="btn-ghost" style={{ padding: "5px 10px", fontSize: 11.5 }}><Lock size={12} /> Yetkiler</button>}
+                    </td>
                     <td>
                       {k.tur !== "google" && (
                         <button onClick={() => sifreSifirlaGonder(k.email)} className="btn-ghost" style={{ padding: "5px 10px", fontSize: 11.5 }}>
@@ -7127,13 +7397,86 @@ function KullaniciYonetimi({ mevcutKullanici }) {
                         </button>
                       )}
                     </td>
-                    <td><button onClick={() => listedenKaldir(k.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                    <td>{!oSahip && <button onClick={() => listedenKaldir(k.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
+        <EvrakPenceresi
+          acik={!!yetkiKisi} kapat={() => setYetkiKisi(null)}
+          baslik={`Yetkiler — ${yetkiKisi?.ad || yetkiKisi?.email || ""}`} ikon={Lock} genislik={860}
+          butonlar={
+            <>
+              <button style={fisAltBtn} onClick={() => hepsineUygula("yok")}><X size={14} /> Tümünü Kapat</button>
+              <button style={fisAltBtn} onClick={() => hepsineUygula("goruntule")}><Search size={14} /> Tümü Görüntüle</button>
+              <button style={fisAltBtn} onClick={() => hepsineUygula("duzenle")}><Check size={14} /> Tümü Düzenle</button>
+              <button style={fisAltBtn} onClick={() => setYetkiKisi(null)}><X size={14} /> Kapat</button>
+              <button style={fisAnaBtn} onClick={yetkiKaydet} disabled={yetkiKaydediliyor}><Save size={14} /> {yetkiKaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+            </>
+          }
+        >
+          <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 14, lineHeight: 1.6 }}>
+            Bütün menüler herkese görünür; burada kapattığın bölümler o kişide soluk ve tıklanamaz olur.
+            <b style={{ color: "#e8a33d" }}> Görüntüle</b> = açar, okur, rapor alır, yazdırır ama hiçbir şey kaydedemez/silemez.
+            <b style={{ color: "#2dd4bf" }}> Düzenle</b> = her şeyi yapabilir. Ana Sayfa ve Yardım herkese açıktır.
+          </div>
+
+          {benSahipMiyim && (
+            <label style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #2a4b52", borderRadius: 6, padding: "11px 14px", background: "#16232a", marginBottom: 14, cursor: "pointer" }}>
+              <input type="checkbox" checked={yetkiYonetici} onChange={(e) => setYetkiYonetici(e.target.checked)} />
+              <span style={{ fontSize: 13, fontWeight: 700 }}>Yönetici yap</span>
+              <span style={{ fontSize: 11.5, color: "#6b7178" }}>— tüm ekranlarda tam yetki alır ve başka kullanıcılara yetki dağıtabilir.</span>
+            </label>
+          )}
+
+          {yetkiYonetici ? (
+            <div style={{ border: "1px solid #1f4d47", background: "#113330", borderRadius: 6, padding: "16px 18px", color: "#2dd4bf", fontSize: 13, fontWeight: 600 }}>
+              Bu kişi yönetici — tüm bölümlerde otomatik olarak tam yetkilidir, tek tek seçim gerekmez.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              {YETKI_AGACI.map((grup) => (
+                <div key={grup.id} style={{ border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderBottom: "1px solid #2a4b52" }}>
+                    <span style={{ flex: 1, fontWeight: 700, fontSize: 12.5 }}>{grup.label}</span>
+                    {YETKI_SEVIYELERI.map((sv) => (
+                      <button key={sv.id} onClick={() => grubaUygula(grup, sv.id)}
+                        style={{ background: "transparent", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 4, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}>
+                        Tümü: {sv.label}
+                      </button>
+                    ))}
+                  </div>
+                  {grup.children.map((c) => {
+                    const secili = yetkiTaslak[c.id] === "duzenle" || yetkiTaslak[c.id] === "goruntule" ? yetkiTaslak[c.id] : "yok";
+                    return (
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: "1px solid #1f3b42" }}>
+                        <span style={{ flex: 1, fontSize: 13, color: "#c7cbd1" }}>{c.label}</span>
+                        {YETKI_SEVIYELERI.map((sv) => (
+                          <button key={sv.id} onClick={() => yetkiSec(c.id, sv.id)}
+                            style={{
+                              background: secili === sv.id ? sv.renk : "transparent",
+                              color: secili === sv.id ? "#142a30" : "#8b929a",
+                              border: `1px solid ${secili === sv.id ? sv.renk : "#3d6169"}`,
+                              borderRadius: 4, padding: "4px 12px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", minWidth: 84,
+                            }}>
+                            {sv.label}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+          {yetkiMsg && (
+            <div style={{ marginTop: 12, fontSize: 12.5, color: yetkiMsg.startsWith("Kaydedilemedi") ? "#e07a6b" : "#2dd4bf", background: yetkiMsg.startsWith("Kaydedilemedi") ? "#3a1f1f" : "#113330", border: `1px solid ${yetkiMsg.startsWith("Kaydedilemedi") ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{yetkiMsg}</div>
+          )}
+        </EvrakPenceresi>
+
         <div style={{ padding: "12px 20px", fontSize: 11.5, color: "#6b7178", borderTop: "1px solid #2a4b52" }}>
           Not: "Sil" butonu kişiyi sadece bu listeden kaldırır, giriş yapma hakkını iptal etmez. Şifreli hesap girişini tamamen kapatmak için Firebase Console → Authentication → Users sekmesinden o hesabı devre dışı bırakman gerekir; Google izinlerinde listeden silmek girişi anında keser.
         </div>
