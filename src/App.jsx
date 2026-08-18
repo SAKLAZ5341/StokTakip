@@ -1663,6 +1663,10 @@ function Panel({ onCikis, kullanici }) {
         .card { background: #1b333c; border: 1px solid #2a4b52; border-radius: 10px; }
         .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8b929a; margin-bottom: 6px; display: block; font-weight: 600; }
         .input { width: 100%; background: #142a30; border: 1px solid #3d6169; border-radius: 7px; padding: 10px 12px; color: #e7e5e0; font-size: 14px; outline: none; transition: border-color .15s; }
+        /* Sayı kutularındaki artır/azalt okları görünmesin — rakam elle yazılır */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
         .input:focus { border-color: #2dd4bf; }
         table { border-collapse: collapse; width: 100%; }
         th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #8b929a; padding: 10px 12px; border-bottom: 1px solid #2a4b52; font-weight: 600; white-space: nowrap; }
@@ -6442,6 +6446,141 @@ const teklifTL = (t) => sayiCevir(t?.genelToplam) * teklifKuru(t);
 const teklifAraTL = (t) => sayiCevir(t?.araToplam) * teklifKuru(t);
 const birimFiyatTL = (r, t) => sayiCevir(r?.birimFiyat) * teklifKuru(t);
 const gecerlilikGecti = (t) => !!(t?.gecerlilikTarihi && String(t.gecerlilikTarihi) < todayISO());
+
+// ---------- TCMB döviz satış kuru ----------
+// TCMB günlük kur dosyasını okur ve "Döviz Satış" (ForexSelling) değerini kullanır.
+// TCMB sunucusu tarayıcıya doğrudan izin vermeyebildiği için sırayla birkaç kaynak denenir;
+// hiçbiri açılmazsa kur alanı elle doldurulabilir kalır.
+const TCMB_ADRES = "https://www.tcmb.gov.tr/kurlar/today.xml";
+const TCMB_KAYNAKLARI = [
+  { ad: "TCMB", url: () => TCMB_ADRES },
+  { ad: "allorigins", url: () => `https://api.allorigins.win/raw?url=${encodeURIComponent(TCMB_ADRES)}` },
+  { ad: "corsproxy", url: () => `https://corsproxy.io/?url=${encodeURIComponent(TCMB_ADRES)}` },
+];
+
+// XML metnini { tarih, kurlar: { USD: 47.897, EUR: 55.545 } } yapısına çevirir
+function tcmbXmlCoz(xml) {
+  if (!xml || xml.indexOf("<Tarih_Date") === -1) throw new Error("TCMB_BICIM");
+  const belge = new DOMParser().parseFromString(xml, "text/xml");
+  const kok = belge.querySelector("Tarih_Date");
+  if (!kok) throw new Error("TCMB_BICIM");
+  const tarih = kok.getAttribute("Tarih") || "";
+  const kurlar = {};
+  belge.querySelectorAll("Currency").forEach((c) => {
+    const kod = c.getAttribute("CurrencyCode");
+    if (!kod) return;
+    const al = (etiket) => sayiCevir((c.querySelector(etiket) || {}).textContent);
+    // Öncelik: Döviz Satış; boşsa Efektif Satış
+    const satis = al("ForexSelling") || al("BanknoteSelling");
+    if (satis > 0) kurlar[kod] = satis;
+  });
+  if (!kurlar.USD && !kurlar.EUR) throw new Error("TCMB_BOS");
+  return { tarih, kurlar };
+}
+
+async function tcmbKurlariCek() {
+  let sonHata = null;
+  for (const kaynak of TCMB_KAYNAKLARI) {
+    try {
+      const kontrol = new AbortController();
+      const zamanAsimi = setTimeout(() => kontrol.abort(), 12000);
+      const cevap = await fetch(kaynak.url(), { signal: kontrol.signal, cache: "no-store" });
+      clearTimeout(zamanAsimi);
+      if (!cevap.ok) throw new Error("HTTP " + cevap.status);
+      const sonuc = tcmbXmlCoz(await cevap.text());
+      return { ...sonuc, kaynak: kaynak.ad };
+    } catch (err) { sonHata = err; }
+  }
+  throw sonHata || new Error("TCMB_ULASILAMADI");
+}
+
+// Günde bir kez indirilir, Firestore'a yazılır; diğer kullanıcılar oradan okur.
+async function kurlariGetir({ zorla = false } = {}) {
+  const bugun = todayISO();
+  const ref = doc(db, "ayarlar", "kurlar");
+  if (!zorla) {
+    try {
+      const snap = await getDoc(ref);
+      const v = snap.exists() ? snap.data() : null;
+      if (v && v.gun === bugun && v.kurlar && (v.kurlar.USD || v.kurlar.EUR)) {
+        return { ...v, onbellek: true };
+      }
+    } catch (e) { /* okunamadıysa doğrudan indirmeyi dene */ }
+  }
+  const taze = await tcmbKurlariCek();
+  const kayit = { gun: bugun, tarih: taze.tarih, kurlar: taze.kurlar, kaynak: taze.kaynak, guncelleme: Date.now() };
+  try { await _setDoc(ref, kayit); } catch (e) { /* yazma yetkisi yoksa sorun değil */ }
+  return { ...kayit, onbellek: false };
+}
+
+// Fişlerde kullanılan kanca: kurları getirir, "TCMB'den al" düğmesini besler
+function useTcmbKur() {
+  const [durum, setDurum] = useState({ kurlar: null, tarih: "", yukleniyor: false, hata: "" });
+  const getir = React.useCallback(async ({ zorla = false, sessiz = false } = {}) => {
+    if (!sessiz) setDurum((s) => ({ ...s, yukleniyor: true, hata: "" }));
+    try {
+      const v = await kurlariGetir({ zorla });
+      setDurum({ kurlar: v.kurlar, tarih: v.tarih || "", yukleniyor: false, hata: "" });
+      return v.kurlar;
+    } catch (err) {
+      setDurum((s) => ({ ...s, yukleniyor: false, hata: "TCMB kuru alınamadı — kuru elle girebilirsin." }));
+      return null;
+    }
+  }, []);
+  useEffect(() => { getir({ sessiz: true }); }, [getir]);
+  return { ...durum, getir };
+}
+
+// Para birimi + kur satırı — sipariş ve teklif fişlerinde aynı bileşen kullanılır
+function ParaBirimiAlani({ paraBirimi, kur, degistir, tcmb }) {
+  const dovizMi = paraBirimi !== "TRY";
+  const tcmbKuru = dovizMi && tcmb.kurlar ? tcmb.kurlar[paraBirimi] : null;
+  const kurAl = async () => {
+    const kurlar = await tcmb.getir({ zorla: true });
+    const v = kurlar && kurlar[paraBirimi];
+    if (v) degistir({ kur: String(v) });
+  };
+  return (
+    <>
+      <div style={fisSatir}>
+        <span style={fisEtiket}>Para Birimi</span>
+        <select
+          style={{ ...fisInput, flex: "0 0 96px" }} value={paraBirimi}
+          onChange={(e) => {
+            const yeni = e.target.value;
+            const otomatik = yeni !== "TRY" && tcmb.kurlar && tcmb.kurlar[yeni];
+            degistir({ paraBirimi: yeni, kur: yeni === "TRY" ? "1" : (otomatik ? String(otomatik) : undefined) });
+          }}
+        >
+          {PARA_BIRIMLERI.map((pb) => <option key={pb.id} value={pb.id}>{pb.label}</option>)}
+        </select>
+        <span style={{ ...fisEtiket, width: 40, marginLeft: 10 }}>Kur</span>
+        <input
+          style={fisInput} value={dovizMi ? kur : "1"} disabled={!dovizMi}
+          placeholder="1 birim = ? TL" onChange={(e) => degistir({ kur: e.target.value })}
+        />
+        {dovizMi && (
+          <button
+            onClick={kurAl} disabled={tcmb.yukleniyor} title="TCMB döviz satış kurunu getir"
+            style={{ ...fisAltBtn, padding: "5px 9px", marginLeft: 6, flexShrink: 0 }}
+          >
+            <RefreshCw size={13} /> {tcmb.yukleniyor ? "…" : "TCMB"}
+          </button>
+        )}
+      </div>
+      {dovizMi && (
+        <div style={{ fontSize: 11.5, color: tcmb.hata ? "#e8a33d" : "#6b7178", margin: "-4px 0 8px 118px" }}>
+          {tcmb.hata
+            ? tcmb.hata
+            : tcmbKuru
+              ? <>TCMB satış kuru{tcmb.tarih ? ` (${tcmb.tarih})` : ""}: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{sayiTR(tcmbKuru)} ₺</b> — otomatik geldi, istersen değiştir.</>
+              : "TCMB kuru alınıyor…"}
+        </div>
+      )}
+    </>
+  );
+}
+
 // Talep satırı -> teklif satırı
 const talepSatiriniTeklife = (r) => ({
   ...bosTeklifSatiri(),
@@ -8060,6 +8199,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   };
   const toplamlar = teklifToplamlari(satirlar);
   const kurDegeri = baslik.paraBirimi === "TRY" ? 1 : sayiCevir(baslik.kur) || 1;
+  const tcmb = useTcmbKur();
 
   const kaydet = async () => {
     if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
@@ -8329,15 +8469,10 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
             </div>
           </div>
           <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
-            <div style={fisSatir}><span style={fisEtiket}>Para Birimi</span>
-              <select style={{ ...fisInput, flex: "0 0 110px" }} value={baslik.paraBirimi} onChange={(e) => setB("paraBirimi")(e.target.value)}>
-                {PARA_BIRIMLERI.map((pb) => <option key={pb.id} value={pb.id}>{pb.label}</option>)}
-              </select>
-              <span style={{ ...fisEtiket, width: 46, marginLeft: 10 }}>Kur</span>
-              <input style={fisInput} value={baslik.paraBirimi === "TRY" ? "1" : baslik.kur}
-                disabled={baslik.paraBirimi === "TRY"} placeholder="1 birim = ? TL"
-                onChange={(e) => setB("kur")(e.target.value)} />
-            </div>
+            <ParaBirimiAlani
+              paraBirimi={baslik.paraBirimi} kur={baslik.kur} tcmb={tcmb}
+              degistir={(d) => setBaslik((x) => ({ ...x, ...(d.paraBirimi !== undefined ? { paraBirimi: d.paraBirimi } : {}), ...(d.kur !== undefined ? { kur: d.kur } : {}) }))}
+            />
             <div style={fisSatir}><span style={fisEtiket}>Teslim Süresi (gün)</span>
               <input style={fisInput} value={baslik.teslimSuresi} placeholder="Örn: 15" onChange={(e) => setB("teslimSuresi")(e.target.value)} />
             </div>
@@ -9093,6 +9228,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   };
   const genelToplam = satirlar.reduce((t, r) => t + satirToplam(r), 0);
   const fisKuru = evrakKuru(baslik);
+  const tcmb = useTcmbKur();
 
   const kaydet = async () => {
     if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
@@ -9468,17 +9604,10 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                 {projeSecenekleri.map((p) => <option key={p.id} value={p.kod}>{p.ad || ""}</option>)}
               </datalist>
             </div>
-            <div style={fisSatir}>
-              <span style={fisEtiket}>Para Birimi</span>
-              <select style={{ ...fisInput, flex: "0 0 96px" }} value={baslik.paraBirimi}
-                onChange={(e) => setBaslik((x) => ({ ...x, paraBirimi: e.target.value, kur: e.target.value === "TRY" ? "1" : x.kur }))}>
-                {PARA_BIRIMLERI.map((pb) => <option key={pb.id} value={pb.id}>{pb.label}</option>)}
-              </select>
-              <span style={{ ...fisEtiket, width: 40, marginLeft: 10 }}>Kur</span>
-              <input style={fisInput} value={baslik.paraBirimi === "TRY" ? "1" : baslik.kur}
-                disabled={baslik.paraBirimi === "TRY"} placeholder="1 birim = ? TL"
-                onChange={(e) => setBaslik((x) => ({ ...x, kur: e.target.value }))} />
-            </div>
+            <ParaBirimiAlani
+              paraBirimi={baslik.paraBirimi} kur={baslik.kur} tcmb={tcmb}
+              degistir={(d) => setBaslik((x) => ({ ...x, ...(d.paraBirimi !== undefined ? { paraBirimi: d.paraBirimi } : {}), ...(d.kur !== undefined ? { kur: d.kur } : {}) }))}
+            />
             <div style={fisSatir}><span style={fisEtiket}>Teslim Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => setBaslik((s) => ({ ...s, teslimTarihi: e.target.value }))} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Ödeme Şekli</span><input style={fisInput} value={baslik.odemeSekli} onChange={(e) => setBaslik((s) => ({ ...s, odemeSekli: e.target.value }))} placeholder="Örn: 30 gün vadeli" /></div>
           </div>
