@@ -68,6 +68,13 @@ const MENU = [
       { id: "satinalma-ayar", label: "Form Ayarları" },
     ],
   },
+  {
+    id: "cari", label: "Cariler", icon: Building2,
+    children: [
+      { id: "cari-kart", label: "Cari Kartları" },
+      { id: "cari-rapor", label: "Cari Raporu" },
+    ],
+  },
   { id: "takimlar", label: "Takımlar", icon: Users },
   { id: "makineler", label: "Makineler", icon: Cog },
   { id: "kullanicilar", label: "Kullanıcılar", icon: UserPlus },
@@ -1382,6 +1389,8 @@ function Panel({ onCikis, kullanici }) {
     if (tab === "takimlar") return "Takımlar";
     if (tab === "makineler") return "Makineler";
     if (tab === "kullanicilar") return "Kullanıcılar";
+    if (tab === "cari-kart") return "Cari Kartları";
+    if (tab === "cari-rapor") return "Cari Raporu";
     if (tab === "satinalma-teklif") return "Teklifler";
     if (tab === "satinalma-karsilastir") return "Teklif Karşılaştırma";
     if (tab === "yardim") return "Yardım";
@@ -1588,6 +1597,12 @@ function Panel({ onCikis, kullanici }) {
               fasonFirmalar={fasonFirmalar} formAyarlari={formAyarlari}
             />}
             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
+            {tab === "cari-kart" && <CariKartlari fasonFirmalar={fasonFirmalar} kullanici={kullanici} />}
+            {tab === "cari-rapor" && <CariRaporu
+              fasonFirmalar={fasonFirmalar} satinalmaSiparisler={satinalmaSiparisler}
+              satinalmaTeklifler={satinalmaTeklifler} fasonIsler={fasonIsler}
+              fasonHareketler={fasonHareketler} hammaddeler={hammaddeler} formAyarlari={formAyarlari}
+            />}
             {tab === "takimlar" && <ListeYonetimi title="Takım" baslikCogul="Takımlar" koleksiyon="teams" placeholder="Örn: Kesim Takım 1" items={teams} icon={Users} />}
             {tab === "makineler" && <ListeYonetimi title="Makine" baslikCogul="Makineler" koleksiyon="machines" placeholder="Makine listesini buradan ekleyin" items={machines} icon={Cog} />}
             {tab === "kullanicilar" && <KullaniciYonetimi mevcutKullanici={kullanici} yonetici={yonetici} />}
@@ -2278,7 +2293,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
 
 // ---------- Fason Takip Raporu ----------
 function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
-  const [f, setF] = useState({ arama: "", firmaId: "" });
+  const [f, setF] = useState({ arama: "", firmaId: "", gorunum: "acik" });
   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
   const filtrelenmisIsler = useMemo(() => {
@@ -2322,10 +2337,17 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
         if (m.tip === "giden") giden += t; else gelen += t;
       });
       return { firma, isSayisi: isler.length, aktifIsSayisi: isler.filter((j) => j.durum !== "tamamlandi").length, giden, gelen, bakiye: giden - gelen };
-    }).filter((r) => r.isSayisi > 0 || !f.firmaId).sort((a, b) => b.bakiye - a.bakiye);
-  }, [fasonFirmalar, filtrelenmisIsler, fasonHareketler, f.firmaId]);
+    }).filter((r) => {
+      // Tek firma seçiliyse her zaman göster; aksi halde görünüm tercihine göre süz
+      if (f.firmaId) return true;
+      if (f.gorunum === "tumu") return true;
+      const hareketVar = r.giden !== 0 || r.gelen !== 0;
+      if (f.gorunum === "isli") return r.isSayisi > 0 || hareketVar;
+      return r.aktifIsSayisi > 0 || (hareketVar && r.bakiye !== 0); // "acik"
+    }).sort((a, b) => (b.aktifIsSayisi - a.aktifIsSayisi) || (b.bakiye - a.bakiye));
+  }, [fasonFirmalar, filtrelenmisIsler, fasonHareketler, f.firmaId, f.gorunum]);
 
-  const disaAktarFirma = () => excelIndir(firmaDetay.map((r) => ({ "Firma": r.firma.ad, "Toplam İş": r.isSayisi, "Aktif İş": r.aktifIsSayisi, "Giden": r.giden.toFixed(2), "Gelen": r.gelen.toFixed(2), "Bakiye": r.bakiye.toFixed(2) })), "fason-firma-raporu.xlsx", "Firma Raporu");
+  const disaAktarFirma = () => excelIndir(firmaDetay.map((r) => ({ "Cari Kod": r.firma.kod || "", "Firma": r.firma.ad, "Toplam İş": r.isSayisi, "Aktif İş": r.aktifIsSayisi, "Giden": r.giden.toFixed(2), "Gelen": r.gelen.toFixed(2), "Bakiye": r.bakiye.toFixed(2) })), "fason-firma-raporu.xlsx", "Firma Raporu");
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -2340,7 +2362,15 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <label className="field-label">Firma</label>
             <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
               <option value="">Tümü</option>
-              {fasonFirmalar.map((fm) => <option key={fm.id} value={fm.id}>{fm.ad}{fm.not && fm.not.trim() ? ` — ${fm.not}` : ""}</option>)}
+              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="field-label">Listelenecek Cariler</label>
+            <select className="input" value={f.gorunum} onChange={setF2("gorunum")}>
+              <option value="acik">Sadece açık işi olanlar</option>
+              <option value="isli">İş kaydı olan tüm cariler</option>
+              <option value="tumu">Tüm cariler ({fasonFirmalar.length})</option>
             </select>
           </div>
         </div>
@@ -2385,16 +2415,26 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>Firma Bazında Detay ({firmaDetay.length})</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Firma Bazında Detay ({firmaDetay.length})</div>
+            <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 2 }}>
+              {f.firmaId ? "Seçili firma" : f.gorunum === "acik" ? "Sadece açık (tamamlanmamış) işi veya bakiyesi olan cariler" : f.gorunum === "isli" ? "İş kaydı olan cariler" : `Tüm cariler — ${fasonFirmalar.length} kayıt`}
+            </div>
+          </div>
           <button className="btn-ghost" onClick={disaAktarFirma}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
           <table>
-            <thead><tr><th>Firma</th><th>Toplam İş</th><th>Aktif İş</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
+            <thead><tr><th>Cari Kod</th><th>Firma</th><th>Toplam İş</th><th>Aktif İş</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
             <tbody>
-              {firmaDetay.length === 0 && <tr><td colSpan={6} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {firmaDetay.length === 0 && (
+                <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+                  {f.gorunum === "acik" ? "Açık işi olan cari yok. Tüm carileri görmek için üstteki \"Listelenecek Cariler\" seçimini değiştir." : "Kayıt bulunamadı."}
+                </td></tr>
+              )}
               {firmaDetay.map((r) => (
                 <tr key={r.firma.id}>
+                  <td style={{ fontFamily: "monospace", color: r.firma.kod ? "#2dd4bf" : "#4a5560" }}>{r.firma.kod || "—"}</td>
                   <td>{r.firma.ad}</td>
                   <td style={{ fontFamily: "monospace" }}>{r.isSayisi}</td>
                   <td style={{ fontFamily: "monospace" }}>{r.aktifIsSayisi}</td>
@@ -4216,6 +4256,17 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
     return { giden, gelen, bakiye: giden - gelen };
   };
 
+  // 800+ cari arasında sadece iş/hareket görmüş olanlar listelenir
+  const hareketliFirmalar = useMemo(() => {
+    const isliIdler = new Set((fasonIsler || []).map((j) => j.firmaId));
+    return cariSirala(fasonFirmalar)
+      .filter((f) => isliIdler.has(f.id))
+      .map((firma) => ({ firma, bakiye: firmaBakiye(firma.id) }))
+      .filter((r) => r.bakiye.giden !== 0 || r.bakiye.gelen !== 0 || isliIdler.has(r.firma.id))
+      .sort((a, b) => b.bakiye.bakiye - a.bakiye.bakiye);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fasonFirmalar, fasonIsler, fasonHareketler]);
+
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
@@ -4248,17 +4299,20 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Firma Bazlı Bakiye</div>
-        {fasonFirmalar.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Henüz firma eklenmedi.</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
+          Firma Bazlı Bakiye ({hareketliFirmalar.length})
+          <div style={{ fontSize: 11.5, color: "#6b7178", fontWeight: 400, marginTop: 2 }}>Sadece işi veya hareketi olan cariler listelenir.</div>
+        </div>
+        {hareketliFirmalar.length === 0 ? (
+          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Hareket görmüş firma yok.</div>
         ) : (
           <table>
-            <thead><tr><th>Firma</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
+            <thead><tr><th>Cari Kod</th><th>Firma</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
             <tbody>
-              {fasonFirmalar.map((f) => {
-                const b = firmaBakiye(f.id);
+              {hareketliFirmalar.map(({ firma: f, bakiye: b }) => {
                 return (
                   <tr key={f.id}>
+                    <td style={{ fontFamily: "monospace", color: f.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{f.kod || "—"}</td>
                     <td>{f.ad}</td>
                     <td style={{ fontFamily: "monospace", color: "#e8a33d" }}>{paraTR(b.giden)}</td>
                     <td style={{ fontFamily: "monospace", color: "#4b8f5e" }}>{paraTR(b.gelen)}</td>
@@ -4580,7 +4634,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   };
   const disaAktar = () => excelIndir(
     fasonIsler.map((j) => ({
-      "Firma Adı": fasonFirmalar.find((f) => f.id === j.firmaId)?.ad || "", "Proje Kodu": j.projeKodu, "Proje Adı": j.projeAdi,
+      "Cari Kod": fasonFirmalar.find((f) => f.id === j.firmaId)?.kod || "", "Firma Adı": fasonFirmalar.find((f) => f.id === j.firmaId)?.ad || "", "Proje Kodu": j.projeKodu, "Proje Adı": j.projeAdi,
       "Miktar": j.miktar, "Ücret": j.ucret, "Resim Referansı": j.resimRef, "Açıklama": j.aciklama,
       "Durum": FASON_DURUM[j.durum]?.label || "", "Oluşturma Tarihi": j.olusturmaTarihi,
     })), "fason-isler.xlsx", "İşler"
@@ -4665,7 +4719,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
               <span style={fisEtiket}>Firma (Cari)</span>
               <select style={fisInput} value={baslik.firmaId} onChange={(e) => setBaslik((s) => ({ ...s, firmaId: e.target.value }))}>
                 <option value="">Seçin…</option>
-                {fasonFirmalar.map((f) => <option key={f.id} value={f.id}>{f.ad}{f.not && f.not.trim() ? ` — ${f.not}` : ""}</option>)}
+                {cariSirala(fasonFirmalar).map((f) => <option key={f.id} value={f.id}>{cariEtiket(f)}</option>)}
               </select>
             </div>
             <div style={fisSatir}>
@@ -4753,7 +4807,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <label className="field-label">Firma</label>
             <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
               <option value="">Tümü</option>
-              {fasonFirmalar.map((fm) => <option key={fm.id} value={fm.id}>{fm.ad}{fm.not && fm.not.trim() ? ` — ${fm.not}` : ""}</option>)}
+              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
             </select>
           </div>
           <div>
@@ -4798,7 +4852,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                       <td><input type="checkbox" checked={secililer.has(j.id)} onChange={() => birSecToggle(j.id)} /></td>
                       <td></td>
                       <td>{j.projeKodu ? `${j.projeKodu} · ` : ""}{j.projeAdi}</td>
-                      <td>{firma?.ad || "—"}</td>
+                      <td>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad || "—"}</td>
                       <td style={{ fontFamily: "monospace" }}>{j.miktar || "—"}</td>
                       <td style={{ fontFamily: "monospace" }}>{j.ucret ? paraTR(j.ucret) : "—"}</td>
                       <td>
@@ -4826,7 +4880,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                       <td onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={grupHepsiSecili} onChange={() => grupSecToggle(g.isler)} /></td>
                       <td>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
                       <td colSpan={3}><span className="pill">{g.isler[0].projeKodu}</span> <span style={{ color: "#6b7178", fontSize: 12 }}>{g.isler.length} kalem</span></td>
-                      <td colSpan={2} style={{ fontSize: 12 }}>{firma?.ad}</td>
+                      <td colSpan={2} style={{ fontSize: 12 }}>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad}</td>
                       <td colSpan={3} style={{ fontFamily: "monospace" }}>Hammadde: {sentCount} / {g.isler.length}</td>
                     </tr>
                     {acik && g.isler.map((j) => {
@@ -4881,7 +4935,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     const j = fasonIsler.find((x) => x.id === isId);
     if (!j) return "—";
     const firma = fasonFirmalar.find((f) => f.id === j.firmaId);
-    return `${j.projeKodu ? j.projeKodu + " · " : ""}${j.projeAdi} (${firma?.ad || "?"})`;
+    return `${j.projeKodu ? j.projeKodu + " · " : ""}${j.projeAdi} (${firma ? cariEtiket(firma) : "?"})`;
   };
 
   const ekle = async () => {
@@ -4911,7 +4965,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
       const j = fasonIsler.find((x) => x.id === m.isId);
       const firma = j ? fasonFirmalar.find((f) => f.id === j.firmaId) : null;
       return {
-        "Firma Adı": firma?.ad || "", "Proje Kodu": j?.projeKodu || "", "Proje Adı": j?.projeAdi || "",
+        "Cari Kod": firma?.kod || "", "Firma Adı": firma?.ad || "", "Proje Kodu": j?.projeKodu || "", "Proje Adı": j?.projeAdi || "",
         "Tip": m.tip === "giden" ? "Giden (Hammadde)" : "Gelen (Ürün/Fason)", "Ürün / Malzeme Adı": m.urunAdi,
         "Malzeme Cinsi": m.malzemeCinsi, "Kalite": m.kalite, "Açıklama": m.aciklama,
         "Miktar": m.miktar, "Birim": m.birim, "Birim Fiyat": m.birimFiyat,
@@ -5019,7 +5073,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <label className="field-label">Firma</label>
             <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
               <option value="">Tümü</option>
-              {fasonFirmalar.map((fm) => <option key={fm.id} value={fm.id}>{fm.ad}{fm.not && fm.not.trim() ? ` — ${fm.not}` : ""}</option>)}
+              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
             </select>
           </div>
         </div>
@@ -6344,6 +6398,514 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
     </div>
   );
 }
+// ---------- Cariler ----------
+const CARI_TIPLERI = {
+  tedarikci: { label: "Tedarikçi", renk: "#2dd4bf" },
+  musteri: { label: "Müşteri", renk: "#7fb0e0" },
+  fason: { label: "Fason", renk: "#e8a33d" },
+  diger: { label: "Diğer", renk: "#8b929a" },
+};
+const cariTipEtiket = (t) => CARI_TIPLERI[t]?.label || CARI_TIPLERI.diger.label;
+const bosCari = () => ({
+  kod: "", ad: "", tip: "tedarikci", yetkili: "", telefon: "", eposta: "",
+  vergiDairesi: "", vergiNo: "", adres: "", iban: "", not: "", aktif: true,
+});
+
+// Excel'den cari listesi okur — sütun başlıklarını esnek eşleştirir
+async function excelDenCariOku(dosya) {
+  const rows = await dosyaOku(dosya);
+  if (!rows.length) return { kayitlar: [], atlanan: 0 };
+  const normalize = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().trim();
+  const ilk = (rows[0] || []).map(normalize);
+  const bul = (...anahtarlar) => ilk.findIndex((h) => anahtarlar.some((a) => h.includes(a)));
+  const sutun = {
+    kod: bul("cari kod", "kod"),
+    ad: bul("cari ad", "cari isim", "firma ad", "unvan", "ünvan", "isim", "firma"),
+    tip: bul("tip", "tür", "tur", "grup"),
+    yetkili: bul("yetkili", "ilgili"),
+    telefon: bul("telefon", "tel", "gsm"),
+    eposta: bul("e-posta", "eposta", "mail"),
+    vergiDairesi: bul("vergi dairesi"),
+    vergiNo: bul("vergi no", "vkn", "tckn"),
+    adres: bul("adres"),
+    iban: bul("iban"),
+    not: bul("not", "aciklama", "açıklama"),
+  };
+  const basliklıMi = Object.values(sutun).some((i) => i !== -1);
+  const adIndex = sutun.ad !== -1 ? sutun.ad : (sutun.kod === 0 ? 1 : 0);
+  const al = (r, i) => (i !== -1 && i != null ? String(r[i] == null ? "" : r[i]).trim() : "");
+  const tipCoz = (v) => {
+    const n = normalize(v);
+    if (!n) return "tedarikci";
+    if (n.includes("muster") || n.includes("müşter") || n.includes("alici") || n.includes("alıcı")) return "musteri";
+    if (n.includes("fason") || n.includes("tasero") || n.includes("taşero")) return "fason";
+    if (n.includes("tedarik") || n.includes("satici") || n.includes("satıcı")) return "tedarikci";
+    return "diger";
+  };
+  const kayitlar = [];
+  let atlanan = 0;
+  for (let i = basliklıMi ? 1 : 0; i < rows.length; i++) {
+    const r = rows[i] || [];
+    const ad = al(r, adIndex);
+    if (!ad) { atlanan++; continue; }
+    kayitlar.push({
+      ...bosCari(),
+      kod: al(r, sutun.kod), ad, tip: tipCoz(al(r, sutun.tip)),
+      yetkili: al(r, sutun.yetkili), telefon: al(r, sutun.telefon), eposta: al(r, sutun.eposta),
+      vergiDairesi: al(r, sutun.vergiDairesi), vergiNo: al(r, sutun.vergiNo),
+      adres: al(r, sutun.adres), iban: al(r, sutun.iban), not: al(r, sutun.not),
+    });
+  }
+  // Başlık sanılan satır aslında veriyse (başlıksız dosya) hiçbir kayıt çıkmaz — o zaman ilk satırı da veri say
+  if (!kayitlar.length && basliklıMi && rows.length) {
+    const ilkAd = al(rows[0] || [], adIndex);
+    if (ilkAd) {
+      kayitlar.push({ ...bosCari(), kod: al(rows[0], sutun.kod), ad: ilkAd, yetkili: al(rows[0], sutun.yetkili) });
+      atlanan = Math.max(0, atlanan - 1);
+    }
+  }
+  return { kayitlar, atlanan };
+}
+
+function CariKartlari({ fasonFirmalar, kullanici }) {
+  const [fisAcik, setFisAcik] = useState(false);
+  const [duzenlenenId, setDuzenlenenId] = useState(null);
+  const [form, setForm] = useState(bosCari());
+  const [msg, setMsg] = useState("");
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [f, setF] = useState({ arama: "", tip: "", durum: "aktif" });
+  const [secililer, setSecililer] = useState(new Set());
+  const [topluDurum, setTopluDurum] = useState("");
+  const [iceAktariliyor, setIceAktariliyor] = useState(false);
+  const [iceMsg, setIceMsg] = useState("");
+  const dosyaRef = useRef(null);
+  const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  const kartAc = () => { setDuzenlenenId(null); setForm(bosCari()); setMsg(""); setFisAcik(true); };
+  const kartiYukle = (c) => {
+    setDuzenlenenId(c.id);
+    setForm({ ...bosCari(), ...c, aktif: c.aktif !== false });
+    setMsg(""); setFisAcik(true);
+  };
+
+  const kaydet = async () => {
+    const ad = String(form.ad || "").trim();
+    if (!ad) { setMsg("Cari ismi zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
+    const kod = String(form.kod || "").trim();
+    const cakisanKod = kod && fasonFirmalar.some((c) => c.id !== duzenlenenId && String(c.kod || "").trim().toLowerCase() === kod.toLowerCase());
+    if (cakisanKod) { setMsg(`"${kod}" cari kodu başka bir caride kullanılıyor.`); setTimeout(() => setMsg(""), 4000); return; }
+    const cakisanAd = fasonFirmalar.some((c) => c.id !== duzenlenenId && String(c.ad || "").trim().toLowerCase() === ad.toLowerCase());
+    if (cakisanAd) { setMsg(`"${ad}" isimli cari zaten kayıtlı.`); setTimeout(() => setMsg(""), 4000); return; }
+    setKaydediliyor(true);
+    const veri = {
+      kod, ad, tip: form.tip || "tedarikci",
+      yetkili: String(form.yetkili || "").trim(), telefon: String(form.telefon || "").trim(),
+      eposta: String(form.eposta || "").trim(), vergiDairesi: String(form.vergiDairesi || "").trim(),
+      vergiNo: String(form.vergiNo || "").trim(), adres: String(form.adres || "").trim(),
+      iban: String(form.iban || "").trim(), not: String(form.not || "").trim(),
+      aktif: form.aktif !== false,
+    };
+    try {
+      if (duzenlenenId) {
+        await updateDoc(doc(db, "fason_firmalar", duzenlenenId), { ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—" });
+        setMsg(`${ad} güncellendi.`);
+      } else {
+        await addDoc(collection(db, "fason_firmalar"), { ...veri, olusturma: Date.now(), olusturanEposta: kullanici?.email || "—" });
+        setMsg(`${ad} kaydedildi.`);
+      }
+      setTimeout(() => { setFisAcik(false); setMsg(""); }, 1000);
+    } catch (err) {
+      if (!err?.yetkiHatasi) { setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata")); setTimeout(() => setMsg(""), 5000); }
+    }
+    setKaydediliyor(false);
+  };
+
+  const sil = async (c) => {
+    if (!window.confirm(`${cariEtiket(c)} silinecek.\n\nGeçmiş sipariş, teklif ve fason kayıtları silinmez ama bu cariye bağlantısı kopar.\n\nEmin misiniz?`)) return;
+    try { await deleteDoc(doc(db, "fason_firmalar", c.id)); } catch (e) { if (!e?.yetkiHatasi) throw e; }
+  };
+  const aktiflikDegistir = async (c) => {
+    try { await updateDoc(doc(db, "fason_firmalar", c.id), { aktif: c.aktif === false }); } catch (e) { if (!e?.yetkiHatasi) throw e; }
+  };
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const secilenleriSil = async () => {
+    if (!secililer.size) return;
+    if (!window.confirm(`${secililer.size} cari kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?`)) return;
+    setTopluDurum("Siliniyor…");
+    const idler = [...secililer];
+    try {
+      for (let i = 0; i < idler.length; i += 400) {
+        const batch = writeBatch(db);
+        idler.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "fason_firmalar", id)));
+        await batch.commit();
+      }
+      setSecililer(new Set());
+      setTopluDurum(`${idler.length} cari silindi.`);
+    } catch (e) { setTopluDurum(e?.yetkiHatasi ? "" : "Silinemedi."); }
+    setTimeout(() => setTopluDurum(""), 4000);
+  };
+
+  const disaAktar = () => excelIndir(
+    cariSirala(fasonFirmalar).map((c) => ({
+      "Cari Kod": c.kod || "", "Cari İsmi": c.ad || "", "Tip": cariTipEtiket(c.tip),
+      "Yetkili": c.yetkili || "", "Telefon": c.telefon || "", "E-posta": c.eposta || "",
+      "Vergi Dairesi": c.vergiDairesi || "", "Vergi No": c.vergiNo || "",
+      "Adres": c.adres || "", "IBAN": c.iban || "", "Not": c.not || "",
+      "Durum": c.aktif === false ? "Pasif" : "Aktif",
+    })), "cari-listesi.xlsx", "Cariler"
+  );
+  const sablonuIndir = () => sablonIndir(
+    ["Cari Kod", "Cari İsmi", "Tip", "Yetkili", "Telefon", "E-posta", "Vergi Dairesi", "Vergi No", "Adres", "IBAN", "Not"],
+    [
+      ["120.01.001", "ABC METAL SAN. TİC. LTD. ŞTİ.", "Tedarikçi", "Ahmet Yılmaz", "0332 000 00 00", "info@abc.com", "Selçuk", "1234567890", "OSB 5. Cadde No:12", "TR00 0000 0000 0000 0000 0000 00", ""],
+      ["320.01.005", "XYZ SANAYİ A.Ş.", "Müşteri", "Ayşe Demir", "0212 000 00 00", "", "", "", "", "", "Yıllık sözleşmeli"],
+    ],
+    "cari-sablonu.xlsx", "Şablon"
+  );
+  const iceAktar = async (e) => {
+    const dosya = e.target.files?.[0];
+    e.target.value = "";
+    if (!dosya) return;
+    setIceAktariliyor(true); setIceMsg("");
+    try {
+      const { kayitlar, atlanan } = await excelDenCariOku(dosya);
+      if (!kayitlar.length) { setIceMsg("Dosyada geçerli cari bulunamadı. En az 'Cari İsmi' sütunu dolu olmalı."); }
+      else {
+        const varAd = new Set(fasonFirmalar.map((c) => String(c.ad || "").trim().toLowerCase()));
+        const varKod = new Set(fasonFirmalar.map((c) => String(c.kod || "").trim().toLowerCase()).filter(Boolean));
+        const yeniler = [];
+        let tekrar = 0;
+        for (const k of kayitlar) {
+          const a = k.ad.toLowerCase(), ko = String(k.kod || "").toLowerCase();
+          if (varAd.has(a) || (ko && varKod.has(ko))) { tekrar++; continue; }
+          varAd.add(a); if (ko) varKod.add(ko);
+          yeniler.push({ ...k, olusturma: Date.now(), olusturanEposta: kullanici?.email || "—" });
+        }
+        const { basarili, basarisiz } = await guvenliTopluYaz("fason_firmalar", yeniler);
+        setIceMsg(`${basarili} cari eklendi${tekrar ? `, ${tekrar} tanesi zaten kayıtlı olduğu için atlandı` : ""}${atlanan ? `, ${atlanan} satır isimsiz olduğu için atlandı` : ""}${basarisiz ? `, ${basarisiz} başarısız` : ""}.`);
+      }
+    } catch (err) {
+      console.error(err);
+      if (!err?.yetkiHatasi) setIceMsg("Hata: " + (err?.message || "bilinmeyen hata"));
+    }
+    setIceAktariliyor(false);
+    setTimeout(() => setIceMsg(""), 9000);
+  };
+
+  const filtrelenmis = useMemo(() => {
+    const q = f.arama.trim().toLowerCase();
+    return cariSirala(fasonFirmalar).filter((c) => {
+      if (f.tip && (c.tip || "tedarikci") !== f.tip) return false;
+      if (f.durum === "aktif" && c.aktif === false) return false;
+      if (f.durum === "pasif" && c.aktif !== false) return false;
+      if (q && !(
+        String(c.ad || "").toLowerCase().includes(q) ||
+        String(c.kod || "").toLowerCase().includes(q) ||
+        String(c.yetkili || "").toLowerCase().includes(q) ||
+        String(c.telefon || "").toLowerCase().includes(q) ||
+        String(c.vergiNo || "").toLowerCase().includes(q)
+      )) return false;
+      return true;
+    });
+  }, [fasonFirmalar, f]);
+  const hepsiSecili = filtrelenmis.length > 0 && filtrelenmis.every((c) => secililer.has(c.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(filtrelenmis.map((c) => c.id)));
+  const kodsuzSayisi = fasonFirmalar.filter((c) => !String(c.kod || "").trim()).length;
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <div style={belgeBaslikKutu}>
+        <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Cari Kartları</div>
+            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>
+              Buraya girdiğin cariler tüm programda (Satınalma Siparişi, Teklif, Fason Takip, Hammadde) cari seçim listelerinde çıkar.
+            </div>
+          </div>
+          <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
+          <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
+          <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
+          <button onClick={kartAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+            <Plus size={16} /> Yeni Cari
+          </button>
+        </div>
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: iceMsg.startsWith("Hata") ? "#e07a6b" : "#2dd4bf" }}>{iceMsg}</div>}
+      </div>
+
+      <EvrakPenceresi
+        acik={fisAcik} kapat={() => setFisAcik(false)}
+        baslik={duzenlenenId ? `Cari Kartı — ${form.ad || ""}` : "Yeni Cari Kartı"} ikon={Building2} genislik={900}
+        butonlar={
+          <>
+            {duzenlenenId && <button style={fisAltBtn} onClick={() => { const c = fasonFirmalar.find((x) => x.id === duzenlenenId); if (c) { sil(c); setFisAcik(false); } }}><Trash2 size={14} /> Sil</button>}
+            <button style={fisAltBtn} onClick={() => { setDuzenlenenId(null); setForm(bosCari()); setMsg(""); }}><RefreshCw size={14} /> Yeni</button>
+            <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
+            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+          </>
+        }
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+            <div style={fisSatir}><span style={fisEtiket}>Cari Kod</span><input style={fisInput} placeholder="Örn: 120.01.001" value={form.kod} onChange={set("kod")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Cari İsmi</span><input style={fisInput} placeholder="Firma ünvanı" value={form.ad} onChange={set("ad")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Tip</span>
+              <select style={fisInput} value={form.tip} onChange={set("tip")}>
+                {Object.entries(CARI_TIPLERI).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
+              </select>
+            </div>
+            <div style={fisSatir}><span style={fisEtiket}>Yetkili</span><input style={fisInput} value={form.yetkili} onChange={set("yetkili")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Telefon</span><input style={fisInput} placeholder="0332 000 00 00" value={form.telefon} onChange={set("telefon")} /></div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>E-posta</span><input style={fisInput} value={form.eposta} onChange={set("eposta")} /></div>
+          </div>
+          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+            <div style={fisSatir}><span style={fisEtiket}>Vergi Dairesi</span><input style={fisInput} value={form.vergiDairesi} onChange={set("vergiDairesi")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Vergi / TC No</span><input style={fisInput} value={form.vergiNo} onChange={set("vergiNo")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>IBAN</span><input style={fisInput} value={form.iban} onChange={set("iban")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Adres</span><input style={fisInput} value={form.adres} onChange={set("adres")} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Not</span><input style={fisInput} value={form.not} onChange={set("not")} /></div>
+            <label style={{ ...fisSatir, marginBottom: 0, cursor: "pointer" }}>
+              <span style={fisEtiket}>Durum</span>
+              <input type="checkbox" checked={form.aktif !== false} onChange={(e) => setForm((s) => ({ ...s, aktif: e.target.checked }))} />
+              <span style={{ fontSize: 12.5, color: "#c7cbd1", marginLeft: 8 }}>Aktif (pasif cariler seçim listelerinde gösterilmez)</span>
+            </label>
+          </div>
+        </div>
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("zorunlu") || msg.includes("kullanılıyor") || msg.includes("zaten") || msg.includes("Kaydedilemedi") ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+      </EvrakPenceresi>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <Stat label="Toplam Cari" value={fasonFirmalar.length} />
+        <Stat label="Aktif" value={fasonFirmalar.filter((c) => c.aktif !== false).length} />
+        <Stat label="Tedarikçi" value={fasonFirmalar.filter((c) => (c.tip || "tedarikci") === "tedarikci").length} />
+        <Stat label="Kodsuz Cari" value={kodsuzSayisi} highlight={kodsuzSayisi > 0} />
+      </div>
+
+      <div className="card" style={{ padding: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari kodu / ismi / yetkili / telefon / vergi no ara…" value={f.arama} onChange={setF2("arama")} />
+        </div>
+        <select className="input" style={{ width: 160 }} value={f.tip} onChange={setF2("tip")}>
+          <option value="">Tüm tipler</option>
+          {Object.entries(CARI_TIPLERI).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
+        </select>
+        <select className="input" style={{ width: 150 }} value={f.durum} onChange={setF2("durum")}>
+          <option value="aktif">Aktif cariler</option>
+          <option value="pasif">Pasif cariler</option>
+          <option value="">Tümü</option>
+        </select>
+      </div>
+
+      {(secililer.size > 0 || topluDurum) && (
+        <div className="card" style={{ padding: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", borderColor: "#6b2f2f" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{topluDurum || `${secililer.size} cari seçili`}</span>
+          {secililer.size > 0 && !topluDurum && (
+            <>
+              <button onClick={secilenleriSil} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <Trash2 size={14} /> Seçilenleri Sil
+              </button>
+              <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Cariler ({filtrelenmis.length})</div>
+        <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
+          <table>
+            <thead><tr>
+              <th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th>
+              <th>Cari Kod</th><th>Cari İsmi</th><th>Tip</th><th>Yetkili</th><th>Telefon</th><th>Vergi No</th><th>Durum</th><th></th>
+            </tr></thead>
+            <tbody>
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Cari bulunamadı.</td></tr>}
+              {filtrelenmis.map((c) => {
+                const pasif = c.aktif === false;
+                return (
+                  <tr key={c.id} style={pasif ? { opacity: 0.55 } : undefined}>
+                    <td><input type="checkbox" checked={secililer.has(c.id)} onChange={() => birSecToggle(c.id)} /></td>
+                    <td style={{ fontFamily: "monospace", color: c.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{c.kod || "—"}</td>
+                    <td>
+                      <button onClick={() => kartiYukle(c)} title="Kartı aç" style={{ background: "none", border: "none", padding: 0, color: "#e7e5e0", cursor: "pointer", textAlign: "left", fontSize: 13.5, textDecoration: "underline" }}>{c.ad}</button>
+                    </td>
+                    <td><span className="pill" style={{ background: "transparent", color: CARI_TIPLERI[c.tip || "tedarikci"]?.renk, borderColor: CARI_TIPLERI[c.tip || "tedarikci"]?.renk }}>{cariTipEtiket(c.tip)}</span></td>
+                    <td style={{ fontSize: 12.5 }}>{c.yetkili || "—"}</td>
+                    <td style={{ fontSize: 12.5, fontFamily: "monospace" }}>{c.telefon || "—"}</td>
+                    <td style={{ fontSize: 12.5, fontFamily: "monospace" }}>{c.vergiNo || "—"}</td>
+                    <td>
+                      <button onClick={() => aktiflikDegistir(c)} title={pasif ? "Aktife al" : "Pasife al"} style={{ background: "none", border: `1px solid ${pasif ? "#3d6169" : "#1f4d47"}`, color: pasif ? "#8b929a" : "#2dd4bf", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                        {pasif ? "Pasif" : "Aktif"}
+                      </button>
+                    </td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <button onClick={() => kartiYukle(c)} title="Düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
+                      <button onClick={() => sil(c)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fasonIsler, fasonHareketler, hammaddeler, formAyarlari }) {
+  const [f, setF] = useState({ arama: "", tip: "", gorunum: "hareketli" });
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  const satirlar = useMemo(() => {
+    return cariSirala(fasonFirmalar).map((c) => {
+      const ad = String(c.ad || "").trim().toLowerCase();
+      const siparisler = (satinalmaSiparisler || []).filter((s) => String(s.tedarikci || "").trim().toLowerCase() === ad);
+      const teklifler = (satinalmaTeklifler || []).filter((t) => String(t.tedarikci || "").trim().toLowerCase() === ad);
+      const isler = (fasonIsler || []).filter((j) => j.firmaId === c.id);
+      const isIdler = new Set(isler.map((j) => j.id));
+      let giden = 0, gelen = 0;
+      (fasonHareketler || []).forEach((m) => {
+        if (!isIdler.has(m.isId)) return;
+        const t = sayiCevir(m.miktar) * sayiCevir(m.birimFiyat);
+        if (m.tip === "giden") giden += t; else gelen += t;
+      });
+      const hammaddeSayisi = (hammaddeler || []).filter((h) => String(h.cari || "").trim().toLowerCase() === ad).length;
+      return {
+        cari: c,
+        siparisSayisi: siparisler.length,
+        siparisTutar: siparisler.reduce((t, s) => t + sayiCevir(s.genelToplam), 0),
+        teklifSayisi: teklifler.length,
+        teklifTutar: teklifler.reduce((t, x) => t + teklifTL(x), 0),
+        isSayisi: isler.length,
+        aktifIsSayisi: isler.filter((j) => j.durum !== "tamamlandi").length,
+        fasonBakiye: giden - gelen,
+        hammaddeSayisi,
+        hareketVar: siparisler.length + teklifler.length + isler.length + hammaddeSayisi > 0,
+      };
+    });
+  }, [fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fasonIsler, fasonHareketler, hammaddeler]);
+
+  const filtrelenmis = useMemo(() => {
+    const q = f.arama.trim().toLowerCase();
+    return satirlar.filter((r) => {
+      if (f.tip && (r.cari.tip || "tedarikci") !== f.tip) return false;
+      if (f.gorunum === "hareketli" && !r.hareketVar) return false;
+      if (f.gorunum === "hareketsiz" && r.hareketVar) return false;
+      if (q && !(String(r.cari.ad || "").toLowerCase().includes(q) || String(r.cari.kod || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [satirlar, f]);
+
+  const toplamSiparis = filtrelenmis.reduce((t, r) => t + r.siparisTutar, 0);
+  const hareketliSayisi = satirlar.filter((r) => r.hareketVar).length;
+
+  const disaAktar = () => excelIndir(filtrelenmis.map((r) => ({
+    "Cari Kod": r.cari.kod || "", "Cari İsmi": r.cari.ad, "Tip": cariTipEtiket(r.cari.tip),
+    "Yetkili": r.cari.yetkili || "", "Telefon": r.cari.telefon || "",
+    "Sipariş Sayısı": r.siparisSayisi, "Sipariş Tutarı": r.siparisTutar.toFixed(2),
+    "Teklif Sayısı": r.teklifSayisi, "Teklif Tutarı (TL)": r.teklifTutar.toFixed(2),
+    "Fason İş": r.isSayisi, "Aktif Fason İş": r.aktifIsSayisi, "Fason Bakiye": r.fasonBakiye.toFixed(2),
+    "Hammadde Kaydı": r.hammaddeSayisi,
+    "Durum": r.cari.aktif === false ? "Pasif" : "Aktif",
+  })), "cari-raporu.xlsx", "Cari Raporu");
+
+  const yazdir = () => satinalmaFormYazdir({
+    ayarlar: formAyarlari, belgeAdi: "Cari Raporu",
+    ustBilgiler: [
+      ["Baskı Tarihi", trTarih(todayISO())], ["Cari Sayısı", String(filtrelenmis.length)], ["Tip", f.tip ? cariTipEtiket(f.tip) : "Tümü"],
+    ],
+    kolonlar: [
+      { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+      { baslik: "Cari Kod", gen: "26mm", al: (r) => r.cari.kod || "" },
+      { baslik: "Cari İsmi", al: (r) => r.cari.ad },
+      { baslik: "Tip", gen: "20mm", hiza: "ort", al: (r) => cariTipEtiket(r.cari.tip) },
+      { baslik: "Sipariş", gen: "16mm", hiza: "sag", al: (r) => String(r.siparisSayisi) },
+      { baslik: "Sipariş Tutarı", gen: "26mm", hiza: "sag", al: (r) => sayiTR(r.siparisTutar) },
+      { baslik: "Teklif", gen: "15mm", hiza: "sag", al: (r) => String(r.teklifSayisi) },
+      { baslik: "Fason İş", gen: "18mm", hiza: "sag", al: (r) => String(r.isSayisi) },
+    ],
+    satirlar: filtrelenmis,
+    toplamSatirlari: [["Toplam Sipariş Tutarı", tutarTL(toplamSiparis)]],
+    notBasligi: "Açıklama", notMetni: f.gorunum === "hareketli" ? "Sadece hareket görmüş cariler listelenmiştir." : "",
+    imzalar: ["Hazırlayan", "Kontrol Eden"],
+  });
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <div style={belgeBaslikKutu}>
+        <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Cari Raporu</div>
+            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Her carinin sipariş, teklif, fason iş ve hammadde hareketleri tek tabloda.</div>
+          </div>
+          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
+          <button className="btn-ghost" onClick={yazdir}><Printer size={14} /> Yazdır / PDF</button>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari kodu / ismi ara…" value={f.arama} onChange={setF2("arama")} />
+        </div>
+        <select className="input" style={{ width: 160 }} value={f.tip} onChange={setF2("tip")}>
+          <option value="">Tüm tipler</option>
+          {Object.entries(CARI_TIPLERI).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
+        </select>
+        <select className="input" style={{ width: 210 }} value={f.gorunum} onChange={setF2("gorunum")}>
+          <option value="hareketli">Sadece hareket görenler</option>
+          <option value="hareketsiz">Hiç hareketi olmayanlar</option>
+          <option value="tumu">Tüm cariler ({fasonFirmalar.length})</option>
+        </select>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <Stat label="Listelenen Cari" value={filtrelenmis.length} />
+        <Stat label="Hareket Gören Cari" value={hareketliSayisi} />
+        <Stat label="Toplam Sipariş Tutarı" value={tutarTL(toplamSiparis)} highlight />
+        <Stat label="Kayıtlı Cari" value={fasonFirmalar.length} />
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Cari Hareket Özeti ({filtrelenmis.length})</div>
+        <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
+          <table>
+            <thead><tr>
+              <th>Cari Kod</th><th>Cari İsmi</th><th>Tip</th>
+              <th style={{ textAlign: "right" }}>Sipariş</th><th style={{ textAlign: "right" }}>Sipariş Tutarı</th>
+              <th style={{ textAlign: "right" }}>Teklif</th><th style={{ textAlign: "right" }}>Teklif Tutarı</th>
+              <th style={{ textAlign: "right" }}>Fason İş</th><th style={{ textAlign: "right" }}>Fason Bakiye</th>
+              <th style={{ textAlign: "right" }}>Hammadde</th>
+            </tr></thead>
+            <tbody>
+              {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.map((r) => (
+                <tr key={r.cari.id} style={r.cari.aktif === false ? { opacity: 0.55 } : undefined}>
+                  <td style={{ fontFamily: "monospace", color: r.cari.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{r.cari.kod || "—"}</td>
+                  <td>{r.cari.ad}</td>
+                  <td><span className="pill" style={{ background: "transparent", color: CARI_TIPLERI[r.cari.tip || "tedarikci"]?.renk, borderColor: CARI_TIPLERI[r.cari.tip || "tedarikci"]?.renk }}>{cariTipEtiket(r.cari.tip)}</span></td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.siparisSayisi || "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.siparisTutar ? "#2dd4bf" : "#4a5560" }}>{r.siparisTutar ? tutarTL(r.siparisTutar) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.teklifSayisi || "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.teklifTutar ? "#e8a33d" : "#4a5560" }}>{r.teklifTutar ? tutarTL(r.teklifTutar) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.isSayisi ? `${r.isSayisi}${r.aktifIsSayisi ? ` (${r.aktifIsSayisi} açık)` : ""}` : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.fasonBakiye > 0 ? "#2dd4bf" : r.fasonBakiye < 0 ? "#e07a6b" : "#4a5560" }}>{r.fasonBakiye ? tutarTL(r.fasonBakiye) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.hammaddeSayisi || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Satınalma Teklifleri ----------
 function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisler, fasonFirmalar, depoStok, kullanici, formAyarlari, taslak, taslakTemizle, siparisOlustur }) {
   const bosBaslik = () => ({
@@ -6368,7 +6930,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   const setB = (k) => (v) => setBaslik((s) => ({ ...s, [k]: v }));
 
   const cariler = useMemo(
-    () => cariSirala(fasonFirmalar),
+    () => cariSirala((fasonFirmalar || []).filter((c) => c.aktif !== false)),
     [fasonFirmalar]
   );
   const acikTalepler = useMemo(
@@ -6705,9 +7267,10 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
                 {cariler.map((c) => <option key={c.id} value={c.ad}>{cariEtiket(c)}</option>)}
                 {baslik.tedarikci && !cariler.some((c) => c.ad === baslik.tedarikci) && <option value={baslik.tedarikci}>{baslik.tedarikci} (listede yok)</option>}
               </select>
-              <span style={{ ...fisEtiket, width: "auto", marginLeft: 10, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#4a5560" }} title="Cari kodu">
-                {baslik.tedarikciKod || "kod yok"}
-              </span>
+            </div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Cari Kod</span>
+              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#6b7178" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
             </div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Geçerlilik Tarihi</span>
               <input style={fisInput} type="date" value={baslik.gecerlilikTarihi} onChange={(e) => setB("gecerlilikTarihi")(e.target.value)} />
@@ -7348,7 +7911,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
 
   // Cari listesi — Fason Firmalar ekranından gelir
   const cariler = useMemo(
-    () => cariSirala(fasonFirmalar),
+    () => cariSirala((fasonFirmalar || []).filter((c) => c.aktif !== false)),
     [fasonFirmalar]
   );
 
@@ -7759,9 +8322,10 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                 {cariler.map((c) => <option key={c.id} value={c.ad}>{cariEtiket(c)}</option>)}
                 {baslik.tedarikci && !cariler.some((c) => c.ad === baslik.tedarikci) && <option value={baslik.tedarikci}>{baslik.tedarikci} (listede yok)</option>}
               </select>
-              <span style={{ ...fisEtiket, width: "auto", marginLeft: 10, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#4a5560" }} title="Cari kodu">
-                {baslik.tedarikciKod || "kod yok"}
-              </span>
+            </div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Cari Kod</span>
+              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#6b7178" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
             </div>
             <div style={fisSatir}><span style={fisEtiket}>Teslim Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => setBaslik((s) => ({ ...s, teslimTarihi: e.target.value }))} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Ödeme Şekli</span><input style={fisInput} value={baslik.odemeSekli} onChange={(e) => setBaslik((s) => ({ ...s, odemeSekli: e.target.value }))} placeholder="Örn: 30 gün vadeli" /></div>
