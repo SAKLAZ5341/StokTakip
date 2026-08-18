@@ -1,0 +1,1006 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index 7df73ad..9a380e7 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -60,6 +60,7 @@ const MENU = [
+       { id: "satinalma-siparis", label: "Satınalma Siparişi" },
+       { id: "satinalma-proje", label: "Proje Kartları" },
+       { id: "satinalma-depo", label: "Depo Kartları" },
++      { id: "satinalma-rapor", label: "Satınalma Raporu" },
+       { id: "satinalma-ayar", label: "Form Ayarları" },
+     ],
+   },
+@@ -1175,6 +1176,7 @@ function Panel({ onCikis, kullanici }) {
+     if (tab === "satinalma-siparis") return "Satınalma Siparişi";
+     if (tab === "satinalma-proje") return "Proje Kartları";
+     if (tab === "satinalma-depo") return "Depo Kartları";
++    if (tab === "satinalma-rapor") return "Satınalma Raporu";
+     if (tab === "satinalma-ayar") return "Form Ayarları";
+     if (tab === "takimlar") return "Takımlar";
+     if (tab === "makineler") return "Makineler";
+@@ -1295,7 +1297,7 @@ function Panel({ onCikis, kullanici }) {
+               fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} fasonHatirlaticilar={fasonHatirlaticilar}
+             />}
+             {tab === "stok-kayit" && <KayitEkle teams={teams} machines={machines} records={records} />}
+-            {tab === "hammadde-kayit" && <HammaddeTakip hammaddeler={hammaddeler} />}
++            {tab === "hammadde-kayit" && <HammaddeTakip hammaddeler={hammaddeler} fasonFirmalar={fasonFirmalar} />}
+             {tab === "metal-hizli" && <MetalHizliHesap metalMalzemeler={metalMalzemeler} kullanici={kullanici} />}
+             {tab === "metal-gecmis" && <MetalGecmisOlcumler metalTalepler={metalTalepler} metalMalzemeler={metalMalzemeler} />}
+             {tab === "metal-malzeme" && <MetalMalzemeYonetimi metalMalzemeler={metalMalzemeler} />}
+@@ -1324,7 +1326,7 @@ function Panel({ onCikis, kullanici }) {
+             />}
+             {tab === "satinalma-siparis" && <SatinalmaSiparis
+               satinalmaSiparisler={satinalmaSiparisler} satinalmaTalepler={satinalmaTalepler}
+-              depoStok={depoStok} kullanici={kullanici} formAyarlari={formAyarlari}
++              fasonFirmalar={fasonFirmalar} depoStok={depoStok} kullanici={kullanici} formAyarlari={formAyarlari}
+               taslak={siparisTaslak} taslakTemizle={() => setSiparisTaslak(null)}
+             />}
+             {tab === "satinalma-proje" && <SatinalmaKartYonetimi
+@@ -1337,6 +1339,11 @@ function Panel({ onCikis, kullanici }) {
+               kayitlar={satinalmaDepolar} ikon={Boxes}
+               kodPlaceholder="Örn: DEP-01" adPlaceholder="Örn: Ana Depo"
+             />}
++            {tab === "satinalma-rapor" && <SatinalmaRaporu
++              satinalmaTalepler={satinalmaTalepler} satinalmaSiparisler={satinalmaSiparisler}
++              satinalmaProjeler={satinalmaProjeler} satinalmaDepolar={satinalmaDepolar}
++              fasonFirmalar={fasonFirmalar} formAyarlari={formAyarlari}
++            />}
+             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
+             {tab === "takimlar" && <ListeYonetimi title="Takım" baslikCogul="Takımlar" koleksiyon="teams" placeholder="Örn: Kesim Takım 1" items={teams} icon={Users} />}
+             {tab === "makineler" && <ListeYonetimi title="Makine" baslikCogul="Makineler" koleksiyon="machines" placeholder="Makine listesini buradan ekleyin" items={machines} icon={Cog} />}
+@@ -2538,7 +2545,7 @@ function SiparisRaporu({ hammaddeler }) {
+ // ---------- Hammadde Takip ----------
+ const DURUM_SECENEKLERI = ["Sipariş Verildi", "Yolda", "Depoda", "Kullanıldı"];
+ 
+-function HammaddeTakip({ hammaddeler }) {
++function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
+   const [gorunum, setGorunum] = useState("acik"); // "acik" | "tamamlanan"
+   const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
+@@ -2615,7 +2622,11 @@ function HammaddeTakip({ hammaddeler }) {
+     );
+   };
+ 
+-  const cariler = [...new Set(hammaddeler.map((h) => h.cari).filter(Boolean))];
++  // Cari listesi: Fason Firmalar (cari kartları) + daha önce girilmiş değerler
++  const cariler = [...new Set([
++    ...(fasonFirmalar || []).map((c) => String(c.ad || "").trim()),
++    ...hammaddeler.map((h) => String(h.cari || "").trim()),
++  ].filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+   const projeler = [...new Set(hammaddeler.map((h) => h.projeKodu).filter(Boolean))];
+   const acikSayisi = hammaddeler.filter((h) => !h.tamamlandi).length;
+   const tamamlananSayisi = hammaddeler.filter((h) => h.tamamlandi).length;
+@@ -4930,6 +4941,65 @@ const CINS_SECENEKLERI = ["Stok", "Hizmet", "Masraf", "Demirbaş", "Diğer"];
+ const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), cinsi: "Stok", kodu: "", ismi: "", projeKodu: "", miktar: "", birim: "Adet", teslimTarihi: "" });
+ const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "" });
+ 
++// ---------- Satınalma Excel içe aktarma ----------
++// Excel satırları Evrak No'ya göre gruplanıp fiş belgelerine dönüştürülür.
++async function satinalmaExcelOku(dosya, alanlar) {
++  const rows = await dosyaOku(dosya);
++  if (!rows.length) return { fisler: [], atlanan: 0 };
++  const normalize = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().trim();
++  const ilk = (rows[0] || []).map(normalize);
++  const bul = (...anahtarlar) => ilk.findIndex((h) => anahtarlar.some((a) => h.includes(normalize(a))));
++  const idx = {};
++  Object.entries(alanlar).forEach(([alan, anahtarlar]) => { idx[alan] = bul(...anahtarlar); });
++  const baslangicSatiri = ilk.some((h) => h.includes("evrak") || h.includes("tarih") || h.includes("miktar")) ? 1 : 0;
++  const al = (r, alan) => (idx[alan] != null && idx[alan] !== -1 ? String(r[idx[alan]] ?? "").trim() : "");
++  const tarihCevir = (v) => {
++    const s = String(v || "").trim();
++    if (!s) return "";
++    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
++    const m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(s);
++    if (m) return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
++    const n = Number(s); // Excel seri tarihi
++    if (Number.isFinite(n) && n > 20000 && n < 60000) {
++      const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
++      return d.toISOString().slice(0, 10);
++    }
++    return s;
++  };
++  const grup = new Map();
++  let atlanan = 0;
++  for (let i = baslangicSatiri; i < rows.length; i++) {
++    const r = rows[i] || [];
++    if (!r.some((h) => String(h ?? "").trim())) continue;
++    const evrakNo = al(r, "evrakNo");
++    const ad = al(r, "ismi");
++    if (!evrakNo || !ad) { atlanan++; continue; }
++    if (!grup.has(evrakNo)) {
++      grup.set(evrakNo, { evrakNo, baslik: {}, satirlar: [] });
++      Object.keys(alanlar).forEach((alan) => {
++        if (alan.startsWith("b_")) {
++          const deger = al(r, alan);
++          grup.get(evrakNo).baslik[alan.slice(2)] = alan.includes("Tarih") ? tarihCevir(deger) : deger;
++        }
++      });
++    }
++    const satir = {};
++    Object.keys(alanlar).forEach((alan) => {
++      if (!alan.startsWith("b_") && alan !== "evrakNo") {
++        const deger = al(r, alan);
++        satir[alan] = alan.toLowerCase().includes("tarih") ? tarihCevir(deger) : deger;
++      }
++    });
++    grup.get(evrakNo).satirlar.push(satir);
++  }
++  return { fisler: [...grup.values()], atlanan };
++}
++
++// Düzenlenmiş fişler listede farklı renkte görünür
++const duzenlenmisSatir = { background: "#332a16" };
++const duzenlenmisRozet = { display: "inline-block", marginLeft: 7, padding: "1px 6px", borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: "#4a3a17", color: "#e8a33d", border: "1px solid #6b5220", textTransform: "uppercase", letterSpacing: 0.3, fontFamily: "inherit", verticalAlign: "middle" };
++const duzenleButonu = { display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 5, padding: "4px 9px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", marginRight: 6, verticalAlign: "middle" };
++
+ const satirToplam = (r) => (Number(String(r.miktar || "").replace(",", ".")) || 0) * (Number(String(r.birimFiyat || "").replace(",", ".")) || 0);
+ 
+ // Talep satırı (Cinsi/Kodu/İsmi/…) -> sipariş satırı eşleşmesi
+@@ -5260,6 +5330,9 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+   const [kaydediliyor, setKaydediliyor] = useState(false);
+   const [uyari, setUyari] = useState(null);
+   const [lookup, setLookup] = useState(null); // {baslik, secenekler, sec}
++  const [iceAktariliyor, setIceAktariliyor] = useState(false);
++  const [iceMsg, setIceMsg] = useState("");
++  const dosyaRef = useRef(null);
+   const [f, setF] = useState({ arama: "", durum: "" });
+   const [secililer, setSecililer] = useState(new Set());
+   const [topluDurum, setTopluDurum] = useState("");
+@@ -5358,15 +5431,19 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+     };
+     try {
+       const yeniId = evrakIdTemizle(baslik.evrakNo);
++      const eski = duzenlenenId ? satinalmaTalepler.find((t) => t.id === duzenlenenId) : null;
+       if (duzenlenenId && duzenlenenId === yeniId) {
+-        await updateDoc(doc(db, "satinalma_talepler", duzenlenenId), veri);
++        await updateDoc(doc(db, "satinalma_talepler", duzenlenenId), {
++          ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—",
++          guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
++        });
+         setMsg(`${baslik.evrakNo} güncellendi.`);
+       } else if (duzenlenenId) {
+         // Evrak No değişti: yeni numarayla oluştur, eskisini sil
+-        const eski = satinalmaTalepler.find((t) => t.id === duzenlenenId);
+         await benzersizEvrakKaydet("satinalma_talepler", baslik.evrakNo, {
+           ...veri, durum: eski?.durum || "bekliyor", siparisEvrakNo: eski?.siparisEvrakNo || "",
+-          olusturma: eski?.olusturma || Date.now(),
++          olusturma: eski?.olusturma || Date.now(), guncellemeTarihi: Date.now(),
++          guncelleyen: kullanici?.email || "—", guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
+         });
+         await deleteDoc(doc(db, "satinalma_talepler", duzenlenenId));
+         setDuzenlenenId(yeniId);
+@@ -5472,6 +5549,57 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+     }))), "satinalma-talepleri.xlsx", "Talepler"
+   );
+ 
++  const sablonuIndir = () => sablonIndir(
++    ["Evrak No", "Tarih", "Belge No", "Belge Tarihi", "Proje Kodu", "Depo", "Talep Eden Personel", "Cinsi", "Kodu", "İsmi", "Satır Proje Kodu", "Miktar", "Birim", "Teslim Tarihi"],
++    [
++      ["TAL-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Stok", "STK-0001", "Örnek Malzeme", "PRJ-001", "10", "Adet", todayISO()],
++      ["TAL-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Hizmet", "", "Örnek Hizmet", "PRJ-001", "1", "Adet", ""],
++    ],
++    "satinalma-talep-sablonu.xlsx", "Şablon"
++  );
++
++  const iceAktar = async (e) => {
++    const dosya = e.target.files?.[0];
++    e.target.value = "";
++    if (!dosya) return;
++    setIceAktariliyor(true); setIceMsg("");
++    try {
++      const { fisler, atlanan } = await satinalmaExcelOku(dosya, {
++        evrakNo: ["evrak no", "evrak"],
++        b_tarih: ["tarih"], b_belgeNo: ["belge no"], b_belgeTarihi: ["belge tarihi"],
++        b_proje: ["proje kodu", "proje"], b_depo: ["depo"], b_talepEdenPersonel: ["talep eden", "personel"],
++        cinsi: ["cinsi", "cins"], kodu: ["kodu", "stok kodu"], ismi: ["ismi", "malzeme", "isim"],
++        projeKodu: ["satır proje", "satir proje"], miktar: ["miktar"], birim: ["birim"], teslimTarihi: ["teslim tarihi"],
++      });
++      if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve İsmi sütunları dolu olmalı."); }
++      else {
++        let eklenen = 0, cakisan = 0;
++        for (const fis of fisler) {
++          try {
++            await benzersizEvrakKaydet("satinalma_talepler", fis.evrakNo, {
++              evrakNo: fis.evrakNo, tarih: fis.baslik.tarih || todayISO(),
++              belgeNo: fis.baslik.belgeNo || "", belgeTarihi: fis.baslik.belgeTarihi || "",
++              proje: fis.baslik.proje || "", depo: fis.baslik.depo || "",
++              talepEdenPersonel: fis.baslik.talepEdenPersonel || "",
++              satirlar: fis.satirlar.map((r) => ({ ...bosTalepSatiri(), ...r, cinsi: r.cinsi || "Stok", birim: r.birim || "Adet", key: undefined })).map(({ key, ...r }) => r),
++              durum: "bekliyor", siparisEvrakNo: "",
++              olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
++            });
++            eklenen++;
++          } catch (err) {
++            if (err?.message === "EVRAK_NO_MEVCUT") cakisan++; else throw err;
++          }
++        }
++        setIceMsg(`${eklenen} talep fişi eklendi${cakisan ? `, ${cakisan} tanesi aynı evrak no olduğu için atlandı` : ""}${atlanan ? `, ${atlanan} satır eksik bilgi nedeniyle atlandı` : ""}.`);
++      }
++    } catch (err) {
++      console.error(err);
++      setIceMsg("Hata: " + (err?.message || "bilinmeyen hata"));
++    }
++    setIceAktariliyor(false);
++    setTimeout(() => setIceMsg(""), 9000);
++  };
++
+   const filtrelenmis = useMemo(() => {
+     const q = f.arama.trim().toLowerCase();
+     return [...satinalmaTalepler].filter((t) => {
+@@ -5664,7 +5792,14 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+       <div className="card" style={{ padding: 20 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+           <div style={{ fontWeight: 700, fontSize: 15 }}>Satınalma Talepleri</div>
+-          <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
++            <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
++            <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
++            <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}>
++              <Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}
++            </button>
++            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++          </div>
+         </div>
+         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+           <Plus size={16} /> Yeni Talep Fişi Aç
+@@ -5672,6 +5807,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+         <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+           Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Evrak No'yu elle değiştirirsen sonraki fiş onu takip eder (SEN-0001 → SEN-0002).
+         </div>
++        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+       </div>
+ 
+       <div className="card" style={{ padding: 20 }}>
+@@ -5713,11 +5849,13 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+               {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
+               {filtrelenmis.map((t) => {
+                 const donustu = t.durum === "siparise_donustu";
++                const duzenlendi = (t.guncellemeSayisi || 0) > 0;
+                 return (
+-                  <tr key={t.id}>
++                  <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
+                     <td><input type="checkbox" checked={secililer.has(t.id)} onChange={() => birSecToggle(t.id)} /></td>
+-                    <td>
+-                      <button onClick={() => fisiYukle(t)} title="Fişi aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf", cursor: "pointer", textDecoration: "underline" }}>{t.evrakNo}</button>
++                    <td style={{ whiteSpace: "nowrap" }}>
++                      <button onClick={() => fisiYukle(t)} title="Fişi aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", cursor: "pointer", textDecoration: "underline" }}>{t.evrakNo}</button>
++                      {duzenlendi && <span style={duzenlenmisRozet} title={`${t.guncellemeSayisi} kez düzenlendi · ${t.guncelleyen || ""}`}>düzenlendi</span>}
+                     </td>
+                     <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
+                     <td style={{ fontSize: 12.5 }}>{t.talepEdenPersonel || t.talepEden || "—"}</td>
+@@ -5731,6 +5869,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+                     </td>
+                     <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.siparisEvrakNo || "—"}</td>
+                     <td style={{ whiteSpace: "nowrap" }}>
++                      <button onClick={() => fisiYukle(t)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
+                       <button
+                         onClick={() => siparisOlustur(t)}
+                         disabled={donustu}
+@@ -5753,18 +5892,34 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaProjeler, satinalmaDepolar
+   );
+ }
+ // ---------- Satınalma Siparişi ----------
+-function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, kullanici, formAyarlari, taslak, taslakTemizle }) {
++function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, fasonFirmalar, depoStok, kullanici, formAyarlari, taslak, taslakTemizle }) {
+   const [fisAcik, setFisAcik] = useState(false);
++  const [duzenlenenId, setDuzenlenenId] = useState(null);
+   const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), tedarikci: "", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "" });
+   const [satirlar, setSatirlar] = useState([bosSiparisSatiri()]);
+   const [msg, setMsg] = useState("");
+   const [kaydediliyor, setKaydediliyor] = useState(false);
+   const [uyari, setUyari] = useState(null);
++  const [iceAktariliyor, setIceAktariliyor] = useState(false);
++  const [iceMsg, setIceMsg] = useState("");
++  const dosyaRef = useRef(null);
+   const [f, setF] = useState({ arama: "", durum: "" });
+   const [secililer, setSecililer] = useState(new Set());
+   const [topluDurum, setTopluDurum] = useState("");
+   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+ 
++  // Cari listesi — Fason Firmalar ekranından gelir
++  const cariler = useMemo(
++    () => [...(fasonFirmalar || [])].sort((a, b) => String(a.ad || "").localeCompare(String(b.ad || ""), "tr")),
++    [fasonFirmalar]
++  );
++
++  const sirali = useMemo(
++    () => [...satinalmaSiparisler].sort((a, b) => (a.olusturma || 0) - (b.olusturma || 0)),
++    [satinalmaSiparisler]
++  );
++  const aktifIndex = duzenlenenId ? sirali.findIndex((s) => s.id === duzenlenenId) : -1;
++
+   const yeniNo = () => sonrakiEvrakNo(satinalmaSiparisler, "SIP-");
+   const numarayiGuncelle = () => {
+     const no = yeniNo();
+@@ -5773,15 +5928,37 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+     setTimeout(() => setMsg(""), 2500);
+   };
+   const fisiTemizle = () => {
++    setDuzenlenenId(null);
+     setBaslik({ evrakNo: yeniNo(), belgeNo: "", tarih: todayISO(), tedarikci: "", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "" });
+     setSatirlar([bosSiparisSatiri()]);
+     setMsg("");
+   };
+   const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
++  const fisiYukle = (s) => {
++    if (!s) return;
++    setDuzenlenenId(s.id);
++    setBaslik({
++      evrakNo: s.evrakNo || "", belgeNo: s.belgeNo || "", tarih: s.tarih || todayISO(),
++      tedarikci: s.tedarikci || "", teslimTarihi: s.teslimTarihi || "", odemeSekli: s.odemeSekli || "",
++      aciklama: s.aciklama || "", talepId: s.talepId || "", talepEvrakNo: s.talepEvrakNo || "",
++    });
++    setSatirlar((s.satirlar || []).length ? s.satirlar.map((r) => ({ ...bosSiparisSatiri(), ...r })) : [bosSiparisSatiri()]);
++    setMsg("");
++    setFisAcik(true);
++  };
++  const onceki = () => {
++    if (sirali.length === 0) return;
++    fisiYukle(sirali[aktifIndex === -1 ? sirali.length - 1 : Math.max(0, aktifIndex - 1)]);
++  };
++  const sonraki = () => {
++    if (sirali.length === 0) return;
++    fisiYukle(sirali[aktifIndex === -1 ? 0 : Math.min(sirali.length - 1, aktifIndex + 1)]);
++  };
+ 
+   // Talep sayfasından "Siparişe Çevir" ile gelindiğinde fiş otomatik dolar ve açılır.
+   useEffect(() => {
+     if (!taslak) return;
++    setDuzenlenenId(null);
+     setBaslik({
+       evrakNo: sonrakiEvrakNo(satinalmaSiparisler, "SIP-"),
+       belgeNo: taslak.belgeNo || "", tarih: todayISO(), tedarikci: "",
+@@ -5814,17 +5991,39 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+     const gecerli = satirlar.filter((r) => r.stokAdi.trim());
+     if (gecerli.length === 0) { setMsg("En az bir satıra Malzeme / Stok Adı girin."); setTimeout(() => setMsg(""), 3000); return; }
+     setKaydediliyor(true);
++    const veri = {
++      evrakNo: baslik.evrakNo.trim(), belgeNo: baslik.belgeNo.trim(), tarih: baslik.tarih,
++      tedarikci: baslik.tedarikci.trim(), teslimTarihi: baslik.teslimTarihi,
++      odemeSekli: baslik.odemeSekli.trim(), aciklama: baslik.aciklama.trim(),
++      talepId: baslik.talepId || "", talepEvrakNo: baslik.talepEvrakNo || "",
++      satirlar: gecerli.map(({ key, ...r }) => ({ ...r, satirTutar: satirToplam(r) })),
++      genelToplam: gecerli.reduce((t, r) => t + satirToplam(r), 0),
++    };
+     try {
+-      await benzersizEvrakKaydet("satinalma_siparisler", baslik.evrakNo, {
+-        evrakNo: baslik.evrakNo.trim(), belgeNo: baslik.belgeNo.trim(), tarih: baslik.tarih,
+-        tedarikci: baslik.tedarikci.trim(), teslimTarihi: baslik.teslimTarihi,
+-        odemeSekli: baslik.odemeSekli.trim(), aciklama: baslik.aciklama.trim(),
+-        talepId: baslik.talepId || "", talepEvrakNo: baslik.talepEvrakNo || "",
+-        satirlar: gecerli.map(({ key, ...r }) => ({ ...r, satirTutar: satirToplam(r) })),
+-        genelToplam: gecerli.reduce((t, r) => t + satirToplam(r), 0),
+-        durum: "acik",
+-        olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
+-      });
++      const yeniId = evrakIdTemizle(baslik.evrakNo);
++      const eski = duzenlenenId ? satinalmaSiparisler.find((s) => s.id === duzenlenenId) : null;
++      if (duzenlenenId && duzenlenenId === yeniId) {
++        await updateDoc(doc(db, "satinalma_siparisler", duzenlenenId), {
++          ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—",
++          guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
++        });
++        setMsg(`${baslik.evrakNo} güncellendi.`);
++      } else if (duzenlenenId) {
++        await benzersizEvrakKaydet("satinalma_siparisler", baslik.evrakNo, {
++          ...veri, durum: eski?.durum || "acik", olusturanEposta: eski?.olusturanEposta || kullanici?.email || "—",
++          olusturma: eski?.olusturma || Date.now(), guncellemeTarihi: Date.now(),
++          guncelleyen: kullanici?.email || "—", guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
++        });
++        await deleteDoc(doc(db, "satinalma_siparisler", duzenlenenId));
++        setDuzenlenenId(yeniId);
++        setMsg(`${baslik.evrakNo} olarak kaydedildi.`);
++      } else {
++        await benzersizEvrakKaydet("satinalma_siparisler", baslik.evrakNo, {
++          ...veri, durum: "acik", olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
++        });
++        setDuzenlenenId(yeniId);
++        setMsg(`${baslik.evrakNo} kaydedildi (${gecerli.length} satır).`);
++      }
+       // Kaynak talebi "siparişe dönüştü" olarak işaretle
+       if (baslik.talepId) {
+         try {
+@@ -5833,7 +6032,6 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+           });
+         } catch (e) { console.error("Talep durumu güncellenemedi:", e); }
+       }
+-      setMsg(`${baslik.evrakNo} kaydedildi (${gecerli.length} satır).`);
+       setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+     } catch (err) {
+       if (err?.message === "EVRAK_NO_MEVCUT") {
+@@ -5849,9 +6047,26 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+     setKaydediliyor(false);
+   };
+ 
++  // Sipariş silinince kaynak talep tekrar kullanıma açılır (Siparişe Çevir yeniden aktif olur)
++  const talebiSerbestBirak = async (siparis) => {
++    if (!siparis?.talepId) return;
++    try {
++      const talep = satinalmaTalepler.find((t) => t.id === siparis.talepId);
++      // Talep başka bir siparişe bağlandıysa dokunma
++      if (talep && talep.siparisEvrakNo && talep.siparisEvrakNo !== siparis.evrakNo) return;
++      await updateDoc(doc(db, "satinalma_talepler", siparis.talepId), { durum: "bekliyor", siparisEvrakNo: "" });
++    } catch (e) { console.error("Talep serbest bırakılamadı:", e); }
++  };
++
+   const sil = async (s) => {
+-    if (!window.confirm(`${s.evrakNo} numaralı sipariş silinecek. Emin misiniz?`)) return;
++    if (!window.confirm(
++      `${s.evrakNo} numaralı sipariş silinecek.` +
++      (s.talepEvrakNo ? `\n\n${s.talepEvrakNo} numaralı talep tekrar kullanıma açılacak (siparişe çevrilebilir hale gelecek).` : "") +
++      `\n\nEmin misiniz?`
++    )) return;
+     await deleteDoc(doc(db, "satinalma_siparisler", s.id));
++    await talebiSerbestBirak(s);
++    if (duzenlenenId === s.id) fisiTemizle();
+   };
+   const durumDegistir = async (id, durum) => { await updateDoc(doc(db, "satinalma_siparisler", id), { durum }); };
+ 
+@@ -5896,7 +6111,13 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+   const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+   const secilenleriSil = async () => {
+     if (secililer.size === 0) return;
+-    if (!window.confirm(`${secililer.size} sipariş kalıcı olarak silinecek. Emin misiniz?`)) return;
++    const secilenler = satinalmaSiparisler.filter((s) => secililer.has(s.id));
++    const bagliTalep = secilenler.filter((s) => s.talepId).length;
++    if (!window.confirm(
++      `${secililer.size} sipariş kalıcı olarak silinecek.` +
++      (bagliTalep ? `\n\n${bagliTalep} adet bağlı talep tekrar kullanıma açılacak.` : "") +
++      `\n\nBu işlem geri alınamaz. Emin misiniz?`
++    )) return;
+     setTopluDurum("Siliniyor…");
+     const idler = [...secililer];
+     for (let i = 0; i < idler.length; i += 400) {
+@@ -5904,6 +6125,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+       idler.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "satinalma_siparisler", id)));
+       await batch.commit();
+     }
++    for (const s of secilenler) await talebiSerbestBirak(s);
+     setSecililer(new Set());
+     setTopluDurum(`${idler.length} sipariş silindi.`);
+     setTimeout(() => setTopluDurum(""), 4000);
+@@ -5918,6 +6140,61 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+     }))), "satinalma-siparisleri.xlsx", "Siparişler"
+   );
+ 
++  const sablonuIndir = () => sablonIndir(
++    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Teslim Tarihi", "Ödeme Şekli", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat"],
++    [
++      ["SIP-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", todayISO(), "30 gün vadeli", "STK-0001", "Örnek Malzeme", "10", "Adet", "150"],
++      ["SIP-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", todayISO(), "30 gün vadeli", "", "Örnek Hizmet", "1", "Adet", "2500"],
++    ],
++    "satinalma-siparis-sablonu.xlsx", "Şablon"
++  );
++
++  const iceAktar = async (e) => {
++    const dosya = e.target.files?.[0];
++    e.target.value = "";
++    if (!dosya) return;
++    setIceAktariliyor(true); setIceMsg("");
++    try {
++      const { fisler, atlanan } = await satinalmaExcelOku(dosya, {
++        evrakNo: ["evrak no", "evrak"],
++        b_tarih: ["tarih"], b_belgeNo: ["belge no"], b_tedarikci: ["tedarik"],
++        b_teslimTarihi: ["teslim tarihi"], b_odemeSekli: ["ödeme", "odeme"],
++        stokKodu: ["stok kodu"], stokAdi: ["malzeme", "stok adı", "stok adi", "ismi"],
++        miktar: ["miktar"], birim: ["birim fiyat", "birim"], birimFiyat: ["birim fiyat", "fiyat"],
++      });
++      if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve Malzeme sütunları dolu olmalı."); }
++      else {
++        let eklenen = 0, cakisan = 0;
++        for (const fis of fisler) {
++          try {
++            const rs = fis.satirlar.map((r) => {
++              const satir = { ...bosSiparisSatiri(), ...r, birim: r.birim || "Adet" };
++              delete satir.key;
++              return { ...satir, satirTutar: satirToplam(satir) };
++            });
++            await benzersizEvrakKaydet("satinalma_siparisler", fis.evrakNo, {
++              evrakNo: fis.evrakNo, tarih: fis.baslik.tarih || todayISO(),
++              belgeNo: fis.baslik.belgeNo || "", tedarikci: fis.baslik.tedarikci || "",
++              teslimTarihi: fis.baslik.teslimTarihi || "", odemeSekli: fis.baslik.odemeSekli || "",
++              aciklama: "", talepId: "", talepEvrakNo: "",
++              satirlar: rs, genelToplam: rs.reduce((t, r) => t + (r.satirTutar || 0), 0),
++              durum: "acik", olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
++            });
++            eklenen++;
++          } catch (err) {
++            if (err?.message === "EVRAK_NO_MEVCUT") cakisan++; else throw err;
++          }
++        }
++        setIceMsg(`${eklenen} sipariş fişi eklendi${cakisan ? `, ${cakisan} tanesi aynı evrak no olduğu için atlandı` : ""}${atlanan ? `, ${atlanan} satır eksik bilgi nedeniyle atlandı` : ""}.`);
++      }
++    } catch (err) {
++      console.error(err);
++      setIceMsg("Hata: " + (err?.message || "bilinmeyen hata"));
++    }
++    setIceAktariliyor(false);
++    setTimeout(() => setIceMsg(""), 9000);
++  };
++
+   const filtrelenmis = useMemo(() => {
+     const q = f.arama.trim().toLowerCase();
+     return [...satinalmaSiparisler].filter((s) => {
+@@ -5951,11 +6228,17 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+ 
+       <EvrakPenceresi
+         acik={fisAcik} kapat={() => setFisAcik(false)}
+-        baslik={baslik.talepEvrakNo ? `Satınalma Sipariş Fişi — ${baslik.talepEvrakNo} talebinden` : "Satınalma Sipariş Fişi"}
++        baslik={
++          duzenlenenId ? `Satınalma Sipariş Fişi — ${baslik.evrakNo} (düzenleniyor)`
++            : baslik.talepEvrakNo ? `Satınalma Sipariş Fişi — ${baslik.talepEvrakNo} talebinden`
++            : "Satınalma Sipariş Fişi (yeni)"
++        }
+         ikon={ShoppingCart} genislik={1120}
+         butonlar={
+           <>
+             {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++            <button style={fisAltBtn} onClick={onceki} disabled={sirali.length === 0} title="Önceki fiş"><ChevronLeft size={14} /> Önceki</button>
++            <button style={fisAltBtn} onClick={sonraki} disabled={sirali.length === 0} title="Sonraki fiş">Sonraki <ChevronRight size={14} /></button>
+             <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
+             <button style={fisAltBtn} onClick={() => siparisYazdir(null)}><Printer size={14} /> Yazdır</button>
+             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
+@@ -5975,7 +6258,14 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={baslik.tarih} onChange={(e) => setBaslik((s) => ({ ...s, tarih: e.target.value }))} /></div>
+           </div>
+           <div>
+-            <div style={fisSatir}><span style={fisEtiket}>Tedarikçi</span><input style={fisInput} value={baslik.tedarikci} onChange={(e) => setBaslik((s) => ({ ...s, tedarikci: e.target.value }))} /></div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Tedarikçi (Cari)</span>
++              <select style={fisInput} value={baslik.tedarikci} onChange={(e) => setBaslik((s) => ({ ...s, tedarikci: e.target.value }))}>
++                <option value="">Seçin…</option>
++                {cariler.map((c) => <option key={c.id} value={c.ad}>{c.ad}</option>)}
++                {baslik.tedarikci && !cariler.some((c) => c.ad === baslik.tedarikci) && <option value={baslik.tedarikci}>{baslik.tedarikci} (listede yok)</option>}
++              </select>
++            </div>
+             <div style={fisSatir}><span style={fisEtiket}>Teslim Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => setBaslik((s) => ({ ...s, teslimTarihi: e.target.value }))} /></div>
+             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Ödeme Şekli</span><input style={fisInput} value={baslik.odemeSekli} onChange={(e) => setBaslik((s) => ({ ...s, odemeSekli: e.target.value }))} placeholder="Örn: 30 gün vadeli" /></div>
+           </div>
+@@ -6057,7 +6347,14 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+       <div className="card" style={{ padding: 20 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+           <div style={{ fontWeight: 700, fontSize: 15 }}>Satınalma Siparişleri</div>
+-          <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
++            <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
++            <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
++            <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}>
++              <Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}
++            </button>
++            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++          </div>
+         </div>
+         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+           <Plus size={16} /> Yeni Sipariş Fişi Aç
+@@ -6065,6 +6362,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+         <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+           Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Talep sayfasındaki "Siparişe Çevir" ile gelen fişler otomatik dolar.
+         </div>
++        {cariler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Tedarikçi listesi boş — Fason Takip → Firmalar ekranından cari ekleyin.</div>}
++        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+       </div>
+ 
+       <div className="card" style={{ padding: 20 }}>
+@@ -6104,10 +6403,15 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+             <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+             <tbody>
+               {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
+-              {filtrelenmis.map((s) => (
+-                <tr key={s.id}>
++              {filtrelenmis.map((s) => {
++                const duzenlendi = (s.guncellemeSayisi || 0) > 0;
++                return (
++                <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
+                   <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
+-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{s.evrakNo}</td>
++                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
++                    {s.evrakNo}
++                    {duzenlendi && <span style={duzenlenmisRozet} title={`${s.guncellemeSayisi} kez düzenlendi · ${s.guncelleyen || ""}`}>düzenlendi</span>}
++                  </td>
+                   <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
+                   <td style={{ fontSize: 12.5 }}>{s.tedarikci || "—"}</td>
+                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
+@@ -6119,11 +6423,13 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+                     </select>
+                   </td>
+                   <td style={{ whiteSpace: "nowrap" }}>
++                    <button onClick={() => fisiYukle(s)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
+                     <button onClick={() => siparisYazdir(s)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Printer size={14} /></button>
+-                    <button onClick={() => sil(s)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
++                    <button onClick={() => sil(s)} title="Sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                   </td>
+                 </tr>
+-              ))}
++                );
++              })}
+             </tbody>
+           </table>
+         </div>
+@@ -6132,6 +6438,387 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, depoStok, ku
+   );
+ }
+ 
++// ---------- Satınalma Raporu ----------
++function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProjeler, satinalmaDepolar, fasonFirmalar, formAyarlari }) {
++  const [altTab, setAltTab] = useState("talep");
++  const [f, setF] = useState({ baslangic: "", bitis: "", durum: "", proje: "", depo: "", tedarikci: "", arama: "" });
++  const [detay, setDetay] = useState(null); // görüntülenen fiş
++  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
++  const temizle = () => setF({ baslangic: "", bitis: "", durum: "", proje: "", depo: "", tedarikci: "", arama: "" });
++
++  const donemSec = (tip) => {
++    const b = new Date();
++    const iso = (d) => d.toISOString().slice(0, 10);
++    if (tip === "ay") setF((s) => ({ ...s, baslangic: iso(new Date(b.getFullYear(), b.getMonth(), 1)), bitis: iso(b) }));
++    else if (tip === "yil") setF((s) => ({ ...s, baslangic: iso(new Date(b.getFullYear(), 0, 1)), bitis: iso(b) }));
++    else if (tip === "gun") setF((s) => ({ ...s, baslangic: iso(b), bitis: iso(b) }));
++    else setF((s) => ({ ...s, baslangic: "", bitis: "" }));
++  };
++
++  const tarihUygun = (t) => {
++    const g = String(t || "");
++    if (f.baslangic && g < f.baslangic) return false;
++    if (f.bitis && g > f.bitis) return false;
++    return true;
++  };
++
++  const talepler = useMemo(() => {
++    const q = f.arama.trim().toLowerCase();
++    return [...satinalmaTalepler].filter((t) => {
++      if (!tarihUygun(t.tarih)) return false;
++      if (f.durum && t.durum !== f.durum) return false;
++      if (f.proje && t.proje !== f.proje) return false;
++      if (f.depo && t.depo !== f.depo) return false;
++      if (q && !(
++        (t.evrakNo || "").toLowerCase().includes(q) || (t.belgeNo || "").toLowerCase().includes(q) ||
++        (t.talepEdenPersonel || "").toLowerCase().includes(q) ||
++        (t.satirlar || []).some((r) => (r.ismi || "").toLowerCase().includes(q) || (r.kodu || "").toLowerCase().includes(q))
++      )) return false;
++      return true;
++    }).sort((a, b) => String(b.tarih || "").localeCompare(String(a.tarih || "")));
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [satinalmaTalepler, f]);
++
++  const siparisler = useMemo(() => {
++    const q = f.arama.trim().toLowerCase();
++    return [...satinalmaSiparisler].filter((s) => {
++      if (!tarihUygun(s.tarih)) return false;
++      if (f.durum && s.durum !== f.durum) return false;
++      if (f.tedarikci && s.tedarikci !== f.tedarikci) return false;
++      if (q && !(
++        (s.evrakNo || "").toLowerCase().includes(q) || (s.belgeNo || "").toLowerCase().includes(q) ||
++        (s.talepEvrakNo || "").toLowerCase().includes(q) ||
++        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q))
++      )) return false;
++      return true;
++    }).sort((a, b) => String(b.tarih || "").localeCompare(String(a.tarih || "")));
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [satinalmaSiparisler, f]);
++
++  const talepKalem = talepler.reduce((t, x) => t + (x.satirlar || []).length, 0);
++  const siparisKalem = siparisler.reduce((t, x) => t + (x.satirlar || []).length, 0);
++  const siparisTutar = siparisler.reduce((t, x) => t + (x.genelToplam || 0), 0);
++  const bekleyenTalep = talepler.filter((t) => t.durum === "bekliyor").length;
++  const acikSiparis = siparisler.filter((s) => s.durum === "acik").length;
++
++  // Tedarikçi bazlı özet
++  const tedarikciOzet = useMemo(() => {
++    const m = new Map();
++    siparisler.forEach((s) => {
++      const k = s.tedarikci || "—";
++      if (!m.has(k)) m.set(k, { tedarikci: k, adet: 0, kalem: 0, tutar: 0 });
++      const o = m.get(k);
++      o.adet += 1; o.kalem += (s.satirlar || []).length; o.tutar += s.genelToplam || 0;
++    });
++    return [...m.values()].sort((a, b) => b.tutar - a.tutar);
++  }, [siparisler]);
++
++  const talepDisaAktar = () => excelIndir(
++    talepler.flatMap((t) => (t.satirlar || []).map((r) => ({
++      "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Proje Kodu": t.proje, "Depo": t.depo,
++      "Talep Eden": t.talepEdenPersonel, "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi,
++      "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
++      "Durum": TALEP_DURUM[t.durum]?.label || "", "Sipariş No": t.siparisEvrakNo || "",
++      "Düzenlendi": (t.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
++    }))), "satinalma-talep-raporu.xlsx", "Talep Raporu"
++  );
++  const siparisDisaAktar = () => excelIndir(
++    siparisler.flatMap((s) => (s.satirlar || []).map((r) => ({
++      "Evrak No": s.evrakNo, "Tarih": s.tarih, "Tedarikçi": s.tedarikci, "Talep No": s.talepEvrakNo || "",
++      "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi, "Miktar": r.miktar, "Birim": r.birim,
++      "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar, "Teslim Tarihi": r.teslimTarihi,
++      "Durum": SIPARIS_DURUM[s.durum]?.label || "",
++      "Düzenlendi": (s.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
++    }))), "satinalma-siparis-raporu.xlsx", "Sipariş Raporu"
++  );
++
++  const raporYazdir = () => {
++    const talepMi = altTab === "talep";
++    satinalmaFormYazdir({
++      ayarlar: formAyarlari,
++      belgeAdi: talepMi ? "Satınalma Talep Raporu" : "Satınalma Sipariş Raporu",
++      ustBilgiler: [
++        ["Başlangıç", f.baslangic ? trTarih(f.baslangic) : "Tümü"],
++        ["Bitiş", f.bitis ? trTarih(f.bitis) : "Tümü"],
++        ["Durum", f.durum ? (talepMi ? TALEP_DURUM[f.durum]?.label : SIPARIS_DURUM[f.durum]?.label) : "Tümü"],
++        ["Kayıt Sayısı", String(talepMi ? talepler.length : siparisler.length)],
++        ["Toplam Kalem", String(talepMi ? talepKalem : siparisKalem)],
++        [talepMi ? "Bekleyen Talep" : "Toplam Tutar", talepMi ? String(bekleyenTalep) : paraTR(siparisTutar)],
++      ],
++      kolonlar: talepMi ? [
++        { baslik: "Evrak No", gen: "24mm", al: (r) => r.evrakNo },
++        { baslik: "Tarih", gen: "20mm", hiza: "ort", al: (r) => trTarih(r.tarih) },
++        { baslik: "Proje", gen: "22mm", al: (r) => r.proje },
++        { baslik: "Depo", gen: "22mm", al: (r) => r.depo },
++        { baslik: "Talep Eden", al: (r) => r.talepEdenPersonel },
++        { baslik: "Kalem", gen: "14mm", hiza: "sag", al: (r) => (r.satirlar || []).length },
++        { baslik: "Durum", gen: "26mm", al: (r) => TALEP_DURUM[r.durum]?.label || "" },
++        { baslik: "Sipariş No", gen: "24mm", al: (r) => r.siparisEvrakNo || "" },
++      ] : [
++        { baslik: "Evrak No", gen: "24mm", al: (r) => r.evrakNo },
++        { baslik: "Tarih", gen: "20mm", hiza: "ort", al: (r) => trTarih(r.tarih) },
++        { baslik: "Tedarikçi", al: (r) => r.tedarikci },
++        { baslik: "Talep No", gen: "24mm", al: (r) => r.talepEvrakNo || "" },
++        { baslik: "Kalem", gen: "14mm", hiza: "sag", al: (r) => (r.satirlar || []).length },
++        { baslik: "Tutar", gen: "28mm", hiza: "sag", al: (r) => paraTR(r.genelToplam || 0) },
++        { baslik: "Durum", gen: "26mm", al: (r) => SIPARIS_DURUM[r.durum]?.label || "" },
++      ],
++      satirlar: talepMi ? talepler : siparisler,
++      toplamSatirlari: talepMi
++        ? [["Kayıt", String(talepler.length)], ["Toplam Kalem", String(talepKalem)]]
++        : [["Kayıt", String(siparisler.length)], ["Toplam Kalem", String(siparisKalem)], Object.assign(["Genel Toplam", paraTR(siparisTutar)], { genel: true })],
++      imzalar: ["Hazırlayan", "Onaylayan"],
++    });
++  };
++
++  const projeler = [...(satinalmaProjeler || [])].sort((a, b) => String(a.kod).localeCompare(String(b.kod), "tr"));
++  const depolar = [...(satinalmaDepolar || [])].sort((a, b) => String(a.kod).localeCompare(String(b.kod), "tr"));
++  const cariler = [...new Set([...(fasonFirmalar || []).map((c) => c.ad), ...satinalmaSiparisler.map((s) => s.tedarikci)].filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
++  const durumSecenekleri = altTab === "talep" ? TALEP_DURUM : SIPARIS_DURUM;
++
++  return (
++    <div style={{ display: "grid", gap: 20 }}>
++      {/* Fiş görüntüleme penceresi */}
++      <EvrakPenceresi
++        acik={!!detay} kapat={() => setDetay(null)}
++        baslik={detay ? `${detay.tip === "talep" ? "Talep" : "Sipariş"} Fişi — ${detay.kayit.evrakNo}` : ""}
++        ikon={detay?.tip === "talep" ? FileText : ShoppingCart} genislik={1000}
++        butonlar={<button style={fisAnaBtn} onClick={() => setDetay(null)}><X size={14} /> Kapat</button>}
++      >
++        {detay && (
++          <>
++            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "0 24px" }}>
++              {(detay.tip === "talep"
++                ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
++                   ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
++                   ["Durum", TALEP_DURUM[detay.kayit.durum]?.label], ["Sipariş No", detay.kayit.siparisEvrakNo]]
++                : [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
++                   ["Tedarikçi", detay.kayit.tedarikci], ["Teslim Tarihi", detay.kayit.teslimTarihi], ["Ödeme Şekli", detay.kayit.odemeSekli],
++                   ["Talep No", detay.kayit.talepEvrakNo], ["Durum", SIPARIS_DURUM[detay.kayit.durum]?.label],
++                   ["Genel Toplam", paraTR(detay.kayit.genelToplam || 0)]]
++              ).map(([et, dg]) => (
++                <div key={et} style={fisSatir}>
++                  <span style={{ ...fisEtiket, width: 118 }}>{et}</span>
++                  <span style={{ fontSize: 12.5, color: "#e7e5e0" }}>{dg || "—"}</span>
++                </div>
++              ))}
++            </div>
++            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
++              <div style={{ overflowX: "auto" }}>
++                <table style={{ width: "100%", borderCollapse: "collapse" }}>
++                  <thead><tr>
++                    <th style={{ ...fisGridTh, width: 32, textAlign: "center" }}>#</th>
++                    {detay.tip === "talep"
++                      ? <><th style={fisGridTh}>Cinsi</th><th style={fisGridTh}>Kodu</th><th style={fisGridTh}>İsmi</th><th style={fisGridTh}>Proje</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={{ ...fisGridTh, borderRight: "none" }}>Birim</th></>
++                      : <><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Malzeme</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={fisGridTh}>Birim</th><th style={{ ...fisGridTh, textAlign: "right" }}>Birim Fiyat</th><th style={{ ...fisGridTh, textAlign: "right", borderRight: "none" }}>Tutar</th></>}
++                  </tr></thead>
++                  <tbody>
++                    {(detay.kayit.satirlar || []).map((r, i) => (
++                      <tr key={i}>
++                        <td style={{ ...fisGridTd, textAlign: "center", padding: "6px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{i + 1}</td>
++                        {detay.tip === "talep" ? (
++                          <>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.cinsi}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.kodu || "—"}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.projeKodu || "—"}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, borderRight: "none" }}>{r.birim}</td>
++                          </>
++                        ) : (
++                          <>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.stokKodu || "—"}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.stokAdi}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.birim}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{paraTR(r.birimFiyat)}</td>
++                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf", borderRight: "none" }}>{paraTR(r.satirTutar || 0)}</td>
++                          </>
++                        )}
++                      </tr>
++                    ))}
++                  </tbody>
++                </table>
++              </div>
++            </div>
++          </>
++        )}
++      </EvrakPenceresi>
++
++      <div style={{ display: "flex", gap: 8 }}>
++        {[["talep", "Talep Raporu", talepler.length], ["siparis", "Sipariş Raporu", siparisler.length]].map(([k, ad, sayi]) => (
++          <button key={k} onClick={() => { setAltTab(k); setF((s) => ({ ...s, durum: "" })); }}
++            style={{
++              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
++              padding: "12px 16px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13.5,
++              background: altTab === k ? "#2dd4bf" : "#1b333c", color: altTab === k ? "#142a30" : "#c7cbd1",
++              border: `1px solid ${altTab === k ? "#2dd4bf" : "#2a4b52"}`,
++            }}>
++            {ad} <span style={{ opacity: 0.75 }}>({sayi})</span>
++          </button>
++        ))}
++      </div>
++
++      <div className="card" style={{ padding: 20 }}>
++        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
++          <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
++          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
++            <button className="btn-ghost" onClick={raporYazdir}><Printer size={14} /> Yazdır / PDF</button>
++            <button className="btn-ghost" onClick={altTab === "talep" ? talepDisaAktar : siparisDisaAktar}><Download size={14} /> Excele Aktar</button>
++            <button className="btn-ghost" onClick={temizle}><RefreshCw size={14} /> Temizle</button>
++          </div>
++        </div>
++        <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
++          <button className="btn-ghost" onClick={() => donemSec("gun")}>Bugün</button>
++          <button className="btn-ghost" onClick={() => donemSec("ay")}>Bu Ay</button>
++          <button className="btn-ghost" onClick={() => donemSec("yil")}>Bu Yıl</button>
++          <button className="btn-ghost" onClick={() => donemSec("tumu")}>Tüm Zamanlar</button>
++        </div>
++        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
++          <div style={{ gridColumn: "1 / -1", position: "relative" }}>
++            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
++            <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, malzeme, personel ara…" value={f.arama} onChange={setF2("arama")} />
++          </div>
++          <div><label className="field-label">Başlangıç</label><input className="input" type="date" value={f.baslangic} onChange={setF2("baslangic")} /></div>
++          <div><label className="field-label">Bitiş</label><input className="input" type="date" value={f.bitis} onChange={setF2("bitis")} /></div>
++          <div>
++            <label className="field-label">Durum</label>
++            <select className="input" value={f.durum} onChange={setF2("durum")}>
++              <option value="">Tümü</option>
++              {Object.entries(durumSecenekleri).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
++            </select>
++          </div>
++          {altTab === "talep" ? (
++            <>
++              <div>
++                <label className="field-label">Proje</label>
++                <select className="input" value={f.proje} onChange={setF2("proje")}>
++                  <option value="">Tümü</option>
++                  {projeler.map((p) => <option key={p.id} value={p.kod}>{p.kod} — {p.ad}</option>)}
++                </select>
++              </div>
++              <div>
++                <label className="field-label">Depo</label>
++                <select className="input" value={f.depo} onChange={setF2("depo")}>
++                  <option value="">Tümü</option>
++                  {depolar.map((d) => <option key={d.id} value={d.kod}>{d.kod} — {d.ad}</option>)}
++                </select>
++              </div>
++            </>
++          ) : (
++            <div>
++              <label className="field-label">Tedarikçi</label>
++              <select className="input" value={f.tedarikci} onChange={setF2("tedarikci")}>
++                <option value="">Tümü</option>
++                {cariler.map((c) => <option key={c} value={c}>{c}</option>)}
++              </select>
++            </div>
++          )}
++        </div>
++      </div>
++
++      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
++        {altTab === "talep" ? (
++          <>
++            <Stat label="Talep Fişi" value={talepler.length} highlight />
++            <Stat label="Toplam Kalem" value={talepKalem} />
++            <Stat label="Bekleyen" value={bekleyenTalep} />
++            <Stat label="Siparişe Dönüşen" value={talepler.filter((t) => t.durum === "siparise_donustu").length} />
++          </>
++        ) : (
++          <>
++            <Stat label="Sipariş Fişi" value={siparisler.length} highlight />
++            <Stat label="Toplam Kalem" value={siparisKalem} />
++            <Stat label="Açık Sipariş" value={acikSiparis} />
++            <Stat label="Toplam Tutar" value={paraTR(siparisTutar)} highlight />
++          </>
++        )}
++      </div>
++
++      {altTab === "siparis" && tedarikciOzet.length > 0 && (
++        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
++          <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Tedarikçi Bazlı Özet</div>
++          <div style={{ overflowX: "auto" }}>
++            <table>
++              <thead><tr><th>Tedarikçi</th><th>Sipariş</th><th>Kalem</th><th>Tutar</th></tr></thead>
++              <tbody>
++                {tedarikciOzet.map((o) => (
++                  <tr key={o.tedarikci}>
++                    <td>{o.tedarikci}</td>
++                    <td style={{ fontFamily: "monospace" }}>{o.adet}</td>
++                    <td style={{ fontFamily: "monospace" }}>{o.kalem}</td>
++                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{paraTR(o.tutar)}</td>
++                  </tr>
++                ))}
++              </tbody>
++            </table>
++          </div>
++        </div>
++      )}
++
++      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
++        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
++          {altTab === "talep" ? `Talepler (${talepler.length})` : `Siparişler (${siparisler.length})`}
++        </div>
++        <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
++          <table>
++            {altTab === "talep" ? (
++              <>
++                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Proje</th><th>Depo</th><th>Talep Eden</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
++                <tbody>
++                  {talepler.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
++                  {talepler.map((t) => {
++                    const duzenlendi = (t.guncellemeSayisi || 0) > 0;
++                    return (
++                      <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
++                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
++                          {t.evrakNo}{duzenlendi && <span style={duzenlenmisRozet}>düzenlendi</span>}
++                        </td>
++                        <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
++                        <td style={{ fontSize: 12.5 }}>{t.proje || "—"}</td>
++                        <td style={{ fontSize: 12.5 }}>{t.depo || "—"}</td>
++                        <td style={{ fontSize: 12.5 }}>{t.talepEdenPersonel || "—"}</td>
++                        <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
++                        <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[t.durum]?.renk || "#8b929a", borderColor: TALEP_DURUM[t.durum]?.renk || "#2a4b52" }}>{TALEP_DURUM[t.durum]?.label || "—"}</span></td>
++                        <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.siparisEvrakNo || "—"}</td>
++                        <td><button onClick={() => setDetay({ tip: "talep", kayit: t })} style={duzenleButonu}><Search size={12} /> Görüntüle</button></td>
++                      </tr>
++                    );
++                  })}
++                </tbody>
++              </>
++            ) : (
++              <>
++                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
++                <tbody>
++                  {siparisler.length === 0 && <tr><td colSpan={8} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
++                  {siparisler.map((s) => {
++                    const duzenlendi = (s.guncellemeSayisi || 0) > 0;
++                    return (
++                      <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
++                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
++                          {s.evrakNo}{duzenlendi && <span style={duzenlenmisRozet}>düzenlendi</span>}
++                        </td>
++                        <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
++                        <td style={{ fontSize: 12.5 }}>{s.tedarikci || "—"}</td>
++                        <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
++                        <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
++                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{paraTR(s.genelToplam || 0)}</td>
++                        <td><span className="pill" style={{ background: "transparent", color: SIPARIS_DURUM[s.durum]?.renk || "#8b929a", borderColor: SIPARIS_DURUM[s.durum]?.renk || "#2a4b52" }}>{SIPARIS_DURUM[s.durum]?.label || "—"}</span></td>
++                        <td><button onClick={() => setDetay({ tip: "siparis", kayit: s })} style={duzenleButonu}><Search size={12} /> Görüntüle</button></td>
++                      </tr>
++                    );
++                  })}
++                </tbody>
++              </>
++            )}
++          </table>
++        </div>
++      </div>
++    </div>
++  );
++}
++
+ // ---------- Yardım ----------
+ const YARDIM_ICERIK = [
+   {

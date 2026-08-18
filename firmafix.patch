@@ -1,0 +1,139 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index 6c72728..ad98a7a 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1,5 +1,5 @@
+ import React, { useState, useEffect, useMemo, useRef } from "react";
+-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle } from "lucide-react";
++import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check } from "lucide-react";
+ import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
+ import {
+   collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch, query, where, getDocs, getDoc, increment,
+@@ -281,15 +281,35 @@ const FASON_KALITE = {
+ async function excelDenFasonFirmaOku(dosya) {
+   const rows = await dosyaOku(dosya);
+   if (!rows.length) return [];
+-  let baslangic = 0;
+-  const ilkSatir = (rows[0] || []).map((v) => String(v || "").trim().toLowerCase());
+-  if (ilkSatir[0] && ilkSatir[0].includes("firma")) baslangic = 1;
++  const normalize = (s) => String(s || "").replace(/İ/g, "I").toLowerCase().trim();
++  const ilkSatir = (rows[0] || []).map(normalize);
++  const bul = (...anahtarlar) => ilkSatir.findIndex((h) => anahtarlar.some((a) => h.includes(a)));
++
++  // Başlık satırından gerçek isim sütununu bul (Firma Adı / Ünvan / Cari gibi).
++  // Bazı ERP dışa aktarımlarında A sütunu isim değil "Kod" olabilir — bunu ayrı tutuyoruz.
++  const adSutun = bul("firma ad", "firma", "unvan", "ünvan", "ad soyad", "isim", "cari");
++  const kodSutun = bul("kod");
++  const yetkiliSutun = bul("yetkili");
++  const notSutun = bul("not", "aciklama", "açıklama");
++  const hasHeader = ilkSatir.some((h) =>
++    h.includes("firma") || h.includes("unvan") || h.includes("ünvan") || h.includes("kod") ||
++    h.includes("yetkili") || h.includes("isim") || h.includes("cari")
++  );
++
++  const adIndex = adSutun !== -1 ? adSutun : 0;
++  const kodIndex = kodSutun !== -1 && kodSutun !== adIndex ? kodSutun : -1;
++  const baslangic = hasHeader ? 1 : 0;
++
+   const kayitlar = [];
+   for (let i = baslangic; i < rows.length; i++) {
+     const r = rows[i] || [];
+-    const ad = String(r[0] || "").trim();
++    const ad = String(r[adIndex] || "").trim();
+     if (!ad) continue;
+-    kayitlar.push({ ad, yetkili: String(r[1] || "").trim(), not: String(r[2] || "").trim() });
++    const kod = kodIndex !== -1 ? String(r[kodIndex] || "").trim() : "";
++    const yetkili = yetkiliSutun !== -1 ? String(r[yetkiliSutun] || "").trim() : (hasHeader ? "" : String(r[1] || "").trim());
++    const notHam = notSutun !== -1 ? String(r[notSutun] || "").trim() : (hasHeader ? "" : String(r[2] || "").trim());
++    const not = kod ? [`Kod: ${kod}`, notHam].filter(Boolean).join(" — ") : notHam;
++    kayitlar.push({ ad, yetkili, not });
+   }
+   return kayitlar;
+ }
+@@ -299,7 +319,7 @@ async function excelDenFasonIsOku(dosya, fasonFirmalar) {
+   if (!rows.length) return [];
+   let baslangic = 0;
+   const ilkSatir = (rows[0] || []).map((v) => String(v || "").trim().toLowerCase());
+-  if (ilkSatir[0] && ilkSatir[0].includes("firma")) baslangic = 1;
++  if (ilkSatir.some((h) => h.includes("firma") || h.includes("proje") || h.includes("miktar") || h.includes("ücret") || h.includes("ucret") || h.includes("durum"))) baslangic = 1;
+   const durumMap = { bekliyor: "bekliyor", "üretimde": "uretimde", uretimde: "uretimde", tamamlandı: "tamamlandi", tamamlandi: "tamamlandi" };
+   const kayitlar = [];
+   for (let i = baslangic; i < rows.length; i++) {
+@@ -325,7 +345,7 @@ async function excelDenFasonHareketOku(dosya, fasonFirmalar, fasonIsler) {
+   if (!rows.length) return [];
+   let baslangic = 0;
+   const ilkSatir = (rows[0] || []).map((v) => String(v || "").trim().toLowerCase());
+-  if (ilkSatir[0] && ilkSatir[0].includes("firma")) baslangic = 1;
++  if (ilkSatir.some((h) => h.includes("firma") || h.includes("proje") || h.includes("miktar") || h.includes("birim") || h.includes("tarih"))) baslangic = 1;
+   const kayitlar = [];
+   for (let i = baslangic; i < rows.length; i++) {
+     const r = rows[i] || [];
+@@ -3518,6 +3538,8 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+   const [msg, setMsg] = useState("");
+   const [iceAktariliyor, setIceAktariliyor] = useState(false);
+   const [iceMsg, setIceMsg] = useState("");
++  const [duzenlenenId, setDuzenlenenId] = useState(null);
++  const [duzenleForm, setDuzenleForm] = useState({ ad: "", yetkili: "", not: "" });
+   const dosyaRef = useRef(null);
+ 
+   const ekle = async () => {
+@@ -3530,6 +3552,13 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+     if (!window.confirm("Bu firma silinecek (işleri ve hareketleri silinmez, ama firma bağlantısı kopar). Emin misiniz?")) return;
+     await deleteDoc(doc(db, "fason_firmalar", id));
+   };
++  const duzenlemeyeBasla = (f) => { setDuzenlenenId(f.id); setDuzenleForm({ ad: f.ad || "", yetkili: f.yetkili || "", not: f.not || "" }); };
++  const duzenlemeyiIptalEt = () => setDuzenlenenId(null);
++  const duzenlemeyiKaydet = async (id) => {
++    if (!duzenleForm.ad.trim()) return;
++    await updateDoc(doc(db, "fason_firmalar", id), { ad: duzenleForm.ad.trim(), yetkili: duzenleForm.yetkili.trim(), not: duzenleForm.not.trim() });
++    setDuzenlenenId(null);
++  };
+ 
+   const iceAktar = async (e) => {
+     const dosya = e.target.files[0];
+@@ -3602,15 +3631,36 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+           <table>
+             <thead><tr><th>Firma Adı</th><th>Yetkili</th><th>İş Sayısı</th><th>Bakiye</th><th></th></tr></thead>
+             <tbody>
+-              {filtrelenmis.map((f) => (
+-                <tr key={f.id}>
+-                  <td>{f.ad}</td>
+-                  <td>{f.yetkili || "—"}</td>
+-                  <td style={{ fontFamily: "monospace" }}>{fasonIsler.filter((j) => j.firmaId === f.id).length}</td>
+-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(firmaBakiye(f.id))}</td>
+-                  <td><button onClick={() => sil(f.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+-                </tr>
+-              ))}
++              {filtrelenmis.map((f) => {
++                const duzenleniyor = duzenlenenId === f.id;
++                return (
++                  <tr key={f.id}>
++                    {duzenleniyor ? (
++                      <>
++                        <td><input className="input" style={{ padding: "5px 8px", fontSize: 13 }} value={duzenleForm.ad} onChange={(e) => setDuzenleForm((s) => ({ ...s, ad: e.target.value }))} autoFocus /></td>
++                        <td><input className="input" style={{ padding: "5px 8px", fontSize: 13 }} value={duzenleForm.yetkili} onChange={(e) => setDuzenleForm((s) => ({ ...s, yetkili: e.target.value }))} /></td>
++                        <td style={{ fontFamily: "monospace" }}>{fasonIsler.filter((j) => j.firmaId === f.id).length}</td>
++                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(firmaBakiye(f.id))}</td>
++                        <td style={{ display: "flex", gap: 4 }}>
++                          <button onClick={() => duzenlemeyiKaydet(f.id)} style={{ background: "none", border: "none", color: "#2dd4bf", cursor: "pointer", padding: 4 }}><Check size={14} /></button>
++                          <button onClick={duzenlemeyiIptalEt} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><X size={14} /></button>
++                        </td>
++                      </>
++                    ) : (
++                      <>
++                        <td>{f.ad}</td>
++                        <td>{f.yetkili || "—"}</td>
++                        <td style={{ fontFamily: "monospace" }}>{fasonIsler.filter((j) => j.firmaId === f.id).length}</td>
++                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(firmaBakiye(f.id))}</td>
++                        <td style={{ display: "flex", gap: 4 }}>
++                          <button onClick={() => duzenlemeyeBasla(f)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Pencil size={14} /></button>
++                          <button onClick={() => sil(f.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
++                        </td>
++                      </>
++                    )}
++                  </tr>
++                );
++              })}
+             </tbody>
+           </table>
+         )}

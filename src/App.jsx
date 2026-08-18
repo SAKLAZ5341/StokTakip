@@ -36,7 +36,6 @@ const MENU = [
   {
     id: "depo", label: "Depo Stok", icon: Boxes,
     children: [
-      { id: "depo-kart", label: "Stok Kartı Oluştur" },
       { id: "depo-giris", label: "Depo Giriş" },
       { id: "depo-cikis", label: "Depo Çıkış" },
       { id: "depo-hareketler", label: "Stok Hareketleri" },
@@ -68,6 +67,7 @@ const MENU = [
       { id: "satinalma-ayar", label: "Form Ayarları" },
     ],
   },
+  { id: "stok-kart", label: "Stok Kartları", icon: Boxes },
   {
     id: "cari", label: "Cariler", icon: Building2,
     children: [
@@ -799,6 +799,28 @@ const cariBul = (liste, ad) => {
 };
 const cariKodBul = (liste, ad) => String(cariBul(liste, ad)?.kod || "").trim();
 
+// ---------- Stok kartı yardımcıları ----------
+// Stok kodu + adı tüm programda aynı biçimde görünür (cari mantığının aynısı)
+const stokEtiket = (s) => (s ? [String(s.stokKodu || "").trim(), String(s.stokAdi || "").trim()].filter(Boolean).join(" · ") : "");
+const stokSirala = (liste) => [...(liste || [])].sort((a, b) => {
+  const ka = String(a.stokKodu || "").trim(), kb = String(b.stokKodu || "").trim();
+  if (ka && kb && ka !== kb) return ka.localeCompare(kb, "tr", { numeric: true });
+  if (ka && !kb) return -1;
+  if (!ka && kb) return 1;
+  return String(a.stokAdi || "").localeCompare(String(b.stokAdi || ""), "tr");
+});
+const stokBulKod = (liste, kod) => {
+  const q = String(kod || "").trim().toLowerCase();
+  if (!q) return null;
+  return (liste || []).find((x) => String(x.stokKodu || "").trim().toLowerCase() === q) || null;
+};
+const stokBulAd = (liste, ad) => {
+  const q = String(ad || "").trim().toLowerCase();
+  if (!q) return null;
+  return (liste || []).find((x) => String(x.stokAdi || "").trim().toLowerCase() === q) || null;
+};
+const stokKodBul = (liste, ad) => String(stokBulAd(liste, ad)?.stokKodu || "").trim();
+
 const FASON_DURUM = {
   bekliyor: { label: "Bekliyor", renk: "#e8a33d" },
   uretimde: { label: "Üretimde", renk: "#2dd4bf" },
@@ -1389,6 +1411,7 @@ function Panel({ onCikis, kullanici }) {
     if (tab === "takimlar") return "Takımlar";
     if (tab === "makineler") return "Makineler";
     if (tab === "kullanicilar") return "Kullanıcılar";
+    if (tab === "stok-kart") return "Stok Kartları";
     if (tab === "cari-kart") return "Cari Kartları";
     if (tab === "cari-rapor") return "Cari Raporu";
     if (tab === "satinalma-teklif") return "Teklifler";
@@ -1526,8 +1549,8 @@ function Panel({ onCikis, kullanici }) {
               metalTalepler={metalTalepler}
               fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} fasonHatirlaticilar={fasonHatirlaticilar}
             />}
-            {tab === "stok-kayit" && <KayitEkle teams={teams} machines={machines} records={records} />}
-            {tab === "hammadde-kayit" && <HammaddeTakip hammaddeler={hammaddeler} fasonFirmalar={fasonFirmalar} />}
+            {tab === "stok-kayit" && <KayitEkle teams={teams} machines={machines} records={records} depoStok={depoStok} />}
+            {tab === "hammadde-kayit" && <HammaddeTakip hammaddeler={hammaddeler} fasonFirmalar={fasonFirmalar} depoStok={depoStok} />}
             {tab === "metal-hizli" && <MetalHizliHesap metalMalzemeler={metalMalzemeler} kullanici={kullanici} />}
             {tab === "metal-gecmis" && <MetalGecmisOlcumler metalTalepler={metalTalepler} metalMalzemeler={metalMalzemeler} />}
             {tab === "metal-malzeme" && <MetalMalzemeYonetimi metalMalzemeler={metalMalzemeler} />}
@@ -1536,8 +1559,8 @@ function Panel({ onCikis, kullanici }) {
             {tab === "depo-cikis" && <DepoStokCikis depoStok={depoStok} machines={machines} kullanici={kullanici} depoHareketler={depoHareketler} />}
             {tab === "fason-ozet" && <FasonOzet fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} fasonHatirlaticilar={fasonHatirlaticilar} />}
             {tab === "fason-firmalar" && <FasonFirmalar fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} />}
-            {tab === "fason-isler" && <FasonIsler fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} />}
-            {tab === "fason-hareketler" && <FasonHareketler fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} />}
+            {tab === "fason-isler" && <FasonIsler fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} depoStok={depoStok} kullanici={kullanici} />}
+            {tab === "fason-hareketler" && <FasonHareketler fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} depoStok={depoStok} />}
             {tab === "fason-hatirlaticilar" && <FasonHatirlaticilar fasonIsler={fasonIsler} fasonHatirlaticilar={fasonHatirlaticilar} />}
             {tab === "depo-hareketler" && <DepoHareketleri depoHareketler={depoHareketler} />}
             {tab === "stok-raporu" && <UretimRaporu teams={teams} machines={machines} records={records} />}
@@ -1597,6 +1620,7 @@ function Panel({ onCikis, kullanici }) {
               fasonFirmalar={fasonFirmalar} formAyarlari={formAyarlari}
             />}
             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
+            {tab === "stok-kart" && <DepoStokKart depoStok={depoStok} kullanici={kullanici} />}
             {tab === "cari-kart" && <CariKartlari fasonFirmalar={fasonFirmalar} kullanici={kullanici} />}
             {tab === "cari-rapor" && <CariRaporu
               fasonFirmalar={fasonFirmalar} satinalmaSiparisler={satinalmaSiparisler}
@@ -1750,9 +1774,9 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
 }
 
 // ---------- Kayıt Ekle ----------
-function KayitEkle({ teams, machines, records }) {
+function KayitEkle({ teams, machines, records, depoStok }) {
   const [fisAcik, setFisAcik] = useState(false);
-  const [form, setForm] = useState({ tarih: todayISO(), takim: "", magaza: "", makine: "", urun: "", adet: "" });
+  const [form, setForm] = useState({ tarih: todayISO(), takim: "", magaza: "", makine: "", stokKodu: "", urun: "", adet: "" });
   const [msg, setMsg] = useState("");
   const [arama, setArama] = useState("");
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
@@ -1777,7 +1801,7 @@ function KayitEkle({ teams, machines, records }) {
     setMsg("Kayıt eklendi.");
     setTimeout(() => { setFisAcik(false); setMsg(""); }, 1100);
   };
-  const fisiTemizle = () => { setForm({ tarih: todayISO(), takim: "", magaza: "", makine: "", urun: "", adet: "" }); setMsg(""); };
+  const fisiTemizle = () => { setForm({ tarih: todayISO(), takim: "", magaza: "", makine: "", stokKodu: "", urun: "", adet: "" }); setMsg(""); };
   const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
 
   const sil = async (id) => { await deleteDoc(doc(db, "records", id)); };
@@ -1886,6 +1910,16 @@ function KayitEkle({ teams, machines, records }) {
               </select>
             </div>
             <div style={fisSatir}><span style={fisEtiket}>Mağaza</span><input style={fisInput} placeholder="Mağaza / müşteri adı" value={form.magaza} onChange={set("magaza")} /></div>
+            <div style={fisSatir}>
+              <span style={fisEtiket}>Stok Kodu</span>
+              <select style={fisInput} value={form.stokKodu} onChange={(e) => {
+                const st = stokBulKod(depoStok, e.target.value);
+                setForm((x) => ({ ...x, stokKodu: e.target.value, urun: st ? st.stokAdi : x.urun }));
+              }}>
+                <option value="">— Stok kartı seç (opsiyonel) —</option>
+                {stokSirala(depoStok).map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+              </select>
+            </div>
             <div style={fisSatir}><span style={fisEtiket}>Ürün / Model</span><input style={fisInput} placeholder="Opsiyonel" value={form.urun} onChange={set("urun")} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Adet</span><input style={fisInput} type="number" min="0" placeholder="0" value={form.adet} onChange={set("adet")} /></div>
           </div>
@@ -2979,10 +3013,10 @@ function SiparisRaporu({ hammaddeler }) {
 // ---------- Hammadde Takip ----------
 const DURUM_SECENEKLERI = ["Sipariş Verildi", "Yolda", "Depoda", "Kullanıldı"];
 
-function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
+function HammaddeTakip({ hammaddeler, fasonFirmalar, depoStok }) {
   const [gorunum, setGorunum] = useState("acik"); // "acik" | "tamamlanan"
   const [fisAcik, setFisAcik] = useState(false);
-  const [form, setForm] = useState({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
+  const [form, setForm] = useState({ cari: "", stokKodu: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
   const [msg, setMsg] = useState("");
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
   useEffect(() => {
@@ -3005,11 +3039,11 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
       return;
     }
     await addDoc(collection(db, "hammadde"), { ...form, miktar: Number(form.miktar) || 0, tamamlandi: gorunum === "tamamlanan", olusturma: Date.now() });
-    setForm({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
+    setForm({ cari: "", stokKodu: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
     setMsg(`Kayıt ${gorunum === "tamamlanan" ? "Tamamlanan" : "Açık Siparişler"} listesine eklendi.`);
     setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
   };
-  const fisiTemizle = () => { setForm({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" }); setMsg(""); };
+  const fisiTemizle = () => { setForm({ cari: "", stokKodu: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" }); setMsg(""); };
   const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
 
   const sil = async (id) => { await deleteDoc(doc(db, "hammadde", id)); };
@@ -3048,7 +3082,7 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
   const disaAktar = () => {
     excelIndir(
       disaAktarKapsami(filtrelenmis, secililer).map((h) => ({
-        "CARİ İSMİ": h.cari, "PROJE KODU": h.projeKodu, "PROJE ADI": h.projeAdi,
+        "CARİ İSMİ": h.cari, "STOK KODU": h.stokKodu || "", "PROJE KODU": h.projeKodu, "PROJE ADI": h.projeAdi,
         "KALİTE": h.kalite, "AÇIKLAMA 1": h.aciklama1, "AÇIKLAMA 2": h.aciklama2, "MİKTAR (KG)": h.miktar || 0, "DURUMU": h.durumu,
       })),
       gorunum === "acik" ? "hammadde-acik-siparisler.xlsx" : "hammadde-tamamlanan.xlsx",
@@ -3187,6 +3221,16 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
                   {cariKodBul(fasonFirmalar, form.cari) || "kod yok"}
                 </span>
               </div>
+              <div style={fisSatir}>
+                <span style={fisEtiket}>Stok Kodu</span>
+                <select style={fisInput} value={form.stokKodu} onChange={(e) => {
+                  const st = stokBulKod(depoStok, e.target.value);
+                  setForm((x) => ({ ...x, stokKodu: e.target.value, aciklama1: st && !x.aciklama1 ? st.stokAdi : x.aciklama1 }));
+                }}>
+                  <option value="">— Stok kartı seç (opsiyonel) —</option>
+                  {stokSirala(depoStok).map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+                </select>
+              </div>
               <div style={fisSatir}><span style={fisEtiket}>Proje Kodu</span><input style={fisInput} placeholder="Örn: 2026-092" value={form.projeKodu} onChange={set("projeKodu")} /></div>
               <div style={fisSatir}><span style={fisEtiket}>Proje Adı</span><input style={fisInput} placeholder="Örn: ENDERUS" value={form.projeAdi} onChange={set("projeAdi")} /></div>
               <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Kalite</span><input style={fisInput} placeholder="Örn: 4140 KALİTE" value={form.kalite} onChange={set("kalite")} /></div>
@@ -3276,7 +3320,7 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
               {filtrelenmis.map((h) => (
                 <tr key={h.id}>
                   <td><input type="checkbox" checked={secililer.has(h.id)} onChange={() => birSecToggle(h.id)} /></td>
-                  <td>{h.cari}</td>
+                  <td>{h.stokKodu && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6, fontSize: 12 }}>{h.stokKodu}</span>}{h.cari}</td>
                   <td style={{ fontFamily: "monospace" }}>{h.projeKodu || "—"}</td>
                   <td>{h.projeAdi || "—"}</td>
                   <td>{h.kalite || "—"}</td>
@@ -4279,7 +4323,7 @@ function HammaddeSilme({ hammaddeler }) {
               {filtrelenmis.map((h) => (
                 <tr key={h.id}>
                   <td><input type="checkbox" checked={secililer.has(h.id)} onChange={() => birSecToggle(h.id)} /></td>
-                  <td>{h.cari}</td>
+                  <td>{h.stokKodu && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6, fontSize: 12 }}>{h.stokKodu}</span>}{h.cari}</td>
                   <td style={{ fontFamily: "monospace" }}>{h.projeKodu || "—"}</td>
                   <td>{h.kalite || "—"}</td>
                   <td>{h.aciklama2 || "—"}</td>
@@ -4689,11 +4733,15 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
 
 // ---------- Fason İşler ----------
 const bosFasonSatiri = () => ({ key: Math.random().toString(36).slice(2), projeAdi: "", miktar: "", ucret: "", resimRef: "", aciklama: "" });
+const bosHamSatiri = () => ({ key: Math.random().toString(36).slice(2), stokId: "", stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", aciklama: "", mevcut: null });
 
-function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kullanici }) {
   const [fisAcik, setFisAcik] = useState(false);
   const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), firmaId: "", projeKodu: "" });
   const [satirlar, setSatirlar] = useState([bosFasonSatiri()]);
+  const [hamSatirlar, setHamSatirlar] = useState([bosHamSatiri()]);
+  const [depodanDus, setDepodanDus] = useState(true);
+  const [kaydediliyor, setKaydediliyor] = useState(false);
   const [msg, setMsg] = useState("");
   const [f, setF] = useState({ arama: "", firmaId: "", durum: "" });
   const [genisletilen, setGenisletilen] = useState(new Set());
@@ -4707,6 +4755,20 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   const satirGuncelle = (key, alan, deger) => setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, [alan]: deger } : r)));
   const satirEkle = () => setSatirlar((s) => [...s, bosFasonSatiri()]);
   const satirSil = (key) => setSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+
+  // Firmaya gönderilen hammadde satırları — stok kartından seçilir
+  const stoklar = useMemo(() => stokSirala(depoStok), [depoStok]);
+  const hamGuncelle = (key, alan, deger) => setHamSatirlar((s) => s.map((r) => (r.key === key ? { ...r, [alan]: deger } : r)));
+  const hamStokSec = (key, stokKodu) => {
+    const st = stokBulKod(depoStok, stokKodu);
+    setHamSatirlar((s) => s.map((r) => (r.key === key
+      ? { ...r, stokKodu, stokAdi: st ? st.stokAdi : r.stokAdi, birim: st?.birim || r.birim, mevcut: st ? Number(st.miktar) || 0 : null, stokId: st?.id || "" }
+      : r)));
+  };
+  const hamEkle = () => setHamSatirlar((s) => [...s, bosHamSatiri()]);
+  const hamSil = (key) => setHamSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+  const gecerliHam = hamSatirlar.filter((r) => String(r.stokAdi || "").trim() && sayiCevir(r.miktar) > 0);
+  const hamToplam = gecerliHam.reduce((t, r) => t + sayiCevir(r.miktar) * sayiCevir(r.birimFiyat), 0);
   const araToplam = satirlar.reduce((t, r) => t + (Number(String(r.ucret || "").replace(",", ".")) || 0), 0);
 
   // Evrak numarası: mevcut fişlerin en büyük numarasının bir fazlası
@@ -4721,6 +4783,8 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   const fisiTemizle = () => {
     setBaslik({ evrakNo: yeniEvrakNo(), belgeNo: "", tarih: todayISO(), firmaId: "", projeKodu: "" });
     setSatirlar([bosFasonSatiri()]);
+    setHamSatirlar([bosHamSatiri()]);
+    setDepodanDus(true);
     setMsg("");
   };
   const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
@@ -4729,19 +4793,67 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     if (!baslik.firmaId) { setMsg("Firma zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
     const gecerliSatirlar = satirlar.filter((r) => r.projeAdi.trim());
     if (gecerliSatirlar.length === 0) { setMsg("En az bir satıra Proje / Parça Adı girin."); setTimeout(() => setMsg(""), 3000); return; }
-    const batch = writeBatch(db);
-    gecerliSatirlar.forEach((r) => {
-      const ref = doc(collection(db, "fason_isler"));
-      batch.set(ref, {
-        evrakNo: baslik.evrakNo, belgeNo: baslik.belgeNo,
-        firmaId: baslik.firmaId, projeKodu: baslik.projeKodu, projeAdi: r.projeAdi.trim(),
-        miktar: r.miktar, ucret: r.ucret, resimRef: r.resimRef, aciklama: r.aciklama,
-        durum: "bekliyor", olusturmaTarihi: baslik.tarih || todayISO(),
+    // Depodan düşülecekse önce stok yeterliliğini kontrol et
+    if (depodanDus) {
+      const eksik = gecerliHam.filter((r) => r.stokId && sayiCevir(r.miktar) > (Number(stokBulKod(depoStok, r.stokKodu)?.miktar) || 0));
+      if (eksik.length && !window.confirm(
+        `Şu kalemlerde depo stoğu yetersiz:\n\n${eksik.map((r) => `• ${r.stokKodu || ""} ${r.stokAdi}`).join("\n")}\n\nStok eksiye düşecek. Devam edilsin mi?`
+      )) return;
+    }
+    setKaydediliyor(true);
+    try {
+      const firma = fasonFirmalar.find((x) => x.id === baslik.firmaId);
+      const batch = writeBatch(db);
+      const isRefler = [];
+      gecerliSatirlar.forEach((r) => {
+        const ref = doc(collection(db, "fason_isler"));
+        isRefler.push(ref);
+        batch.set(ref, {
+          evrakNo: baslik.evrakNo, belgeNo: baslik.belgeNo,
+          firmaId: baslik.firmaId, projeKodu: baslik.projeKodu, projeAdi: r.projeAdi.trim(),
+          miktar: r.miktar, ucret: r.ucret, resimRef: r.resimRef, aciklama: r.aciklama,
+          durum: "bekliyor", olusturmaTarihi: baslik.tarih || todayISO(),
+        });
       });
-    });
-    await batch.commit();
-    setMsg(`${gecerliSatirlar.length} satır kaydedildi.`);
-    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+      // Firmaya gönderilen hammadde: fişin ilk işine bağlanır, proje kodu ile birlikte tutulur
+      const anaIsRef = isRefler[0];
+      gecerliHam.forEach((r) => {
+        const mik = sayiCevir(r.miktar);
+        const hRef = doc(collection(db, "fason_hareketler"));
+        batch.set(hRef, {
+          isId: anaIsRef.id, tip: "giden",
+          stokKodu: r.stokKodu || "", urunAdi: r.stokAdi.trim(),
+          malzemeCinsi: "", kalite: "", aciklama: r.aciklama || "",
+          miktar: mik, birim: r.birim || "Adet", birimFiyat: sayiCevir(r.birimFiyat),
+          projeKodu: baslik.projeKodu || "", evrakNo: baslik.evrakNo || "",
+          tarih: baslik.tarih || todayISO(), not: "",
+          olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
+        });
+        // Depo stoğundan düş + depo hareketi oluştur
+        if (depodanDus && r.stokId) {
+          const st = stokBulKod(depoStok, r.stokKodu);
+          const onceki = Number(st?.miktar) || 0;
+          batch.update(doc(db, "depo_stok", r.stokId), { miktar: increment(-mik), guncellemeTarihi: Date.now() });
+          const dRef = doc(collection(db, "depo_hareketler"));
+          batch.set(dRef, {
+            stokKodu: r.stokKodu || "", stokAdi: r.stokAdi.trim(), tip: "cikis", miktar: mik,
+            oncekiMiktar: onceki, sonrakiMiktar: onceki - mik, birim: r.birim || "Adet",
+            hedefMakine: `Fason: ${firma ? cariEtiket(firma) : ""}`.trim(),
+            aciklama: [baslik.evrakNo, baslik.projeKodu, r.aciklama].filter(Boolean).join(" · "),
+            kullanici: kullanici?.email || "—", tarih: new Date(baslik.tarih || todayISO()).getTime() || Date.now(),
+          });
+        }
+      });
+      await batch.commit();
+      setMsg(
+        `${gecerliSatirlar.length} iş satırı kaydedildi` +
+        (gecerliHam.length ? `, ${gecerliHam.length} hammadde kalemi firmaya gönderildi${depodanDus ? " ve depodan düşüldü" : ""}` : "") + "."
+      );
+      setTimeout(() => { setFisAcik(false); setMsg(""); }, 1600);
+    } catch (err) {
+      if (!err?.yetkiHatasi) { setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata")); setTimeout(() => setMsg(""), 5000); }
+    }
+    setKaydediliyor(false);
   };
   const sil = async (id) => {
     if (!window.confirm("Bu iş silinecek. Bağlı hareketler silinmez ama bağlantısız kalır. Emin misiniz?")) return;
@@ -4833,9 +4945,10 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
           <>
             {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
             <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
+            <button style={fisAltBtn} onClick={hamEkle}><Plus size={14} /> Hammadde Ekle</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
             <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
-            <button style={fisAnaBtn} onClick={kaydet}><Save size={14} /> Kaydet</button>
+            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
           </>
         }
       >
@@ -4920,6 +5033,73 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
               </tfoot>
             </table>
           </div>
+        </div>
+
+        {/* --- Firmaya gönderilen hammadde --- */}
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden", marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 13px", background: "#16232a", borderBottom: "1px solid #2a4b52", flexWrap: "wrap" }}>
+            <span style={{ fontWeight: 700, fontSize: 12.5, flex: 1 }}>Firmaya Gönderilen Hammadde</span>
+            <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#c7cbd1", cursor: "pointer" }}>
+              <input type="checkbox" checked={depodanDus} onChange={(e) => setDepodanDus(e.target.checked)} />
+              Depo stoğundan düş
+            </label>
+            <span style={{ fontSize: 11.5, color: "#6b7178" }}>Boş bırakabilirsin — sonradan Hareketler ekranından da girebilirsin.</span>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ ...fisGridTh, width: 32 }}>#</th>
+                <th style={{ ...fisGridTh, width: 190 }}>Stok Kodu</th>
+                <th style={fisGridTh}>Stok Adı</th>
+                <th style={{ ...fisGridTh, width: 96 }}>Miktar</th>
+                <th style={{ ...fisGridTh, width: 78 }}>Birim</th>
+                <th style={{ ...fisGridTh, width: 104 }}>Birim Fiyat</th>
+                <th style={{ ...fisGridTh, width: 108 }}>Tutar</th>
+                <th style={{ ...fisGridTh, width: 92 }}>Depoda</th>
+                <th style={{ ...fisGridTh, width: 32 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {hamSatirlar.map((r, i) => {
+                const tutar = sayiCevir(r.miktar) * sayiCevir(r.birimFiyat);
+                const yetersiz = r.mevcut != null && sayiCevir(r.miktar) > r.mevcut;
+                return (
+                  <tr key={r.key}>
+                    <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                    <td style={fisGridTd}>
+                      <select style={{ ...fisHucreInput, cursor: "pointer" }} value={r.stokKodu} onChange={(e) => hamStokSec(r.key, e.target.value)}>
+                        <option value="">— Stok kartı seç —</option>
+                        {stoklar.map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+                      </select>
+                    </td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => hamGuncelle(r.key, "stokAdi", e.target.value)} placeholder="Stok kartında yoksa elle yaz" /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", color: yetersiz ? "#e07a6b" : undefined }} value={r.miktar} onChange={(e) => hamGuncelle(r.key, "miktar", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => hamGuncelle(r.key, "birim", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={r.birimFiyat} onChange={(e) => hamGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
+                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf" }}>{tutar ? sayiTR(tutar) : "—"}</td>
+                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: yetersiz ? "#e07a6b" : "#8b929a", fontSize: 11.5 }}>
+                      {r.mevcut == null ? "—" : `${r.mevcut} ${r.birim || ""}`}
+                    </td>
+                    <td style={{ ...fisGridTd, textAlign: "center" }}>
+                      <button onClick={() => hamSil(r.key)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 2 }}><X size={13} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr>
+                <td colSpan={9} style={{ padding: "7px 10px", background: "#16232a" }}>
+                  <button onClick={hamEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Hammadde Satırı Ekle</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={9} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  Gönderilen Hammadde Toplamı: <span style={{ fontFamily: "monospace", color: "#e8a33d", marginLeft: 6 }}>{tutarTL(hamToplam)}</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </EvrakPenceresi>
 
@@ -5068,9 +5248,9 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
 }
 
 // ---------- Fason Hareketler ----------
-function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok }) {
   const [fisAcik, setFisAcik] = useState(false);
-  const [form, setForm] = useState({ isId: "", tip: "giden", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" });
+  const [form, setForm] = useState({ isId: "", tip: "giden", stokKodu: "", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" });
   const [msg, setMsg] = useState("");
   const [f, setF] = useState({ arama: "", tip: "", firmaId: "" });
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
@@ -5088,11 +5268,11 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
   const ekle = async () => {
     if (!form.isId || !form.urunAdi.trim() || !form.miktar) { setMsg("İş, ürün/malzeme adı ve miktar zorunlu."); setTimeout(() => setMsg(""), 2500); return; }
     await addDoc(collection(db, "fason_hareketler"), { ...form, miktar: Number(form.miktar) || 0, birimFiyat: Number(form.birimFiyat) || 0 });
-    setForm({ isId: form.isId, tip: form.tip, urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: form.tarih, not: "" });
+    setForm({ isId: form.isId, tip: form.tip, stokKodu: "", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: form.tarih, not: "" });
     setMsg("Hareket kaydedildi.");
     setTimeout(() => { setFisAcik(false); setMsg(""); }, 1100);
   };
-  const fisiTemizle = () => { setForm({ isId: "", tip: "giden", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" }); setMsg(""); };
+  const fisiTemizle = () => { setForm({ isId: "", tip: "giden", stokKodu: "", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" }); setMsg(""); };
   const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
   const sil = async (id) => { await deleteDoc(doc(db, "fason_hareketler", id)); };
 
@@ -5113,7 +5293,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
       const firma = j ? fasonFirmalar.find((f) => f.id === j.firmaId) : null;
       return {
         "Cari Kod": firma?.kod || "", "Firma Adı": firma?.ad || "", "Proje Kodu": j?.projeKodu || "", "Proje Adı": j?.projeAdi || "",
-        "Tip": m.tip === "giden" ? "Giden (Hammadde)" : "Gelen (Ürün/Fason)", "Ürün / Malzeme Adı": m.urunAdi,
+        "Tip": m.tip === "giden" ? "Giden (Hammadde)" : "Gelen (Ürün/Fason)", "Stok Kodu": m.stokKodu || "", "Ürün / Malzeme Adı": m.urunAdi,
         "Malzeme Cinsi": m.malzemeCinsi, "Kalite": m.kalite, "Açıklama": m.aciklama,
         "Miktar": m.miktar, "Birim": m.birim, "Birim Fiyat": m.birimFiyat,
         "Tutar": (Number(m.miktar) || 0) * (Number(m.birimFiyat) || 0), "Tarih": m.tarih, "Not": m.not,
@@ -5180,6 +5360,16 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
 
           <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "0 26px" }}>
             <div>
+              <div style={fisSatir}>
+                <span style={fisEtiket}>Stok Kodu</span>
+                <select style={fisInput} value={form.stokKodu} onChange={(e) => {
+                  const st = stokBulKod(depoStok, e.target.value);
+                  setForm((x) => ({ ...x, stokKodu: e.target.value, urunAdi: st ? st.stokAdi : x.urunAdi, birim: st?.birim || x.birim }));
+                }}>
+                  <option value="">— Stok kartı seç (opsiyonel) —</option>
+                  {stokSirala(depoStok).map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+                </select>
+              </div>
               <div style={fisSatir}><span style={fisEtiket}>{form.tip === "giden" ? "Malzeme İsmi" : "Ürün Adı"}</span><input style={fisInput} value={form.urunAdi} onChange={(e) => setForm((s) => ({ ...s, urunAdi: e.target.value }))} /></div>
               {form.tip === "giden" && (
                 <>
@@ -5239,7 +5429,10 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                   <tr key={m.id}>
                     <td style={{ fontFamily: "monospace" }}>{m.tarih}</td>
                     <td>{m.tip === "giden" ? <span className="pill">↑ Giden</span> : <span className="pill" style={{ background: "#113330", color: "#4b8f5e", borderColor: "#1f4d47" }}>↓ Gelen</span>}</td>
-                    <td>{m.urunAdi}{m.kalite ? ` · ${m.kalite}` : ""}</td>
+                    <td>
+                      {m.stokKodu && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6, fontSize: 12 }}>{m.stokKodu}</span>}
+                      {m.urunAdi}{m.kalite ? ` · ${m.kalite}` : ""}
+                    </td>
                     <td style={{ fontSize: 12 }}>{isLabel(m.isId)}</td>
                     <td style={{ fontFamily: "monospace" }}>{m.miktar} {m.birim}</td>
                     <td style={{ fontFamily: "monospace", fontWeight: 700, color: m.tip === "giden" ? "#e8a33d" : "#4b8f5e" }}>{paraTR(tutar)}</td>

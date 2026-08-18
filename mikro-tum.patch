@@ -1,0 +1,1277 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index 91dad0c..407933d 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1114,6 +1114,7 @@ function AnaSayfa({ kullanici, git, kullanicilar, teams, machines, records, hamm
+ 
+ // ---------- Kayıt Ekle ----------
+ function KayitEkle({ teams, machines, records }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ tarih: todayISO(), takim: "", magaza: "", makine: "", urun: "", adet: "" });
+   const [msg, setMsg] = useState("");
+   const [arama, setArama] = useState("");
+@@ -1137,8 +1138,10 @@ function KayitEkle({ teams, machines, records }) {
+     await addDoc(collection(db, "records"), { ...form, adet: Number(form.adet), olusturma: Date.now() });
+     setForm((f) => ({ tarih: f.tarih, takim: "", magaza: "", makine: "", urun: "", adet: "" }));
+     setMsg("Kayıt eklendi.");
+-    setTimeout(() => setMsg(""), 1800);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1100);
+   };
++  const fisiTemizle = () => { setForm({ tarih: todayISO(), takim: "", magaza: "", makine: "", urun: "", adet: "" }); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+ 
+   const sil = async (id) => { await deleteDoc(doc(db, "records", id)); };
+ 
+@@ -1214,35 +1217,42 @@ function KayitEkle({ teams, machines, records }) {
+             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
+           </div>
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Tarih</label><input className="input" type="date" value={form.tarih} onChange={set("tarih")} /></div>
+-            <div>
+-              <label className="field-label">Takım</label>
+-              <select className="input" value={form.takim} onChange={set("takim")}>
++        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Çıkış Fişi Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Günlük Üretim Çıkış Fişi" ikon={ClipboardList} genislik={720}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={submit}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={set("tarih")} /></div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Takım</span>
++              <select style={fisInput} value={form.takim} onChange={set("takim")}>
+                 <option value="">Seçiniz</option>
+                 {teams.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
+               </select>
+             </div>
+-            <div><label className="field-label">Mağaza</label><input className="input" placeholder="Mağaza / müşteri adı" value={form.magaza} onChange={set("magaza")} /></div>
+-            <div>
+-              <label className="field-label">Makine</label>
+-              <select className="input" value={form.makine} onChange={set("makine")}>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Makine</span>
++              <select style={fisInput} value={form.makine} onChange={set("makine")}>
+                 <option value="">Seçiniz</option>
+                 {machines.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+               </select>
+             </div>
+-            <div><label className="field-label">Ürün / Model</label><input className="input" placeholder="Opsiyonel" value={form.urun} onChange={set("urun")} /></div>
+-            <div><label className="field-label">Adet</label><input className="input" type="number" min="0" placeholder="0" value={form.adet} onChange={set("adet")} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Mağaza</span><input style={fisInput} placeholder="Mağaza / müşteri adı" value={form.magaza} onChange={set("magaza")} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Ürün / Model</span><input style={fisInput} placeholder="Opsiyonel" value={form.urun} onChange={set("urun")} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Adet</span><input style={fisInput} type="number" min="0" placeholder="0" value={form.adet} onChange={set("adet")} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={submit} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <Plus size={16} /> Kaydı Ekle
+-          </button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+-        </div>
++        </EvrakPenceresi>
+         {iceMsg && (
+           <div style={{ marginTop: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+         )}
+@@ -2162,6 +2172,7 @@ const DURUM_SECENEKLERI = ["Sipariş Verildi", "Yolda", "Depoda", "Kullanıldı"
+ 
+ function HammaddeTakip({ hammaddeler }) {
+   const [gorunum, setGorunum] = useState("acik"); // "acik" | "tamamlanan"
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
+   const [msg, setMsg] = useState("");
+   const [iceAktariliyor, setIceAktariliyor] = useState(false);
+@@ -2186,9 +2197,11 @@ function HammaddeTakip({ hammaddeler }) {
+     }
+     await addDoc(collection(db, "hammadde"), { ...form, miktar: Number(form.miktar) || 0, tamamlandi: gorunum === "tamamlanan", olusturma: Date.now() });
+     setForm({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" });
+-    setMsg(`Hammadde kaydı ${gorunum === "tamamlanan" ? "Tamamlanan" : "Açık Siparişler"} listesine eklendi.`);
+-    setTimeout(() => setMsg(""), 1800);
++    setMsg(`Kayıt ${gorunum === "tamamlanan" ? "Tamamlanan" : "Açık Siparişler"} listesine eklendi.`);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+   };
++  const fisiTemizle = () => { setForm({ cari: "", projeKodu: "", projeAdi: "", kalite: "", aciklama1: "", aciklama2: "", miktar: "", durumu: "" }); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+ 
+   const sil = async (id) => { await deleteDoc(doc(db, "hammadde", id)); };
+   const durumDegistir = async (id, deger) => { await updateDoc(doc(db, "hammadde", id), { tamamlandi: deger }); };
+@@ -2335,33 +2348,45 @@ function HammaddeTakip({ hammaddeler }) {
+             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
+           </div>
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div style={{ gridColumn: "span 2" }}>
+-              <label className="field-label">Cari İsmi</label>
+-              <input className="input" list="cari-list" placeholder="Firma / tedarikçi adı" value={form.cari} onChange={set("cari")} />
+-              <datalist id="cari-list">{cariler.map((c) => <option key={c} value={c} />)}</datalist>
++        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Sipariş Fişi Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik={`Hammadde Sipariş Fişi — ${gorunum === "tamamlanan" ? "Tamamlanan" : "Açık Sipariş"}`}
++          ikon={Boxes} genislik={880}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={submit}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "0 26px" }}>
++            <div>
++              <div style={fisSatir}>
++                <span style={fisEtiket}>Cari İsmi</span>
++                <input style={fisInput} list="cari-list" placeholder="Firma / tedarikçi adı" value={form.cari} onChange={set("cari")} />
++                <datalist id="cari-list">{cariler.map((c) => <option key={c} value={c} />)}</datalist>
++              </div>
++              <div style={fisSatir}><span style={fisEtiket}>Proje Kodu</span><input style={fisInput} placeholder="Örn: 2026-092" value={form.projeKodu} onChange={set("projeKodu")} /></div>
++              <div style={fisSatir}><span style={fisEtiket}>Proje Adı</span><input style={fisInput} placeholder="Örn: ENDERUS" value={form.projeAdi} onChange={set("projeAdi")} /></div>
++              <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Kalite</span><input style={fisInput} placeholder="Örn: 4140 KALİTE" value={form.kalite} onChange={set("kalite")} /></div>
+             </div>
+-            <div><label className="field-label">Proje Kodu</label><input className="input" placeholder="Örn: 2026-092" value={form.projeKodu} onChange={set("projeKodu")} /></div>
+-            <div><label className="field-label">Proje Adı</label><input className="input" placeholder="Örn: ENDERUS" value={form.projeAdi} onChange={set("projeAdi")} /></div>
+-            <div><label className="field-label">Kalite</label><input className="input" placeholder="Örn: 4140 KALİTE" value={form.kalite} onChange={set("kalite")} /></div>
+-            <div><label className="field-label">Miktar (Kg)</label><input className="input" type="number" min="0" step="0.01" placeholder="0" value={form.miktar} onChange={set("miktar")} /></div>
+             <div>
+-              <label className="field-label">Durumu</label>
+-              <input className="input" list="durum-list" placeholder="Seç veya yaz" value={form.durumu} onChange={set("durumu")} />
+-              <datalist id="durum-list">{DURUM_SECENEKLERI.map((d) => <option key={d} value={d} />)}</datalist>
++              <div style={fisSatir}><span style={fisEtiket}>Miktar (Kg)</span><input style={fisInput} type="number" min="0" step="0.01" placeholder="0" value={form.miktar} onChange={set("miktar")} /></div>
++              <div style={fisSatir}>
++                <span style={fisEtiket}>Durumu</span>
++                <input style={fisInput} list="durum-list" placeholder="Seç veya yaz" value={form.durumu} onChange={set("durumu")} />
++                <datalist id="durum-list">{DURUM_SECENEKLERI.map((d) => <option key={d} value={d} />)}</datalist>
++              </div>
++              <div style={fisSatir}><span style={fisEtiket}>Açıklama 1 (Ölçü)</span><input style={fisInput} placeholder="Örn: Ø30X375 1 ADET" value={form.aciklama1} onChange={set("aciklama1")} /></div>
++              <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Açıklama 2 (Parça)</span><input style={fisInput} placeholder="Parça kodu / adı" value={form.aciklama2} onChange={set("aciklama2")} /></div>
+             </div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Açıklama 1 (Ölçü / Adet)</label><input className="input" placeholder="Örn: Ø30X375 1 ADET 10 KALAY" value={form.aciklama1} onChange={set("aciklama1")} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Açıklama 2 (Parça)</label><input className="input" placeholder="Parça kodu / adı" value={form.aciklama2} onChange={set("aciklama2")} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={submit} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <Plus size={16} /> {gorunum === "tamamlanan" ? "Tamamlanan Olarak Ekle" : "Açık Sipariş Olarak Ekle"}
+-          </button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+-        </div>
++        </EvrakPenceresi>
+         {iceMsg && (
+           <div style={{ marginTop: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+         )}
+@@ -2463,6 +2488,7 @@ function HammaddeTakip({ hammaddeler }) {
+ 
+ // ---------- Malzeme Tanımları ----------
+ function MetalMalzemeYonetimi({ metalMalzemeler }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [ad, setAd] = useState("");
+   const [yogunluk, setYogunluk] = useState("");
+   const [msg, setMsg] = useState("");
+@@ -2480,7 +2506,11 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
+     }
+     await addDoc(collection(db, "metal_malzemeler"), { ad: ad.trim(), yogunluk: Number(yogunluk) });
+     setAd(""); setYogunluk("");
++    setMsg("Malzeme kaydedildi.");
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1000);
+   };
++  const fisiTemizle = () => { setAd(""); setYogunluk(""); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+ 
+   const sil = async (id) => { await deleteDoc(doc(db, "metal_malzemeler", id)); };
+ 
+@@ -2495,23 +2525,30 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
+   return (
+     <div style={{ display: "grid", gap: 20 }}>
+       <div className="card" style={{ padding: 20 }}>
+-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Yeni Malzeme Ekle</div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Malzeme Adı</label><input className="input" placeholder="Örn: Pirinç" value={ad} onChange={(e) => setAd(e.target.value)} /></div>
+-            <div><label className="field-label">Yoğunluk (g/cm³)</label><input className="input" type="number" step="0.001" placeholder="Örn: 8.40" value={yogunluk} onChange={(e) => setYogunluk(e.target.value)} /></div>
+-          </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={ekle} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <Plus size={16} /> Malzeme Ekle
++        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Malzeme Tanımları</div>
++        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
++          <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++            <Plus size={16} /> Yeni Malzeme Kartı Aç
+           </button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#e07a6b" }}>{msg}</span>}
+-        </div>
+-        <div style={{ marginTop: 14 }}>
+           <button className="btn-ghost" onClick={varsayilanEkle}>Varsayılan Malzemeleri Ekle (Çelik, Paslanmaz, Bronz, Kestamid, Alüminyum)</button>
+         </div>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Malzeme Tanım Kartı" ikon={Ruler} genislik={560}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Malzeme Adı</span><input style={fisInput} placeholder="Örn: Pirinç" value={ad} onChange={(e) => setAd(e.target.value)} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Yoğunluk (g/cm³)</span><input style={fisInput} type="number" step="0.001" placeholder="Örn: 8.40" value={yogunluk} onChange={(e) => setYogunluk(e.target.value)} /></div>
++          </div>
++        </EvrakPenceresi>
+       </div>
+ 
+       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+@@ -2608,6 +2645,7 @@ function MetalOlcuFormu({ tur, setTur, dims, setDims, yogunluk, setYogunluk, mal
+ // ---------- Metal Talep - Yeni Talep Ekle ----------
+ function MetalTalepEkle({ metalMalzemeler }) {
+   const malzemeListesi = useMemo(() => birlesikMalzemeler(metalMalzemeler), [metalMalzemeler]);
++  const [fisAcik, setFisAcik] = useState(false);
+   const [talepNo, setTalepNo] = useState("");
+   const [tur, setTur] = useState("mil");
+   const [dims, setDims] = useState({});
+@@ -2658,8 +2696,10 @@ function MetalTalepEkle({ metalMalzemeler }) {
+       tarih: Date.now(),
+     });
+     setMsg("Talebe eklendi.");
+-    setTimeout(() => setMsg(""), 2000);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1100);
+   };
++  const fisiTemizle = () => { setTalepNo(""); setDims({}); setFiyat(""); setAdet("1"); setBoy("500"); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+ 
+   const iceAktar = async (e) => {
+     const dosya = e.target.files[0];
+@@ -2713,35 +2753,46 @@ function MetalTalepEkle({ metalMalzemeler }) {
+       </div>
+ 
+       <div className="card" style={{ padding: 20 }}>
+-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Talep Bilgisi</div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ marginBottom: 16 }}>
+-            <label className="field-label">Talep / Proje No</label>
+-            <input className="input" placeholder="Örn: ARC-2026-014" value={talepNo} onChange={(e) => setTalepNo(e.target.value)} />
++        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Metal Ölçü Talebi</div>
++        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Talep Fişi Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Metal Ölçü Talep Fişi" ikon={Ruler} genislik={780}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
++            <div style={{ ...fisSatir, marginBottom: 0 }}>
++              <span style={fisEtiket}>Talep / Proje No</span>
++              <input style={fisInput} placeholder="Örn: ARC-2026-014" value={talepNo} onChange={(e) => setTalepNo(e.target.value)} />
++            </div>
+           </div>
+ 
+-          <MetalOlcuFormu
+-            tur={tur} setTur={setTur} dims={dims} setDims={setDims}
+-            yogunluk={yogunluk} setYogunluk={setYogunluk}
+-            malzemeler={malzemeListesi} malzemeAdi={malzemeAdi} setMalzemeAdi={setMalzemeAdi}
+-            boy={boy} setBoy={setBoy} boyBirim={boyBirim} setBoyBirim={setBoyBirim}
+-            adet={adet} setAdet={setAdet}
+-          />
+-
+-          <div><label className="field-label">Birim Fiyat (TL/kg, opsiyonel)</label><input className="input" type="number" step="0.01" placeholder="opsiyonel" value={fiyat} onChange={(e) => setFiyat(e.target.value)} style={{ maxWidth: 220 }} /></div>
+-        </div>
+-
+-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#16232a", border: "1px dashed #2a4b52", borderRadius: 8, padding: "12px 16px", margin: "16px 0", flexWrap: "wrap", gap: 8 }}>
+-          <span style={{ fontFamily: "monospace", fontSize: 13, color: "#8b929a" }}>
+-            Parça ağırlığı: <b style={{ color: "#2dd4bf" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> kg · Toplam: <b style={{ color: "#2dd4bf" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> kg
+-          </span>
+-        </div>
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <MetalOlcuFormu
++              tur={tur} setTur={setTur} dims={dims} setDims={setDims}
++              yogunluk={yogunluk} setYogunluk={setYogunluk}
++              malzemeler={malzemeListesi} malzemeAdi={malzemeAdi} setMalzemeAdi={setMalzemeAdi}
++              boy={boy} setBoy={setBoy} boyBirim={boyBirim} setBoyBirim={setBoyBirim}
++              adet={adet} setAdet={setAdet}
++            />
++            <div style={{ marginTop: 12 }}><label className="field-label">Birim Fiyat (TL/kg, opsiyonel)</label><input className="input" type="number" step="0.01" placeholder="opsiyonel" value={fiyat} onChange={(e) => setFiyat(e.target.value)} style={{ maxWidth: 220 }} /></div>
++          </div>
+ 
+-        <button onClick={ekle} style={{ width: "100%", background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "12px 0", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+-          Listeye Ekle
+-        </button>
+-        {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf" }}>{msg}</div>}
++          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#22404a", border: "1px solid #2a4b52", borderRadius: 4, padding: "11px 14px", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
++            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#8b929a" }}>
++              Parça ağırlığı: <b style={{ color: "#2dd4bf" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> kg · Toplam: <b style={{ color: "#2dd4bf" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> kg
++            </span>
++          </div>
++        </EvrakPenceresi>
+       </div>
+     </div>
+   );
+@@ -3596,6 +3647,7 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
+ 
+ // ---------- Fason Firmalar ----------
+ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ ad: "", yetkili: "", not: "" });
+   const [arama, setArama] = useState("");
+   const [msg, setMsg] = useState("");
+@@ -3611,7 +3663,8 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+     if (!form.ad.trim()) { setMsg("Firma adı zorunlu."); setTimeout(() => setMsg(""), 2500); return; }
+     await addDoc(collection(db, "fason_firmalar"), { ...form });
+     setForm({ ad: "", yetkili: "", not: "" });
+-    setMsg("Firma eklendi."); setTimeout(() => setMsg(""), 2000);
++    setMsg("Firma kaydedildi.");
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1000);
+   };
+   const sil = async (id) => {
+     if (!window.confirm("Bu firma silinecek (işleri ve hareketleri silinmez, ama firma bağlantısı kopar). Emin misiniz?")) return;
+@@ -3680,7 +3733,7 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+     <div style={{ display: "grid", gap: 20 }}>
+       <div className="card" style={{ padding: 20 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+-          <div style={{ fontWeight: 700, fontSize: 15 }}>Yeni Fason Firma Ekle</div>
++          <div style={{ fontWeight: 700, fontSize: 15 }}>Fason Firma (Cari) Kartları</div>
+           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+             <button className="btn-ghost" onClick={() => sablonIndir(["FİRMA ADI", "YETKİLİ", "NOT"], [["Örnek Fason Ltd.", "Ahmet Yılmaz - 0532 000 00 00", ""]], "fason-firma-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
+             <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+@@ -3688,18 +3741,27 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+           </div>
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Firma Adı</label><input className="input" value={form.ad} onChange={(e) => setForm((s) => ({ ...s, ad: e.target.value }))} /></div>
+-            <div><label className="field-label">Yetkili / Telefon</label><input className="input" value={form.yetkili} onChange={(e) => setForm((s) => ({ ...s, yetkili: e.target.value }))} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Not</label><input className="input" value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
++        <button onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Firma Kartı Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Fason Firma (Cari) Kartı" ikon={Building2} genislik={640}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); }}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Firma Adı</span><input style={fisInput} value={form.ad} onChange={(e) => setForm((s) => ({ ...s, ad: e.target.value }))} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Yetkili / Telefon</span><input style={fisInput} value={form.yetkili} onChange={(e) => setForm((s) => ({ ...s, yetkili: e.target.value }))} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Not</span><input style={fisInput} value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={ekle} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}><Plus size={16} /> Firma Ekle</button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+-        </div>
++        </EvrakPenceresi>
+         {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+       </div>
+ 
+@@ -4153,6 +4215,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+ 
+ // ---------- Fason Hareketler ----------
+ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ isId: "", tip: "giden", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" });
+   const [msg, setMsg] = useState("");
+   const [f, setF] = useState({ arama: "", tip: "", firmaId: "" });
+@@ -4172,8 +4235,11 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+     if (!form.isId || !form.urunAdi.trim() || !form.miktar) { setMsg("İş, ürün/malzeme adı ve miktar zorunlu."); setTimeout(() => setMsg(""), 2500); return; }
+     await addDoc(collection(db, "fason_hareketler"), { ...form, miktar: Number(form.miktar) || 0, birimFiyat: Number(form.birimFiyat) || 0 });
+     setForm({ isId: form.isId, tip: form.tip, urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: form.tarih, not: "" });
+-    setMsg("Hareket eklendi."); setTimeout(() => setMsg(""), 2000);
++    setMsg("Hareket kaydedildi.");
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1100);
+   };
++  const fisiTemizle = () => { setForm({ isId: "", tip: "giden", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" }); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+   const sil = async (id) => { await deleteDoc(doc(db, "fason_hareketler", id)); };
+ 
+   const iceAktar = async (e) => {
+@@ -4216,7 +4282,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+     <div style={{ display: "grid", gap: 20 }}>
+       <div className="card" style={{ padding: 20 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+-          <div style={{ fontWeight: 700, fontSize: 15 }}>Yeni Hareket Ekle</div>
++          <div style={{ fontWeight: 700, fontSize: 15 }}>Fason Hareket Fişleri</div>
+           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+             <button className="btn-ghost" onClick={() => sablonIndir(["FİRMA ADI", "PROJE KODU", "PROJE ADI", "TİP", "ÜRÜN/MALZEME ADI", "MALZEME CİNSİ", "KALİTE", "AÇIKLAMA", "MİKTAR", "BİRİM", "BİRİM FİYAT", "TARİH", "NOT"], [["Örnek Fason Ltd.", "PRJ-001", "Örnek Proje", "Giden (Hammadde)", "Çelik Sac", "Paslanmaz Çelik", "304", "", "50", "kg", "120", "2026-01-15", ""]], "fason-hareket-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
+             <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+@@ -4224,41 +4290,62 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+           </div>
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div style={{ gridColumn: "span 2" }}>
+-              <label className="field-label">İş</label>
+-              <select className="input" value={form.isId} onChange={(e) => setForm((s) => ({ ...s, isId: e.target.value }))}>
++        <button onClick={fisiAc} disabled={fasonIsler.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonIsler.length === 0 ? "default" : "pointer", opacity: fasonIsler.length === 0 ? 0.5 : 1 }}>
++          <Plus size={16} /> Yeni Hareket Fişi Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik={`Fason Hareket Fişi — ${form.tip === "giden" ? "Giden (Hammadde)" : "Gelen (Ürün)"}`}
++          ikon={RefreshCw} genislik={900}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>İş (Proje)</span>
++              <select style={fisInput} value={form.isId} onChange={(e) => setForm((s) => ({ ...s, isId: e.target.value }))}>
+                 <option value="">Seçin…</option>
+                 {fasonIsler.map((j) => <option key={j.id} value={j.id}>{isLabel(j.id)}</option>)}
+               </select>
+             </div>
+-            <div>
+-              <label className="field-label">Hareket Tipi</label>
+-              <select className="input" value={form.tip} onChange={(e) => setForm((s) => ({ ...s, tip: e.target.value }))}>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Hareket Tipi</span>
++              <select style={fisInput} value={form.tip} onChange={(e) => setForm((s) => ({ ...s, tip: e.target.value }))}>
+                 <option value="giden">Giden — Hammadde (firmaya)</option>
+                 <option value="gelen">Gelen — Ürün / Fason (firmadan)</option>
+               </select>
+             </div>
+-            <div><label className="field-label">{form.tip === "giden" ? "Malzeme İsmi" : "Ürün Adı"}</label><input className="input" value={form.urunAdi} onChange={(e) => setForm((s) => ({ ...s, urunAdi: e.target.value }))} /></div>
+-            {form.tip === "giden" && (
+-              <>
+-                <div><label className="field-label">Malzeme Cinsi</label><input className="input" value={form.malzemeCinsi} onChange={(e) => setForm((s) => ({ ...s, malzemeCinsi: e.target.value }))} /></div>
+-                <div><label className="field-label">Kalite</label><input className="input" value={form.kalite} onChange={(e) => setForm((s) => ({ ...s, kalite: e.target.value }))} /></div>
+-              </>
+-            )}
+-            <div><label className="field-label">Miktar</label><input className="input" type="number" step="0.01" value={form.miktar} onChange={(e) => setForm((s) => ({ ...s, miktar: e.target.value }))} /></div>
+-            <div><label className="field-label">Birim</label><input className="input" value={form.birim} onChange={(e) => setForm((s) => ({ ...s, birim: e.target.value }))} placeholder="kg, adet, mt" /></div>
+-            <div><label className="field-label">Birim Fiyat (₺)</label><input className="input" type="number" step="0.01" value={form.birimFiyat} onChange={(e) => setForm((s) => ({ ...s, birimFiyat: e.target.value }))} /></div>
+-            <div><label className="field-label">Tarih</label><input className="input" type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Not</label><input className="input" value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={ekle} disabled={fasonIsler.length === 0} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}><Plus size={16} /> Hareketi Kaydet</button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+-        </div>
++
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "0 26px" }}>
++            <div>
++              <div style={fisSatir}><span style={fisEtiket}>{form.tip === "giden" ? "Malzeme İsmi" : "Ürün Adı"}</span><input style={fisInput} value={form.urunAdi} onChange={(e) => setForm((s) => ({ ...s, urunAdi: e.target.value }))} /></div>
++              {form.tip === "giden" && (
++                <>
++                  <div style={fisSatir}><span style={fisEtiket}>Malzeme Cinsi</span><input style={fisInput} value={form.malzemeCinsi} onChange={(e) => setForm((s) => ({ ...s, malzemeCinsi: e.target.value }))} /></div>
++                  <div style={fisSatir}><span style={fisEtiket}>Kalite</span><input style={fisInput} value={form.kalite} onChange={(e) => setForm((s) => ({ ...s, kalite: e.target.value }))} /></div>
++                </>
++              )}
++              <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Not</span><input style={fisInput} value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
++            </div>
++            <div>
++              <div style={fisSatir}><span style={fisEtiket}>Miktar</span><input style={fisInput} type="number" step="0.01" value={form.miktar} onChange={(e) => setForm((s) => ({ ...s, miktar: e.target.value }))} /></div>
++              <div style={fisSatir}><span style={fisEtiket}>Birim</span><input style={fisInput} value={form.birim} onChange={(e) => setForm((s) => ({ ...s, birim: e.target.value }))} placeholder="kg, adet, mt" /></div>
++              <div style={fisSatir}><span style={fisEtiket}>Birim Fiyat (₺)</span><input style={fisInput} type="number" step="0.01" value={form.birimFiyat} onChange={(e) => setForm((s) => ({ ...s, birimFiyat: e.target.value }))} /></div>
++              <div style={{ ...fisSatir, marginBottom: 0 }}>
++                <span style={fisEtiket}>Tutar</span>
++                <input style={{ ...fisInput, background: "#16232a", color: "#2dd4bf", fontFamily: "monospace", textAlign: "right" }} value={paraTR((Number(form.miktar) || 0) * (Number(form.birimFiyat) || 0))} readOnly />
++              </div>
++            </div>
++          </div>
++        </EvrakPenceresi>
+         {fasonIsler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce İşler sekmesinden bir iş ekleyin.</div>}
+         {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+       </div>
+@@ -4316,6 +4403,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+ 
+ // ---------- Fason Hatırlatıcılar ----------
+ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ baslik: "", tarih: todayISO(), isId: "", not: "" });
+   const [msg, setMsg] = useState("");
+   const [filtre, setFiltre] = useState("bekleyen");
+@@ -4327,8 +4415,11 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
+     if (!form.baslik.trim()) { setMsg("Başlık zorunlu."); setTimeout(() => setMsg(""), 2000); return; }
+     await addDoc(collection(db, "fason_hatirlaticilar"), { ...form, isId: form.isId || null, tamamlandi: false });
+     setForm({ baslik: "", tarih: todayISO(), isId: "", not: "" });
+-    setMsg("Hatırlatıcı eklendi."); setTimeout(() => setMsg(""), 2000);
++    setMsg("Hatırlatıcı kaydedildi.");
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1000);
+   };
++  const fisiTemizle = () => { setForm({ baslik: "", tarih: todayISO(), isId: "", not: "" }); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+   const sil = async (id) => { await deleteDoc(doc(db, "fason_hatirlaticilar", id)); };
+   const toggle = async (r) => { await updateDoc(doc(db, "fason_hatirlaticilar", r.id), { tamamlandi: !r.tamamlandi }); };
+   const disaAktar = () => excelIndir(
+@@ -4381,7 +4472,7 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
+     <div style={{ display: "grid", gap: 20 }}>
+       <div className="card" style={{ padding: 20 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+-          <div style={{ fontWeight: 700, fontSize: 15 }}>Yeni Hatırlatıcı</div>
++          <div style={{ fontWeight: 700, fontSize: 15 }}>Hatırlatıcılar</div>
+           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+             <button className="btn-ghost" onClick={() => sablonIndir(["Başlık", "Tarih", "İlişkili Proje Adı", "Not", "Durum"], [["Teslimat kontrolü", "2026-01-20", "Örnek Proje", "", "Bekliyor"]], "fason-hatirlatici-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
+             <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+@@ -4390,25 +4481,34 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
+           </div>
+         </div>
+         {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Başlık</label><input className="input" value={form.baslik} onChange={(e) => setForm((s) => ({ ...s, baslik: e.target.value }))} /></div>
+-            <div><label className="field-label">Tarih</label><input className="input" type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
+-            <div>
+-              <label className="field-label">İşle İlişkilendir (opsiyonel)</label>
+-              <select className="input" value={form.isId} onChange={(e) => setForm((s) => ({ ...s, isId: e.target.value }))}>
++        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Hatırlatıcı Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Hatırlatıcı Kartı" ikon={Bell} genislik={640}
++          butonlar={
++            <>
++              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Başlık</span><input style={fisInput} value={form.baslik} onChange={(e) => setForm((s) => ({ ...s, baslik: e.target.value }))} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>İlişkili İş</span>
++              <select style={fisInput} value={form.isId} onChange={(e) => setForm((s) => ({ ...s, isId: e.target.value }))}>
+                 <option value="">Yok</option>
+                 {fasonIsler.map((j) => <option key={j.id} value={j.id}>{j.projeAdi}</option>)}
+               </select>
+             </div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Not</label><input className="input" value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Not</span><input style={fisInput} value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={ekle} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}><Plus size={16} /> Ekle</button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+-        </div>
++        </EvrakPenceresi>
+       </div>
+ 
+       <div style={{ display: "flex", gap: 8 }}>
+@@ -4574,6 +4674,8 @@ function YardimEkrani({ git }) {
+ // ---------- Kullanıcı Yönetimi ----------
+ function KullaniciYonetimi({ mevcutKullanici }) {
+   const [kullanicilar, setKullanicilar] = useState([]);
++  const [sifreliAcik, setSifreliAcik] = useState(false);
++  const [googleAcik, setGoogleAcik] = useState(false);
+   const [form, setForm] = useState({ ad: "", email: "", sifre: "" });
+   const [googleForm, setGoogleForm] = useState({ ad: "", email: "" });
+   const [olusturuluyor, setOlusturuluyor] = useState(false);
+@@ -4670,19 +4772,29 @@ function KullaniciYonetimi({ mevcutKullanici }) {
+         <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>
+           Kişinin kendi e-posta ve şifresiyle giriş yapabilmesi için hesap açar. Şifreyi kendine ya da kişiye iletmen gerekir.
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Ad Soyad (opsiyonel)</label><input className="input" placeholder="Örn: Ahmet Yılmaz" value={form.ad} onChange={set("ad")} /></div>
+-            <div><label className="field-label">E-posta</label><input className="input" type="email" placeholder="ornek@firma.com" value={form.email} onChange={set("email")} /></div>
+-            <div><label className="field-label">Şifre</label><input className="input" type="text" placeholder="En az 6 karakter" value={form.sifre} onChange={set("sifre")} /></div>
++        <button onClick={() => { setForm({ ad: "", email: "", sifre: "" }); setMsg(""); setSifreliAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <UserPlus size={16} /> Yeni Kullanıcı Kartı Aç
++        </button>
++        <EvrakPenceresi
++          acik={sifreliAcik} kapat={() => setSifreliAcik(false)}
++          baslik="Kullanıcı Kartı — E-posta / Şifre" ikon={UserPlus} genislik={640}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={() => { setForm({ ad: "", email: "", sifre: "" }); setMsg(""); }}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setSifreliAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={kullaniciOlustur} disabled={olusturuluyor}><Save size={14} /> {olusturuluyor ? "Oluşturuluyor…" : "Kaydet"}</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Ad Soyad</span><input style={fisInput} placeholder="Örn: Ahmet Yılmaz (opsiyonel)" value={form.ad} onChange={set("ad")} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>E-posta</span><input style={fisInput} type="email" placeholder="ornek@firma.com" value={form.email} onChange={set("email")} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Şifre</span><input style={fisInput} type="text" placeholder="En az 6 karakter" value={form.sifre} onChange={set("sifre")} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={kullaniciOlustur} disabled={olusturuluyor} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <UserPlus size={16} /> {olusturuluyor ? "Oluşturuluyor…" : "Kullanıcı Oluştur"}
+-          </button>
+-        </div>
++          {msg && (
++            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
++          )}
++        </EvrakPenceresi>
+       </div>
+ 
+       <div className="card" style={{ padding: 20 }}>
+@@ -4690,21 +4802,28 @@ function KullaniciYonetimi({ mevcutKullanici }) {
+         <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>
+           Şifre oluşturmaz, sadece bu e-postanın kendi Google hesabıyla giriş yapmasına izin verir. Kişinin kullandığı Google hesabının e-postasını gir.
+         </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Ad Soyad (opsiyonel)</label><input className="input" placeholder="Örn: Ahmet Yılmaz" value={googleForm.ad} onChange={setG("ad")} /></div>
+-            <div><label className="field-label">Google E-postası</label><input className="input" type="email" placeholder="ornek@gmail.com" value={googleForm.email} onChange={setG("email")} /></div>
++        <button onClick={() => { setGoogleForm({ ad: "", email: "" }); setMsg(""); setGoogleAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Chrome size={16} /> Google İzin Kartı Aç
++        </button>
++        <EvrakPenceresi
++          acik={googleAcik} kapat={() => setGoogleAcik(false)}
++          baslik="Kullanıcı Kartı — Google ile Giriş İzni" ikon={Chrome} genislik={640}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={() => { setGoogleForm({ ad: "", email: "" }); setMsg(""); }}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setGoogleAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={googleIzniEkle} disabled={googleEkleniyor}><Save size={14} /> {googleEkleniyor ? "Ekleniyor…" : "Kaydet"}</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={fisSatir}><span style={fisEtiket}>Ad Soyad</span><input style={fisInput} placeholder="Örn: Ahmet Yılmaz (opsiyonel)" value={googleForm.ad} onChange={setG("ad")} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Google E-postası</span><input style={fisInput} type="email" placeholder="ornek@gmail.com" value={googleForm.email} onChange={setG("email")} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={googleIzniEkle} disabled={googleEkleniyor} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <Chrome size={16} /> {googleEkleniyor ? "Ekleniyor…" : "İzin Ver"}
+-          </button>
+-        </div>
+-        {msg && (
+-          <div style={{ marginTop: 14, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 7, padding: "9px 12px" }}>{msg}</div>
+-        )}
++          {msg && (
++            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
++          )}
++        </EvrakPenceresi>
+       </div>
+ 
+       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+@@ -4750,6 +4869,7 @@ function KullaniciYonetimi({ mevcutKullanici }) {
+ 
+ // ---------- Depo Stok Listesi ----------
+ function DepoStokKart({ depoStok, kullanici }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [form, setForm] = useState({ stokKodu: "", stokAdi: "", birim: "Adet", anaGrupKodu: "", anaGrupAdi: "", altGrupKodu: "", altGrupAdi: "", miktar: "" });
+   const [msg, setMsg] = useState("");
+   const [msgTip, setMsgTip] = useState("bilgi");
+@@ -4848,8 +4968,10 @@ function DepoStokKart({ depoStok, kullanici }) {
+     });
+     setForm({ stokKodu: "", stokAdi: "", birim: "Adet", anaGrupKodu: "", anaGrupAdi: "", altGrupKodu: "", altGrupAdi: "", miktar: "" });
+     setMsgTip("bilgi"); setMsg("Yeni stok kartı oluşturuldu.");
+-    setTimeout(() => setMsg(""), 3000);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+   };
++  const kartiTemizle = () => { setForm({ stokKodu: "", stokAdi: "", birim: "Adet", anaGrupKodu: "", anaGrupAdi: "", altGrupKodu: "", altGrupAdi: "", miktar: "" }); setMsg(""); };
++  const kartiAc = () => { kartiTemizle(); setFisAcik(true); };
+ 
+   const sil = async (id) => {
+     if (!window.confirm("Bu stok kartı silinecek (hareket geçmişi silinmez). Emin misiniz?")) return;
+@@ -4942,47 +5064,64 @@ function DepoStokKart({ depoStok, kullanici }) {
+           </div>
+         </div>
+         <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Bu ekran sadece yeni stok kartı (kimlik) tanımlamak içindir. Mevcut bir stoğa miktar eklemek/düşmek için "Depo Giriş" / "Depo Çıkış" ekranlarını kullan.</div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div><label className="field-label">Stok Kodu</label><input className="input" placeholder="Örn: BTK-DDK-0001" value={form.stokKodu} onChange={set("stokKodu")} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Stok İsmi</label><input className="input" placeholder="Malzeme / parça adı" value={form.stokAdi} onChange={set("stokAdi")} /></div>
+-            <div>
+-              <label className="field-label">Birim</label>
+-              <select className="input" value={form.birim} onChange={set("birim")}>
++        <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni Stok Kartı Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Depo Stok Tanım Kartı" ikon={Boxes} genislik={900}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={kartiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
++            <div style={fisSatir}><span style={fisEtiket}>Stok Kodu</span><input style={fisInput} placeholder="Örn: BTK-DDK-0001" value={form.stokKodu} onChange={set("stokKodu")} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Stok İsmi</span><input style={fisInput} placeholder="Malzeme / parça adı" value={form.stokAdi} onChange={set("stokAdi")} /></div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Birim</span>
++              <select style={fisInput} value={form.birim} onChange={set("birim")}>
+                 <option>Adet</option><option>Kg</option><option>KİLOGRAM</option><option>Ton</option><option>MT</option><option>SANDIK</option><option>Metre</option><option>Litre</option><option>Kutu</option><option>Paket</option>
+               </select>
+             </div>
+-            <div>
+-              <label className="field-label">Ana Grup Kodu</label>
+-              <input className="input" list="ana-grup-kodlari" placeholder="Örn: KSC" value={form.anaGrupKodu} onChange={set("anaGrupKodu")} />
+-              <datalist id="ana-grup-kodlari">{anaGruplar.map(([kod]) => <option key={kod} value={kod} />)}</datalist>
+-            </div>
+-            <div>
+-              <label className="field-label">Ana Grup İsmi</label>
+-              <input className="input" list="ana-grup-isimleri" placeholder="Örn: KESİCİ TAKIM" value={form.anaGrupAdi} onChange={set("anaGrupAdi")} />
+-              <datalist id="ana-grup-isimleri">{anaGrupAdlariListe.map((v) => <option key={v} value={v} />)}</datalist>
+-            </div>
+-            <div>
+-              <label className="field-label">Alt Grup Kodu</label>
+-              <input className="input" placeholder="Örn: KSC-DEL" value={form.altGrupKodu} onChange={set("altGrupKodu")} />
+-            </div>
+-            <div>
+-              <label className="field-label">Alt Grup İsmi</label>
+-              <input className="input" list="alt-grup-isimleri" placeholder="Örn: KESİCİ TAKIM - DELİK DELME ELMASLARI" value={form.altGrupAdi} onChange={set("altGrupAdi")} />
+-              <datalist id="alt-grup-isimleri">{altGrupAdlariListe.map((v) => <option key={v} value={v} />)}</datalist>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Başlangıç Miktarı</span><input style={fisInput} type="number" min="0" step="0.01" placeholder="0" value={form.miktar} onChange={set("miktar")} /></div>
++          </div>
++
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Grup Bilgileri</div>
++            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "0 26px" }}>
++              <div>
++                <div style={fisSatir}>
++                  <span style={fisEtiket}>Ana Grup Kodu</span>
++                  <input style={fisInput} list="ana-grup-kodlari" placeholder="Örn: KSC" value={form.anaGrupKodu} onChange={set("anaGrupKodu")} />
++                  <datalist id="ana-grup-kodlari">{anaGruplar.map(([kod]) => <option key={kod} value={kod} />)}</datalist>
++                </div>
++                <div style={{ ...fisSatir, marginBottom: 0 }}>
++                  <span style={fisEtiket}>Ana Grup İsmi</span>
++                  <input style={fisInput} list="ana-grup-isimleri" placeholder="Örn: KESİCİ TAKIM" value={form.anaGrupAdi} onChange={set("anaGrupAdi")} />
++                  <datalist id="ana-grup-isimleri">{anaGrupAdlariListe.map((v) => <option key={v} value={v} />)}</datalist>
++                </div>
++              </div>
++              <div>
++                <div style={fisSatir}>
++                  <span style={fisEtiket}>Alt Grup Kodu</span>
++                  <input style={fisInput} placeholder="Örn: KSC-DEL" value={form.altGrupKodu} onChange={set("altGrupKodu")} />
++                </div>
++                <div style={{ ...fisSatir, marginBottom: 0 }}>
++                  <span style={fisEtiket}>Alt Grup İsmi</span>
++                  <input style={fisInput} list="alt-grup-isimleri" placeholder="Örn: KESİCİ TAKIM - DELİK DELME" value={form.altGrupAdi} onChange={set("altGrupAdi")} />
++                  <datalist id="alt-grup-isimleri">{altGrupAdlariListe.map((v) => <option key={v} value={v} />)}</datalist>
++                </div>
++              </div>
+             </div>
+-            <div><label className="field-label">Başlangıç Miktarı</label><input className="input" type="number" min="0" step="0.01" placeholder="0" value={form.miktar} onChange={set("miktar")} /></div>
+           </div>
+-        </div>
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={ekle} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-            <Plus size={16} /> Stok Kartı Oluştur
+-          </button>
+-        </div>
+-        {msg && (
+-          <div style={{ marginTop: 14, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 7, padding: "9px 12px" }}>{msg}</div>
+-        )}
++          {msg && (
++            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
++          )}
++        </EvrakPenceresi>
+         {iceMsg && (
+           <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+         )}
+@@ -5075,6 +5214,8 @@ function DepoStokKart({ depoStok, kullanici }) {
+ 
+ // ---------- Depo Stok - Depo Giriş ----------
+ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
++  const [fisAcik, setFisAcik] = useState(false);
++  const [topluAcik, setTopluAcik] = useState(false);
+   const [stokId, setStokId] = useState("");
+   const [miktar, setMiktar] = useState("");
+   const [tarih, setTarih] = useState(todayISO());
+@@ -5150,8 +5291,11 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
+     await batch.commit();
+     setMiktar(""); setAciklama("");
+     setMsgTip("bilgi"); setMsg(`${secilenStok.stokAdi} için ${mik} ${secilenStok.birim || "Adet"} giriş yapıldı.`);
+-    setTimeout(() => setMsg(""), 3500);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1400);
+   };
++  const fisiTemizle = () => { setStokId(""); setMiktar(""); setAciklama(""); setTarih(todayISO()); setArama(""); setAltGrupFiltre(""); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
++  const topluAc = () => { setTopluMiktarlar({}); setTopluMsg(""); setArama(""); setAltGrupFiltre(""); setTopluAcik(true); };
+ 
+   const iceAktar = async (e) => {
+     const dosya = e.target.files[0];
+@@ -5218,82 +5362,126 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
+         {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+         <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Var olan bir stok kartına gelen malzemeyi/ürünü ekle.</div>
+ 
+-        <div style={{ marginBottom: 14 }}>
+-          <label className="field-label">Alt Grup (opsiyonel filtre)</label>
+-          <select className="input" value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
+-            <option value="">Tüm Alt Gruplar</option>
+-            {altGrupAdlariListe.map((v) => <option key={v} value={v}>{v}</option>)}
+-          </select>
+-        </div>
+-        <div style={{ marginBottom: 14, position: "relative" }}>
+-          <label className="field-label">Stok Kodu / Adı Ara</label>
+-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: 34 }} />
+-          <input className="input" style={{ paddingLeft: 30 }} placeholder="Ara…" value={arama} onChange={(e) => { setArama(e.target.value); setStokId(""); }} />
++        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
++          <button onClick={fisiAc} disabled={depoStok.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: depoStok.length === 0 ? "default" : "pointer", opacity: depoStok.length === 0 ? 0.5 : 1 }}>
++            <Plus size={16} /> Yeni Giriş Fişi Aç
++          </button>
++          <button onClick={topluAc} disabled={depoStok.length === 0} className="btn-ghost" style={{ padding: "11px 18px" }}>
++            <Boxes size={15} /> Toplu Giriş Fişi Aç
++          </button>
+         </div>
++        {depoStok.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Stok Kartı Oluştur" ekranından bir stok kartı ekle.</div>}
+ 
+-        {(arama.trim() || altGrupFiltre) && (
+-          <div style={{ marginBottom: 14, border: "1px solid #2a4b52", borderRadius: 8, maxHeight: 260, overflowY: "auto" }}>
+-            {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
+-            {filtrelenmisStok.slice(0, 50).map((s) => (
+-              <button
+-                key={s.id}
+-                onClick={() => setStokId(s.id)}
+-                style={{
+-                  display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
+-                  padding: "10px 14px", background: stokId === s.id ? "#113330" : "transparent",
+-                  border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
+-                }}
+-              >
+-                <div>
+-                  <div style={{ fontSize: 13, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
+-                  <div style={{ fontSize: 11.5, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
+-                </div>
+-                <div style={{ fontFamily: "monospace", fontSize: 12.5, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
+-              </button>
+-            ))}
+-            {filtrelenmisStok.length > 50 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
++        {/* ---- Tekli giriş fişi penceresi ---- */}
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Depo Giriş Fişi" ikon={Boxes} genislik={820}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={girisYap}><Save size={14} /> Girişi Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
++            <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Stok Seçimi</div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Alt Grup</span>
++              <select style={fisInput} value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
++                <option value="">Tüm Alt Gruplar</option>
++                {altGrupAdlariListe.map((v) => <option key={v} value={v}>{v}</option>)}
++              </select>
++            </div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}>
++              <span style={fisEtiket}>Stok Kodu / Adı</span>
++              <input style={fisInput} placeholder="Ara…" value={arama} onChange={(e) => { setArama(e.target.value); setStokId(""); }} />
++            </div>
++
++            {(arama.trim() || altGrupFiltre) && (
++              <div style={{ marginTop: 12, border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
++                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
++                {filtrelenmisStok.slice(0, 50).map((s) => (
++                  <button
++                    key={s.id}
++                    onClick={() => setStokId(s.id)}
++                    style={{
++                      display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
++                      padding: "9px 13px", background: stokId === s.id ? "#113330" : "transparent",
++                      border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
++                    }}
++                  >
++                    <div>
++                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
++                      <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
++                    </div>
++                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
++                  </button>
++                ))}
++                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
++              </div>
++            )}
+           </div>
+-        )}
+ 
+-        {secilenStok && (
+-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#113330", border: "1px solid #1f4d47", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
+-            <div style={{ fontSize: 13 }}>
+-              Seçili: <b style={{ color: "#2dd4bf" }}>{secilenStok.stokAdi}</b> <span style={{ color: "#6b7178", fontFamily: "monospace" }}>({secilenStok.stokKodu})</span> — mevcut: {secilenStok.miktar} {secilenStok.birim || "Adet"}
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Giriş Bilgileri</div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Stok Adı</span>
++              <input style={{ ...fisInput, background: "#16232a", color: secilenStok ? "#2dd4bf" : "#6b7178" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
+             </div>
+-            <button onClick={() => setStokId("")} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", fontSize: 12 }}>Değiştir ✕</button>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Mevcut Miktar</span>
++              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
++            </div>
++            <div style={fisSatir}><span style={fisEtiket}>Giriş Miktarı</span><input style={fisInput} type="number" min="0" step="0.01" value={miktar} onChange={(e) => setMiktar(e.target.value)} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Açıklama</span><input style={fisInput} placeholder="Opsiyonel" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
+           </div>
+-        )}
+-
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div style={{ gridColumn: "span 2" }}>
+-              <label className="field-label">Stok Adı</label>
+-              <input className="input" value={secilenStok ? secilenStok.stokAdi : ""} placeholder="Yukarıdan bir stok seç" disabled style={{ opacity: secilenStok ? 1 : 0.6 }} />
++          {msg && (
++            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
++          )}
++        </EvrakPenceresi>
++
++        {/* ---- Toplu giriş fişi penceresi ---- */}
++        <EvrakPenceresi
++          acik={topluAcik} kapat={() => setTopluAcik(false)}
++          baslik="Toplu Depo Giriş Fişi" ikon={Boxes} genislik={980}
++          butonlar={
++            <>
++              {topluMsg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{topluMsg}</span>}
++              <button style={fisAltBtn} onClick={() => setTopluMiktarlar({})}><RefreshCw size={14} /> Temizle</button>
++              <button style={fisAltBtn} onClick={() => setTopluAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={topluKaydet} disabled={topluKaydediliyor}><Save size={14} /> {topluKaydediliyor ? "Kaydediliyor…" : "Toplu Kaydet"}</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "0 26px" }}>
++            <div>
++              <div style={fisSatir}>
++                <span style={fisEtiket}>Alt Grup</span>
++                <select style={fisInput} value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
++                  <option value="">Tüm Alt Gruplar</option>
++                  {altGrupAdlariListe.map((v) => <option key={v} value={v}>{v}</option>)}
++                </select>
++              </div>
++              <div style={{ ...fisSatir, marginBottom: 0 }}>
++                <span style={fisEtiket}>Stok Ara</span>
++                <input style={fisInput} placeholder="Ara…" value={arama} onChange={(e) => setArama(e.target.value)} />
++              </div>
++            </div>
++            <div>
++              <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={topluTarih} onChange={(e) => setTopluTarih(e.target.value)} /></div>
++              <div style={{ ...fisSatir, marginBottom: 0 }}>
++                <span style={fisEtiket}>Dolu Satır</span>
++                <input style={{ ...fisInput, background: "#16232a", color: "#2dd4bf", fontFamily: "monospace" }} value={Object.values(topluMiktarlar).filter((v) => Number(v) > 0).length} readOnly />
++              </div>
+             </div>
+-            <div><label className="field-label">Miktar</label><input className="input" type="number" min="0" step="0.01" value={miktar} onChange={(e) => setMiktar(e.target.value)} /></div>
+-            <div><label className="field-label">Tarih</label><input className="input" type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Açıklama (opsiyonel)</label><input className="input" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
+           </div>
+-        </div>
+-
+-        <button onClick={girisYap} style={{ background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-          + Girişi Kaydet
+-        </button>
+-        {msg && (
+-          <div style={{ marginTop: 14, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 7, padding: "9px 12px" }}>{msg}</div>
+-        )}
+-        {depoStok.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Stok Kartı Oluştur" ekranından bir stok kartı ekle.</div>}
+-      </div>
+-
+-      <div className="card" style={{ padding: 20 }}>
+-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Toplu Stok Girişi</div>
+-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Yukarıdaki Alt Grup / arama ile listeyi daralt, birden fazla kalemin miktarını aynı anda yazıp tek seferde kaydet.</div>
+-        {(arama.trim() || altGrupFiltre) ? (
++          {(arama.trim() || altGrupFiltre) ? (
+           <>
+-            <div style={{ ...erpGridKutu, maxHeight: 340, overflowY: "auto", marginBottom: 14 }}>
++            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 340, overflowY: "auto" }}>
+               <table style={{ width: "100%", borderCollapse: "collapse" }}>
+-                <thead><tr style={{ background: "#16232a" }}><th style={erpGridTh}>Stok Adı</th><th style={erpGridTh}>Stok Kodu</th><th style={erpGridTh}>Mevcut</th><th style={{ ...erpGridTh, width: 120 }}>Giriş Miktarı</th></tr></thead>
++                <thead><tr><th style={fisGridTh}>Stok Adı</th><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Mevcut</th><th style={{ ...fisGridTh, width: 120, borderRight: "none" }}>Giriş Miktarı</th></tr></thead>
+                 <tbody>
+                   {filtrelenmisStok.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 18 }}>Eşleşen stok bulunamadı.</td></tr>}
+                   {filtrelenmisStok.slice(0, 100).map((s) => (
+@@ -5315,20 +5503,11 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
+               </table>
+               {filtrelenmisStok.length > 100 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 100 sonuç gösteriliyor, daraltmak için ara.</div>}
+             </div>
+-            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, flexWrap: "wrap" }}>
+-              <div style={{ maxWidth: 200 }}>
+-                <label className="field-label">Tarih (tüm kalemler için)</label>
+-                <input className="input" type="date" value={topluTarih} onChange={(e) => setTopluTarih(e.target.value)} />
+-              </div>
+-              <button onClick={topluKaydet} disabled={topluKaydediliyor} style={{ background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-                {topluKaydediliyor ? "Kaydediliyor…" : "+ Toplu Girişi Kaydet"}
+-              </button>
+-            </div>
+-            {topluMsg && <div style={{ marginTop: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{topluMsg}</div>}
+           </>
+         ) : (
+-          <div style={{ fontSize: 12.5, color: "#6b7178" }}>Listeyi görmek için yukarıdan bir Alt Grup seç ya da arama yap.</div>
++          <div style={{ fontSize: 12.5, color: "#6b7178", padding: "18px 0", textAlign: "center", border: "1px dashed #2a4b52", borderRadius: 4 }}>Listeyi görmek için yukarıdan bir Alt Grup seç ya da arama yap.</div>
+         )}
++        </EvrakPenceresi>
+       </div>
+ 
+       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+@@ -5357,6 +5536,7 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
+ 
+ // ---------- Depo Stok - Stok Çıkış (Hedef Makine Seçimli) ----------
+ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [stokId, setStokId] = useState("");
+   const [hedefMakine, setHedefMakine] = useState("");
+   const [miktar, setMiktar] = useState("");
+@@ -5402,8 +5582,10 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
+     await batch.commit();
+     setMiktar(""); setAciklama("");
+     setMsgTip("bilgi"); setMsg(`${secilenStok.stokAdi} → ${hedefMakine} : ${mik} ${secilenStok.birim || "Adet"} çıkış yapıldı.`);
+-    setTimeout(() => setMsg(""), 3500);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1500);
+   };
++  const fisiTemizle = () => { setStokId(""); setHedefMakine(""); setMiktar(""); setAciklama(""); setTarih(todayISO()); setArama(""); setAltGrupFiltre(""); setMsg(""); };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
+ 
+   const iceAktar = async (e) => {
+     const dosya = e.target.files[0];
+@@ -5471,79 +5653,86 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
+         {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+         <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Verilen ürünü ve hangi makineye gittiğini seç, adedini yaz, çıkışı kaydet — ilgili stoktan otomatik düşer.</div>
+ 
+-        <div style={{ marginBottom: 14 }}>
+-          <label className="field-label">Alt Grup (opsiyonel filtre)</label>
+-          <select className="input" value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
+-            <option value="">Tüm Alt Gruplar</option>
+-            {altGrupAdlariListe.map((v) => <option key={v} value={v}>{v}</option>)}
+-          </select>
+-        </div>
+-        <div style={{ marginBottom: 14, position: "relative" }}>
+-          <label className="field-label">Stok Kodu / Adı Ara</label>
+-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: 34, }} />
+-          <input className="input" style={{ paddingLeft: 30 }} placeholder="Ara…" value={arama} onChange={(e) => { setArama(e.target.value); setStokId(""); }} />
+-        </div>
+-
+-        {(arama.trim() || altGrupFiltre) && (
+-          <div style={{ marginBottom: 14, border: "1px solid #2a4b52", borderRadius: 8, maxHeight: 260, overflowY: "auto" }}>
+-            {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
+-            {filtrelenmisStok.slice(0, 50).map((s) => (
+-              <button
+-                key={s.id}
+-                onClick={() => setStokId(s.id)}
+-                style={{
+-                  display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
+-                  padding: "10px 14px", background: stokId === s.id ? "#113330" : "transparent",
+-                  border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
+-                }}
+-              >
+-                <div>
+-                  <div style={{ fontSize: 13, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
+-                  <div style={{ fontSize: 11.5, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
+-                </div>
+-                <div style={{ fontFamily: "monospace", fontSize: 12.5, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
+-              </button>
+-            ))}
+-            {filtrelenmisStok.length > 50 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
+-          </div>
+-        )}
++        <button onClick={fisiAc} disabled={depoStok.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: depoStok.length === 0 ? "default" : "pointer", opacity: depoStok.length === 0 ? 0.5 : 1 }}>
++          <Plus size={16} /> Yeni Çıkış Fişi Aç
++        </button>
++        {machines.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Makineler" ekranından makine ekle.</div>}
+ 
+-        {secilenStok && (
+-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#113330", border: "1px solid #1f4d47", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
+-            <div style={{ fontSize: 13 }}>
+-              Seçili: <b style={{ color: "#2dd4bf" }}>{secilenStok.stokAdi}</b> <span style={{ color: "#6b7178", fontFamily: "monospace" }}>({secilenStok.stokKodu})</span>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik="Depo Çıkış Fişi" ikon={Boxes} genislik={820}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={{ ...fisAnaBtn, background: "#c0392b", borderColor: "#c0392b", color: "#fff" }} onClick={cikisYap}><Save size={14} /> Çıkışı Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
++            <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Stok Seçimi</div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Alt Grup</span>
++              <select style={fisInput} value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
++                <option value="">Tüm Alt Gruplar</option>
++                {altGrupAdlariListe.map((v) => <option key={v} value={v}>{v}</option>)}
++              </select>
++            </div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}>
++              <span style={fisEtiket}>Stok Kodu / Adı</span>
++              <input style={fisInput} placeholder="Ara…" value={arama} onChange={(e) => { setArama(e.target.value); setStokId(""); }} />
+             </div>
+-            <button onClick={() => setStokId("")} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", fontSize: 12 }}>Değiştir ✕</button>
++
++            {(arama.trim() || altGrupFiltre) && (
++              <div style={{ marginTop: 12, border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
++                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
++                {filtrelenmisStok.slice(0, 50).map((s) => (
++                  <button
++                    key={s.id}
++                    onClick={() => setStokId(s.id)}
++                    style={{
++                      display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
++                      padding: "9px 13px", background: stokId === s.id ? "#113330" : "transparent",
++                      border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
++                    }}
++                  >
++                    <div>
++                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
++                      <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
++                    </div>
++                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
++                  </button>
++                ))}
++                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
++              </div>
++            )}
+           </div>
+-        )}
+ 
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+-            <div style={{ gridColumn: "span 2" }}>
+-              <label className="field-label">Stok Adı</label>
+-              <input className="input" value={secilenStok ? secilenStok.stokAdi : ""} placeholder="Yukarıdan bir stok seç" disabled style={{ opacity: secilenStok ? 1 : 0.6 }} />
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Çıkış Bilgileri</div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Stok Adı</span>
++              <input style={{ ...fisInput, background: "#16232a", color: secilenStok ? "#2dd4bf" : "#6b7178" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
+             </div>
+-            <div>
+-              <label className="field-label">Hedef Makine</label>
+-              <select className="input" value={hedefMakine} onChange={(e) => setHedefMakine(e.target.value)}>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Mevcut Miktar</span>
++              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
++            </div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Hedef Makine</span>
++              <select style={fisInput} value={hedefMakine} onChange={(e) => setHedefMakine(e.target.value)}>
+                 <option value="">Seçiniz</option>
+                 {machines.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+               </select>
+             </div>
+-            <div><label className="field-label">Miktar</label><input className="input" type="number" min="0" step="0.01" value={miktar} onChange={(e) => setMiktar(e.target.value)} /></div>
+-            <div><label className="field-label">Tarih</label><input className="input" type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} /></div>
+-            <div style={{ gridColumn: "span 2" }}><label className="field-label">Açıklama (opsiyonel)</label><input className="input" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Çıkış Miktarı</span><input style={fisInput} type="number" min="0" step="0.01" value={miktar} onChange={(e) => setMiktar(e.target.value)} /></div>
++            <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} /></div>
++            <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Açıklama</span><input style={fisInput} placeholder="Opsiyonel" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
+           </div>
+-        </div>
+-
+-        <button onClick={cikisYap} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 7, padding: "10px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+-          − Çıkışı Kaydet
+-        </button>
+-        {msg && (
+-          <div style={{ marginTop: 14, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 7, padding: "9px 12px" }}>{msg}</div>
+-        )}
+-        {machines.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Makineler" ekranından makine ekle.</div>}
++          {msg && (
++            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
++          )}
++        </EvrakPenceresi>
+       </div>
+ 
+       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+@@ -5704,6 +5893,7 @@ function DepoHareketleri({ depoHareketler }) {
+ 
+ 
+ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, icon: Icon }) {
++  const [fisAcik, setFisAcik] = useState(false);
+   const [val, setVal] = useState("");
+   const [arama, setArama] = useState("");
+   const [iceAktariliyor, setIceAktariliyor] = useState(false);
+@@ -5785,18 +5975,33 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
+           </div>
+         </div>
+ 
+-        <div style={{ display: "flex", gap: 10 }}>
+-          <input
+-            className="input"
+-            placeholder={placeholder}
+-            value={val}
+-            onChange={(e) => setVal(e.target.value)}
+-            onKeyDown={(e) => e.key === "Enter" && add()}
+-          />
+-          <button onClick={add} style={{ display: "flex", alignItems: "center", gap: 6, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "0 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer", whiteSpace: "nowrap" }}>
+-            <Plus size={15} /> Ekle
+-          </button>
+-        </div>
++        <button onClick={() => { setVal(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
++          <Plus size={16} /> Yeni {title} Kartı Aç
++        </button>
++        <EvrakPenceresi
++          acik={fisAcik} kapat={() => setFisAcik(false)}
++          baslik={`${title} Tanım Kartı`} ikon={Icon} genislik={560}
++          butonlar={
++            <>
++              <button style={fisAltBtn} onClick={() => setVal("")}><RefreshCw size={14} /> Yeni</button>
++              <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++              <button style={fisAnaBtn} onClick={() => { add(); setFisAcik(false); }}><Save size={14} /> Kaydet</button>
++            </>
++          }
++        >
++          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
++            <div style={{ ...fisSatir, marginBottom: 0 }}>
++              <span style={fisEtiket}>{title} Adı</span>
++              <input
++                style={fisInput}
++                placeholder={placeholder}
++                value={val}
++                onChange={(e) => setVal(e.target.value)}
++                onKeyDown={(e) => { if (e.key === "Enter") { add(); setFisAcik(false); } }}
++              />
++            </div>
++          </div>
++        </EvrakPenceresi>
+         <div style={{ fontSize: 12, color: mesaj ? "#2dd4bf" : "#6b7178", marginTop: 10 }}>
+           {mesaj || `Toplam ${items.length} kayıt. Excel dosyasında isimler tek sütunda alt alta olmalı (başlık satırı olabilir).`}
+         </div>

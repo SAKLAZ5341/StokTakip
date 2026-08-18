@@ -1,0 +1,281 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index 1edbe03..91dad0c 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1,5 +1,5 @@
+ import React, { useState, useEffect, useMemo, useRef } from "react";
+-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check } from "lucide-react";
++import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet } from "lucide-react";
+ import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
+ import {
+   collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch, query, where, getDocs, getDoc, increment,
+@@ -275,6 +275,49 @@ const erpGridKutu = { border: "1px solid #2a4b52", borderRadius: 8, overflow: "h
+ const erpGridTh = { padding: "8px 10px", textAlign: "left", fontSize: 11, textTransform: "uppercase", color: "#6b7178", borderBottom: "1px solid #2a4b52", fontWeight: 700, letterSpacing: 0.3, whiteSpace: "nowrap" };
+ const erpGridTd = { padding: "6px 8px" };
+ const erpGridInput = { padding: "6px 8px", fontSize: 12.5 };
++
++// ---------- Mikro tarzı evrak penceresi (ortak bileşen) ----------
++// Etiket solda, alan sağda — klasik ERP fiş düzeni.
++const fisSatir = { display: "flex", alignItems: "center", gap: 8, marginBottom: 7 };
++const fisEtiket = { fontSize: 12.5, color: "#c7cbd1", width: 128, flexShrink: 0 };
++const fisInput = { flex: 1, minWidth: 0, background: "#142a30", border: "1px solid #3d6169", borderRadius: 3, padding: "5px 8px", color: "#e7e5e0", fontSize: 12.5, outline: "none" };
++const fisGridTh = { padding: "6px 8px", textAlign: "left", fontSize: 11.5, color: "#c7cbd1", background: "#22404a", borderBottom: "1px solid #2a4b52", borderRight: "1px solid #2a4b52", fontWeight: 600, whiteSpace: "nowrap" };
++const fisGridTd = { padding: 0, borderBottom: "1px solid #24424a", borderRight: "1px solid #24424a" };
++const fisHucreInput = { width: "100%", background: "transparent", border: "none", padding: "6px 8px", color: "#e7e5e0", fontSize: 12.5, outline: "none" };
++const fisAltBtn = { display: "flex", alignItems: "center", gap: 6, background: "#1b333c", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 4, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
++const fisAnaBtn = { ...fisAltBtn, background: "#2dd4bf", borderColor: "#2dd4bf", color: "#142a30", fontWeight: 700 };
++
++function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, genislik = 1080 }) {
++  useEffect(() => {
++    if (!acik) return;
++    const esc = (e) => { if (e.key === "Escape") kapat(); };
++    window.addEventListener("keydown", esc);
++    document.body.style.overflow = "hidden";
++    return () => { window.removeEventListener("keydown", esc); document.body.style.overflow = ""; };
++  }, [acik, kapat]);
++  if (!acik) return null;
++  return (
++    <div
++      onMouseDown={kapat}
++      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "32px 14px", overflowY: "auto" }}
++    >
++      <div
++        onMouseDown={(e) => e.stopPropagation()}
++        style={{ width: "100%", maxWidth: genislik, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column" }}
++      >
++        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
++          {Ikon && <Ikon size={15} color="#2dd4bf" />}
++          <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{baslik}</span>
++          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
++        </div>
++        <div style={{ padding: 14 }}>{children}</div>
++        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", flexWrap: "wrap", borderRadius: "0 0 4px 4px" }}>
++          {butonlar}
++        </div>
++      </div>
++    </div>
++  );
++}
+ const FASON_DURUM = {
+   bekliyor: { label: "Bekliyor", renk: "#e8a33d" },
+   uretimde: { label: "Üretimde", renk: "#2dd4bf" },
+@@ -3732,7 +3775,8 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+ const bosFasonSatiri = () => ({ key: Math.random().toString(36).slice(2), projeAdi: "", miktar: "", ucret: "", resimRef: "", aciklama: "" });
+ 
+ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+-  const [baslik, setBaslik] = useState({ firmaId: "", projeKodu: "" });
++  const [fisAcik, setFisAcik] = useState(false);
++  const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), firmaId: "", projeKodu: "" });
+   const [satirlar, setSatirlar] = useState([bosFasonSatiri()]);
+   const [msg, setMsg] = useState("");
+   const [f, setF] = useState({ arama: "", firmaId: "", durum: "" });
+@@ -3749,22 +3793,39 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+   const satirSil = (key) => setSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+   const araToplam = satirlar.reduce((t, r) => t + (Number(String(r.ucret || "").replace(",", ".")) || 0), 0);
+ 
++  // Evrak numarası: mevcut fişlerin en büyük numarasının bir fazlası
++  const yeniEvrakNo = () => {
++    let maks = 0;
++    fasonIsler.forEach((j) => {
++      const m = /(\d+)\s*$/.exec(String(j.evrakNo || ""));
++      if (m) maks = Math.max(maks, Number(m[1]));
++    });
++    return `İŞ-${String(maks + 1).padStart(5, "0")}`;
++  };
++  const fisiTemizle = () => {
++    setBaslik({ evrakNo: yeniEvrakNo(), belgeNo: "", tarih: todayISO(), firmaId: "", projeKodu: "" });
++    setSatirlar([bosFasonSatiri()]);
++    setMsg("");
++  };
++  const fisiAc = () => { fisiTemizle(); setFisAcik(true); };
++
+   const kaydet = async () => {
+-    if (!baslik.firmaId) { setMsg("Firma zorunlu."); setTimeout(() => setMsg(""), 2500); return; }
++    if (!baslik.firmaId) { setMsg("Firma zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
+     const gecerliSatirlar = satirlar.filter((r) => r.projeAdi.trim());
+-    if (gecerliSatirlar.length === 0) { setMsg("En az bir satıra Proje / Parça Adı girin."); setTimeout(() => setMsg(""), 2500); return; }
++    if (gecerliSatirlar.length === 0) { setMsg("En az bir satıra Proje / Parça Adı girin."); setTimeout(() => setMsg(""), 3000); return; }
+     const batch = writeBatch(db);
+     gecerliSatirlar.forEach((r) => {
+       const ref = doc(collection(db, "fason_isler"));
+       batch.set(ref, {
++        evrakNo: baslik.evrakNo, belgeNo: baslik.belgeNo,
+         firmaId: baslik.firmaId, projeKodu: baslik.projeKodu, projeAdi: r.projeAdi.trim(),
+         miktar: r.miktar, ucret: r.ucret, resimRef: r.resimRef, aciklama: r.aciklama,
+-        durum: "bekliyor", olusturmaTarihi: todayISO(),
++        durum: "bekliyor", olusturmaTarihi: baslik.tarih || todayISO(),
+       });
+     });
+     await batch.commit();
+-    setSatirlar([bosFasonSatiri()]);
+-    setMsg(`${gecerliSatirlar.length} satır eklendi.`); setTimeout(() => setMsg(""), 2500);
++    setMsg(`${gecerliSatirlar.length} satır kaydedildi.`);
++    setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
+   };
+   const sil = async (id) => {
+     if (!window.confirm("Bu iş silinecek. Bağlı hareketler silinmez ama bağlantısız kalır. Emin misiniz?")) return;
+@@ -3847,75 +3908,122 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+ 
+   return (
+     <div style={{ display: "grid", gap: 20 }}>
+-      <div className="card" style={{ padding: 20 }}>
+-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+-          <div style={{ fontWeight: 700, fontSize: 15 }}>Yeni İş Ekle</div>
+-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+-            <button className="btn-ghost" onClick={() => sablonIndir(["FİRMA ADI", "PROJE KODU", "PROJE ADI", "MİKTAR", "ÜCRET", "RESİM REFERANSI", "AÇIKLAMA", "DURUM", "OLUŞTURMA TARİHİ"], [["Örnek Fason Ltd.", "PRJ-001", "Örnek Proje", "100", "5000", "TR-001", "", "Bekliyor", "2026-01-15"]], "fason-is-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
+-            <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+-            <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
+-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++      <EvrakPenceresi
++        acik={fisAcik}
++        kapat={() => setFisAcik(false)}
++        baslik="Fason İş Fişi (Yeni Kayıt)"
++        ikon={ClipboardList}
++        butonlar={
++          <>
++            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
++            <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
++            <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
++            <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
++            <button style={fisAnaBtn} onClick={kaydet}><Save size={14} /> Kaydet</button>
++          </>
++        }
++      >
++        {/* --- Fiş başlığı: etiket solda, alan sağda (Mikro düzeni) --- */}
++        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "0 26px" }}>
++          <div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Evrak No</span>
++              <input style={fisInput} value={baslik.evrakNo} onChange={(e) => setBaslik((s) => ({ ...s, evrakNo: e.target.value }))} />
++            </div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Belge No</span>
++              <input style={fisInput} value={baslik.belgeNo} onChange={(e) => setBaslik((s) => ({ ...s, belgeNo: e.target.value }))} />
++            </div>
+           </div>
+-        </div>
+-        <div style={belgeBaslikKutu}>
+-          <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+-            <div>
+-              <label className="field-label">Firma</label>
+-              <select className="input" value={baslik.firmaId} onChange={(e) => setBaslik((s) => ({ ...s, firmaId: e.target.value }))}>
++          <div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Tarih</span>
++              <input style={fisInput} type="date" value={baslik.tarih} onChange={(e) => setBaslik((s) => ({ ...s, tarih: e.target.value }))} />
++            </div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Proje Kodu</span>
++              <input style={fisInput} value={baslik.projeKodu} onChange={(e) => setBaslik((s) => ({ ...s, projeKodu: e.target.value }))} placeholder="Örn: PRJ-001" />
++            </div>
++          </div>
++          <div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Firma (Cari)</span>
++              <select style={fisInput} value={baslik.firmaId} onChange={(e) => setBaslik((s) => ({ ...s, firmaId: e.target.value }))}>
+                 <option value="">Seçin…</option>
+                 {fasonFirmalar.map((f) => <option key={f.id} value={f.id}>{f.ad}{f.not && f.not.trim() ? ` — ${f.not}` : ""}</option>)}
+               </select>
+             </div>
+-            <div><label className="field-label">Proje Kodu</label><input className="input" value={baslik.projeKodu} onChange={(e) => setBaslik((s) => ({ ...s, projeKodu: e.target.value }))} placeholder="Örn: PRJ-001" /></div>
++            <div style={fisSatir}>
++              <span style={fisEtiket}>Satır Sayısı</span>
++              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a" }} value={satirlar.filter((r) => r.projeAdi.trim()).length} readOnly />
++            </div>
+           </div>
+         </div>
+ 
+-        <div style={erpGridKutu}>
++        {/* --- Satır grid'i --- */}
++        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+           <div style={{ overflowX: "auto" }}>
+-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
++            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
+               <thead>
+-                <tr style={{ background: "#16232a" }}>
+-                  <th style={erpGridTh}>Proje / Parça Adı</th>
+-                  <th style={{ ...erpGridTh, width: 110 }}>Miktar</th>
+-                  <th style={{ ...erpGridTh, width: 130 }}>Ücret (₺)</th>
+-                  <th style={erpGridTh}>Resim Referansı / Link</th>
+-                  <th style={erpGridTh}>Açıklama</th>
+-                  <th style={{ ...erpGridTh, width: 36 }}></th>
++                <tr>
++                  <th style={{ ...fisGridTh, width: 34, textAlign: "center" }}>#</th>
++                  <th style={fisGridTh}>Proje / Parça Adı</th>
++                  <th style={{ ...fisGridTh, width: 100 }}>Miktar</th>
++                  <th style={{ ...fisGridTh, width: 120 }}>Ücret (₺)</th>
++                  <th style={{ ...fisGridTh, width: 170 }}>Resim Referansı</th>
++                  <th style={fisGridTh}>Açıklama</th>
++                  <th style={{ ...fisGridTh, width: 34, borderRight: "none" }}></th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {satirlar.map((r, i) => (
+-                  <tr key={r.key} style={{ borderBottom: "1px solid #223840" }}>
+-                    <td style={erpGridTd}><input className="input" style={erpGridInput} value={r.projeAdi} onChange={(e) => satirGuncelle(r.key, "projeAdi", e.target.value)} placeholder={`Satır ${i + 1}`} /></td>
+-                    <td style={erpGridTd}><input className="input" style={erpGridInput} value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
+-                    <td style={erpGridTd}><input className="input" type="number" step="0.01" style={erpGridInput} value={r.ucret} onChange={(e) => satirGuncelle(r.key, "ucret", e.target.value)} /></td>
+-                    <td style={erpGridTd}><input className="input" style={erpGridInput} value={r.resimRef} onChange={(e) => satirGuncelle(r.key, "resimRef", e.target.value)} /></td>
+-                    <td style={erpGridTd}><input className="input" style={erpGridInput} value={r.aciklama} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} /></td>
+-                    <td style={{ ...erpGridTd, textAlign: "center" }}>
+-                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4 }}><Trash2 size={14} /></button>
++                  <tr key={r.key}>
++                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
++                    <td style={fisGridTd}><input style={fisHucreInput} value={r.projeAdi} onChange={(e) => satirGuncelle(r.key, "projeAdi", e.target.value)} /></td>
++                    <td style={fisGridTd}><input style={fisHucreInput} value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
++                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.ucret} onChange={(e) => satirGuncelle(r.key, "ucret", e.target.value)} /></td>
++                    <td style={fisGridTd}><input style={fisHucreInput} value={r.resimRef} onChange={(e) => satirGuncelle(r.key, "resimRef", e.target.value)} /></td>
++                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} /></td>
++                    <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
++                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                     </td>
+                   </tr>
+                 ))}
++                <tr>
++                  <td colSpan={7} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
++                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
++                  </td>
++                </tr>
+               </tbody>
+               <tfoot>
+-                <tr style={{ background: "#16232a" }}>
+-                  <td colSpan={2} style={{ padding: 10 }}>
+-                    <button className="btn-ghost" onClick={satirEkle} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><Plus size={13} /> Satır Ekle</button>
+-                  </td>
+-                  <td colSpan={4} style={{ padding: 10, textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+-                    Ara Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf" }}>{paraTR(araToplam)}</span>
++                <tr>
++                  <td colSpan={7} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
++                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{paraTR(araToplam)}</span>
+                   </td>
+                 </tr>
+               </tfoot>
+             </table>
+           </div>
+         </div>
++      </EvrakPenceresi>
+ 
+-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
+-          <button onClick={kaydet} disabled={fasonFirmalar.length === 0} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}><Plus size={16} /> Kaydet</button>
+-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
++      <div className="card" style={{ padding: 20 }}>
++        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
++          <div style={{ fontWeight: 700, fontSize: 15 }}>Fason İş Fişleri</div>
++          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
++            <button className="btn-ghost" onClick={() => sablonIndir(["FİRMA ADI", "PROJE KODU", "PROJE ADI", "MİKTAR", "ÜCRET", "RESİM REFERANSI", "AÇIKLAMA", "DURUM", "OLUŞTURMA TARİHİ"], [["Örnek Fason Ltd.", "PRJ-001", "Örnek Proje", "100", "5000", "TR-001", "", "Bekliyor", "2026-01-15"]], "fason-is-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
++            <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
++            <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
++            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
++          </div>
+         </div>
++        <button
++          onClick={fisiAc}
++          disabled={fasonFirmalar.length === 0}
++          style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonFirmalar.length === 0 ? "default" : "pointer", opacity: fasonFirmalar.length === 0 ? 0.5 : 1 }}
++        >
++          <Plus size={16} /> Yeni İş Fişi Aç
++        </button>
+         {fasonFirmalar.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce Firmalar sekmesinden firma ekleyin.</div>}
+         {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+       </div>
