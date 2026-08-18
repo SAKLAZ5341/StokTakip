@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer, LogOut } from "lucide-react";
 import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
 import {
   collection, onSnapshot, doc, query, where, getDocs, getDoc, increment,
@@ -14,12 +14,22 @@ import * as XLSX from "xlsx";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
+// Mobil alt çubuktaki hızlı erişim düğmeleri
+const MOBIL_KISAYOL = [
+  { id: "ana-sayfa", label: "Ana Sayfa", icon: Home },
+  { id: "hammadde-acik", label: "Hammadde", icon: Boxes },
+  { id: "satinalma-siparis", label: "Sipariş", icon: ShoppingCart },
+  { id: "depo-kart", label: "Depo", icon: Factory },
+  { id: "__menu", label: "Menü", icon: MenuIcon },
+];
+
 const MENU = [
   { id: "ana-sayfa", label: "Ana Sayfa", icon: Home },
   {
     id: "hammadde", label: "Hammadde", icon: Factory,
     children: [
       { id: "hammadde-raporu", label: "Hammadde Raporu" },
+      { id: "hammadde-aktarim", label: "Hammadde Aktarım" },
       { id: "hammadde-gelen", label: "Gelen Hammaddeler" },
       { id: "hammadde-acik", label: "Açık Siparişler" },
       { id: "hammadde-analiz", label: "Kalite / Sipariş Analizi" },
@@ -127,6 +137,7 @@ const YETKI_ESDEGER = {
   "hammadde-gelen": "hammadde-raporu",
   "hammadde-acik": "hammadde-kayit",
   "hammadde-analiz": "hammadde-raporu",
+  "hammadde-aktarim": "hammadde-raporu",
   "stok-kart": "depo-kart",
 };
 function ekranYetkisi(kayit, eposta, ekranId) {
@@ -761,6 +772,53 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
   w.focus();
 }
 
+// ---------- Mobil / masaüstü ayrımı ----------
+// 820px altı = telefon-tablet: menü çekmece olur, tablolar kart görünümüne düşer,
+// fişler tam ekran açılır. Üstü = masaüstü düzeni (hiç değişmez).
+const MOBIL_ESIK = 820;
+function mobilMi() {
+  if (typeof window === "undefined") return false;
+  if (window.matchMedia) return window.matchMedia(`(max-width: ${MOBIL_ESIK}px)`).matches;
+  return (window.innerWidth || 0) <= MOBIL_ESIK;
+}
+function useMobil() {
+  const [mobil, setMobil] = useState(mobilMi);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia(`(max-width: ${MOBIL_ESIK}px)`);
+    const degisti = () => setMobil(mq.matches);
+    degisti();
+    if (mq.addEventListener) { mq.addEventListener("change", degisti); return () => mq.removeEventListener("change", degisti); }
+    mq.addListener(degisti); return () => mq.removeListener(degisti);
+  }, []);
+  return mobil;
+}
+
+// Mobilde tabloları kart görünümüne çevirebilmek için başlıkları hücrelere kopyalar.
+// Böylece 30'dan fazla ekranın tablosu tek yerden mobil uyumlu hale gelir.
+function useTabloEtiketleri(etkin, tetik) {
+  useEffect(() => {
+    if (!etkin || typeof document === "undefined") return;
+    const etiketle = () => {
+      document.querySelectorAll("table").forEach((tbl) => {
+        const basliklar = [...tbl.querySelectorAll("thead th")].map((h) => h.textContent.trim());
+        if (!basliklar.length) return;
+        tbl.querySelectorAll("tbody tr").forEach((tr) => {
+          [...tr.children].forEach((td, i) => {
+            const e = basliklar[i] || "";
+            if (td.getAttribute("data-label") !== e) td.setAttribute("data-label", e);
+          });
+        });
+      });
+    };
+    etiketle();
+    if (typeof MutationObserver === "undefined") return;
+    const gozcu = new MutationObserver(etiketle);
+    gozcu.observe(document.body, { childList: true, subtree: true });
+    return () => gozcu.disconnect();
+  }, [etkin, tetik]);
+}
+
 function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, genislik = 1080 }) {
   useEffect(() => {
     if (!acik) return;
@@ -773,19 +831,21 @@ function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, g
   return (
     <div
       onMouseDown={kapat}
+      className="evrak-katman"
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "32px 14px", overflowY: "auto" }}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
+        className="evrak-kutu"
         style={{ width: "100%", maxWidth: genislik, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
+        <div className="evrak-baslik" style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
           {Ikon && <Ikon size={15} color="#2dd4bf" />}
           <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{baslik}</span>
           <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
         </div>
-        <div style={{ padding: 14 }}>{children}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", flexWrap: "wrap", borderRadius: "0 0 4px 4px" }}>
+        <div className="evrak-govde" style={{ padding: 14 }}>{children}</div>
+        <div className="evrak-alt" style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", flexWrap: "wrap", borderRadius: "0 0 4px 4px" }}>
           {butonlar}
         </div>
       </div>
@@ -1253,6 +1313,10 @@ function Panel({ onCikis, kullanici }) {
   const [tab, setTab] = useState("ana-sayfa");
   const [acikGruplar, setAcikGruplar] = useState(new Set(["uretim"]));
   const [mobilMenuAcik, setMobilMenuAcik] = useState(false);
+  const mobil = useMobil();
+  useTabloEtiketleri(mobil, tab);
+  // Masaüstüne dönülünce çekmece açık kalmasın
+  useEffect(() => { if (!mobil) setMobilMenuAcik(false); }, [mobil]);
 
   // Tarayıcının geri/ileri tuşları uygulama içinde menüler arasında gezinsin,
   // uygulamadan çıkıp giriş ekranına dönmesin.
@@ -1392,6 +1456,7 @@ function Panel({ onCikis, kullanici }) {
   const aktifBaslik = () => {
     if (tab === "ana-sayfa") return "Ana Sayfa";
     if (tab === "stok-kayit") return "Üretim Kaydı";
+    if (tab === "hammadde-aktarim") return "Hammadde Aktarım";
     if (tab === "hammadde-gelen") return "Gelen Hammaddeler";
     if (tab === "hammadde-acik") return "Açık Hammadde Siparişleri";
     if (tab === "hammadde-analiz") return "Hammadde Kalite / Sipariş Analizi";
@@ -1459,15 +1524,98 @@ function Panel({ onCikis, kullanici }) {
         .navbtn.kilitli, .navsub.kilitli { opacity: 0.38; cursor: not-allowed; }
         .navbtn.kilitli:hover, .navsub.kilitli:hover { background: transparent; color: inherit; }
         .mobil-menu-btn { display: none; }
+        .sadece-mobil { display: none; }
+
+        /* ================= MOBİL DÜZEN (820px ve altı) ================= */
         @media (max-width: 820px) {
+          .sadece-masaustu { display: none !important; }
+          .sadece-mobil { display: flex; }
           .mobil-menu-btn { display: flex; }
-          .sidebar { position: fixed; inset: 0 0 0 0; z-index: 40; width: 260px !important; transform: translateX(-100%); transition: transform .2s; }
+
+          /* Menü: soldan açılan çekmece */
+          .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 272px !important; transform: translateX(-100%); transition: transform .22s ease; overflow-y: auto; box-shadow: 6px 0 24px rgba(0,0,0,.45); }
           .sidebar.open { transform: translateX(0); }
-          .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; }
+          .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30; }
+          .navbtn, .navsub { padding-top: 13px; padding-bottom: 13px; font-size: 14.5px; }
+          .navsub { padding-left: 40px; }
+
+          /* Genel yerleşim */
+          .ana-icerik { padding: 12px !important; padding-bottom: 78px !important; }
+          .card { border-radius: 12px; }
+          .card > div[style*="padding: 20px"], .card > div[style*="padding: 24px"] { padding: 14px !important; }
+          .ust-baslik { padding: 10px 12px !important; gap: 8px !important; }
+          .input { font-size: 16px; padding: 12px 13px; }  /* 16px: iOS otomatik yakınlaştırmayı engeller */
+
+          /* Özet kartları mobilde daha derli toplu */
+          .stat-kart { padding: 11px 12px !important; }
+          .stat-etiket { font-size: 9.5px !important; margin-bottom: 4px !important; line-height: 1.25; }
+          .stat-deger { font-size: 18px !important; word-break: break-word; }
+          .btn-ghost { padding: 10px 13px; font-size: 13px; min-height: 40px; }
+          .mobil-menu-btn { min-width: 44px; justify-content: center; }
+          button { touch-action: manipulation; }
+
+          /* Tablolar: her satır bir kart */
+          table { display: block; }
+          thead { display: none; }
+          tbody, tfoot { display: block; width: 100%; }
+          tbody tr { display: block; background: #16232a; border: 1px solid #2a4b52; border-radius: 10px; margin-bottom: 10px; padding: 4px 0; }
+          tbody tr:hover td { background: transparent; }
+          tbody td { display: flex; align-items: center; gap: 10px; width: 100%; border: none; border-bottom: 1px solid #22404a; padding: 9px 12px; font-size: 13.5px; }
+          tbody tr td:last-child { border-bottom: none; }
+          tbody td::before {
+            content: attr(data-label);
+            flex: 0 0 116px; min-width: 116px;
+            color: #8b929a; font-size: 10.5px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em; line-height: 1.3;
+            text-align: left;
+          }
+          tbody td[data-label=""]::before { display: none; }
+          tbody td > * { max-width: 100%; }
+          tfoot tr { display: block; }
+          tfoot td { display: block; width: 100%; text-align: right; }
+          tfoot td::before { display: none; }
+
+          /* Fişler tam ekran */
+          .evrak-katman { padding: 0 !important; align-items: stretch !important; }
+          .evrak-kutu { max-width: 100% !important; min-height: 100%; border-radius: 0 !important; border: none !important; }
+          .evrak-baslik { position: sticky; top: 0; z-index: 2; border-radius: 0 !important; padding: 12px 13px !important; }
+          .evrak-govde { padding: 12px !important; }
+          .evrak-alt { position: sticky; bottom: 0; z-index: 2; border-radius: 0 !important; justify-content: stretch !important; }
+          .evrak-alt > button { flex: 1; justify-content: center; padding: 12px 10px !important; }
+
+          /* Alt hızlı erişim çubuğu */
+          .mobil-alt-bar {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
+            display: flex; background: #16232a; border-top: 1px solid #2a4b52;
+            padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px));
+          }
+          .mobil-alt-bar button {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+            background: none; border: none; color: #8b929a; font-size: 10.5px; font-weight: 700;
+            padding: 7px 2px; cursor: pointer; border-radius: 8px;
+          }
+          .mobil-alt-bar button.active { color: #2dd4bf; background: #113330; }
+        }
+
+        /* Çok dar telefonlar */
+        @media (max-width: 420px) {
+          tbody td::before { flex-basis: 96px; min-width: 96px; font-size: 10px; }
+          .ana-icerik { padding: 9px !important; padding-bottom: 76px !important; }
+        }
+
+        /* Yazdırmada mobil düzen devreye girmesin */
+        @media print {
+          .sidebar, .mobil-alt-bar, .mobil-menu-btn { display: none !important; }
+          thead { display: table-header-group !important; }
+          table { display: table !important; }
+          tbody { display: table-row-group !important; }
+          tbody tr { display: table-row !important; }
+          tbody td { display: table-cell !important; }
+          tbody td::before { display: none !important; }
         }
       `}</style>
 
-      <header style={{ borderBottom: "1px solid #2a4b52", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+      <header className="ust-baslik" style={{ borderBottom: "1px solid #2a4b52", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <button
           className="btn-ghost mobil-menu-btn"
           onClick={() => setMobilMenuAcik(true)}
@@ -1489,8 +1637,9 @@ function Panel({ onCikis, kullanici }) {
           <div style={{ fontSize: 11.5, color: "#8b929a" }}>{aktifBaslik()}</div>
         </div>
         <button onClick={onCikis} style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 7, padding: "7px 12px", fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-          {kullanici?.email && <span style={{ color: "#6b7178", fontSize: 11.5 }}>{kullanici.email}</span>}
-          Çıkış Yap
+          {kullanici?.email && <span className="sadece-masaustu" style={{ color: "#6b7178", fontSize: 11.5 }}>{kullanici.email}</span>}
+          <span className="sadece-masaustu">Çıkış Yap</span>
+          <LogOut size={15} className="sadece-mobil" />
         </button>
       </header>
 
@@ -1547,7 +1696,7 @@ function Panel({ onCikis, kullanici }) {
           })}
         </aside>
 
-        <main style={{ flex: 1, padding: 24, overflowY: "auto", minWidth: 0 }}>
+        <main className="ana-icerik" style={{ flex: 1, padding: 24, overflowY: "auto", minWidth: 0 }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
             {!kullanicilarYuklendi && (
               <div style={{ color: "#2dd4bf", fontFamily: "monospace", fontSize: 13, letterSpacing: 1, padding: 40, textAlign: "center" }}>YETKİLER YÜKLENİYOR…</div>
@@ -1563,6 +1712,10 @@ function Panel({ onCikis, kullanici }) {
               fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} fasonHatirlaticilar={fasonHatirlaticilar}
             />}
             {tab === "stok-kayit" && <KayitEkle teams={teams} machines={machines} records={records} depoStok={depoStok} />}
+            {tab === "hammadde-aktarim" && <HammaddeAktarim
+              hammaddeler={hammaddeler} satinalmaSiparisler={satinalmaSiparisler}
+              fasonFirmalar={fasonFirmalar} depoStok={depoStok} kullanici={kullanici}
+            />}
             {(tab === "hammadde-raporu" || tab === "hammadde-gelen" || tab === "hammadde-acik") && <HammaddeRaporu
               key={tab}
               hammaddeler={hammaddeler} satinalmaSiparisler={satinalmaSiparisler}
@@ -1655,6 +1808,26 @@ function Panel({ onCikis, kullanici }) {
           </div>
         </main>
       </div>
+
+      {/* Mobil alt hızlı erişim çubuğu */}
+      <nav className="mobil-alt-bar sadece-mobil">
+        {MOBIL_KISAYOL.map((k) => {
+          const Ikon = k.icon;
+          const kilitli = kullanicilarYuklendi && yetki(k.id) === "yok";
+          return (
+            <button
+              key={k.id}
+              className={tab === k.id ? "active" : ""}
+              onClick={() => { if (k.id === "__menu") setMobilMenuAcik(true); else if (!kilitli) secimYap(k.id); }}
+              disabled={kilitli && k.id !== "__menu"}
+              style={kilitli && k.id !== "__menu" ? { opacity: 0.35 } : undefined}
+            >
+              <Ikon size={19} />
+              <span>{k.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
@@ -2119,6 +2292,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Malzeme Bazında Dağılım ({malzemeGruplari.length})</div>
+                    <ExcelSeridi alanlar={XLS_ALAN.metal_malzemeler} dosyaAdi="metal-malzemeleri" koleksiyon="metal_malzemeler" />
           <button className="btn-ghost" onClick={disaAktarMalzeme}><Download size={14} /> Excele Aktar</button>
         </div>
         <table>
@@ -2140,6 +2314,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Talep Bazında Dağılım ({talepGruplari.length})</div>
+                    <ExcelSeridi alanlar={XLS_ALAN.metal_talepler} dosyaAdi="metal-talepleri" koleksiyon="metal_talepler" />
           <button className="btn-ghost" onClick={disaAktarTalep}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
@@ -2276,6 +2451,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Makine Bazında Çıkış ({makineBazliCikis.length})</div>
+                    <ExcelSeridi alanlar={XLS_ALAN.depo_hareketler} dosyaAdi="depo-hareketleri" koleksiyon="depo_hareketler" />
           <button className="btn-ghost" onClick={disaAktarMakine}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 400, overflowY: "auto" }}>
@@ -2321,6 +2497,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Kalem Bazında Hareket Özeti ({enCokHareketGorenler.length})</div>
+                    <ExcelSeridi alanlar={XLS_ALAN.depo_hareketler} dosyaAdi="depo-hareketleri" koleksiyon="depo_hareketler" />
           <button className="btn-ghost" onClick={disaAktarHareket}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 400, overflowY: "auto" }}>
@@ -2540,6 +2717,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
               {" · "}<b style={{ color: "#2dd4bf" }}>Firmaya tıklayınca iş dökümü açılır</b>
             </div>
           </div>
+                    <ExcelSeridi alanlar={XLS_ALAN.fason_isler} dosyaAdi="fason-isleri" koleksiyon="fason_isler" />
           <button className="btn-ghost" onClick={disaAktarFirma}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
@@ -2692,6 +2870,7 @@ function UretimRaporu({ teams, machines, records }) {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
+          <ExcelSeridi alanlar={XLS_ALAN.records} dosyaAdi="uretim-kayitlari" koleksiyon="records" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
@@ -2761,9 +2940,9 @@ function UretimRaporu({ teams, machines, records }) {
 
 function Stat({ label, value, highlight }) {
   return (
-    <div className="card" style={{ padding: "16px 18px" }}>
-      <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b929a", fontWeight: 600, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: highlight ? "#2dd4bf" : "#e7e5e0" }}>{value}</div>
+    <div className="card stat-kart" style={{ padding: "16px 18px" }}>
+      <div className="stat-etiket" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b929a", fontWeight: 600, marginBottom: 8 }}>{label}</div>
+      <div className="stat-deger" style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: highlight ? "#2dd4bf" : "#e7e5e0" }}>{value}</div>
     </div>
   );
 }
@@ -2838,6 +3017,7 @@ function StokRaporu({ hammaddeler }) {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
+          <ExcelSeridi alanlar={XLS_ALAN.hammadde} dosyaAdi="hammadde-stok" koleksiyon="hammadde" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
@@ -2976,6 +3156,7 @@ function SiparisRaporu({ hammaddeler }) {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
+          <ExcelSeridi alanlar={XLS_ALAN.hammadde} dosyaAdi="hammadde-siparis" koleksiyon="hammadde" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
@@ -3113,6 +3294,443 @@ async function hammaddeGelenAyarla(kayit, yeniGelen, depoStok, eposta) {
   }
   await batch.commit();
   return { fark, depoyaIslendi: !!stok };
+}
+
+// ---------- Ortak Excel şeridi: Şablon İndir / Excel'den İçe Aktar / Excele Aktar ----------
+// alanlar: [{ baslik: "STOK KODU", alan: "stokKodu", ornek: "STK-001", sayi: false, zorunlu: true, esler: ["kod"] }]
+async function excelDenGenelOku(dosya, alanlar) {
+  const rows = await dosyaOku(dosya);
+  if (!rows.length) return [];
+  const nrm = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().replace(/\s+/g, " ").trim();
+  const ilk = (rows[0] || []).map(nrm);
+  const sutunlar = alanlar.map((a) => {
+    const anahtarlar = [nrm(a.baslik), ...(a.esler || []).map(nrm)].filter(Boolean);
+    return ilk.findIndex((h) => h && anahtarlar.some((k) => h === k || h.includes(k) || k.includes(h)));
+  });
+  const baslikliMi = sutunlar.filter((i) => i !== -1).length >= Math.min(2, alanlar.length);
+  const al = (r, i) => (i != null && i !== -1 ? String(r[i] == null ? "" : r[i]).trim() : "");
+  const coz = (r) => {
+    const k = {};
+    alanlar.forEach((a, j) => {
+      const ham = al(r, baslikliMi ? sutunlar[j] : j);
+      k[a.alan] = a.sayi ? sayiCevir(ham) : ham;
+    });
+    return k;
+  };
+  const zorunlu = alanlar.filter((a) => a.zorunlu).map((a) => a.alan);
+  const gecerli = (k) => (zorunlu.length
+    ? zorunlu.every((z) => String(k[z] == null ? "" : k[z]).trim() !== "")
+    : Object.values(k).some((v) => String(v == null ? "" : v).trim() !== "" && v !== 0));
+  let kayitlar = [];
+  for (let i = baslikliMi ? 1 : 0; i < rows.length; i++) {
+    const k = coz(rows[i] || []);
+    if (gecerli(k)) kayitlar.push(k);
+  }
+  // Başlık sanılan satır aslında veriyse (başlıksız dosya) hiçbir kayıt çıkmaz — ilk satırı da veri say
+  if (!kayitlar.length && baslikliMi && rows.length) {
+    const k = coz(rows[0] || []);
+    if (gecerli(k)) kayitlar = [k];
+  }
+  return kayitlar;
+}
+
+function ExcelSeridi({ alanlar, dosyaAdi, sayfaAdi = "Veri", koleksiyon, hazirla, disaAktar, disaEtiketi, iceKapali }) {
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [msg, setMsg] = useState("");
+  const dosyaRef = useRef(null);
+  const alanListesi = alanlar || [];
+
+  const sablonAl = () => sablonIndir(
+    alanListesi.map((a) => a.baslik),
+    [alanListesi.map((a) => (a.ornek == null ? "" : String(a.ornek)))],
+    `${dosyaAdi || "sablon"}-sablonu.xlsx`, "Şablon"
+  );
+
+  const iceAktar = async (e) => {
+    const dosya = e.target.files[0];
+    if (!dosya) return;
+    setYukleniyor(true); setMsg("");
+    try {
+      const ham = await excelDenGenelOku(dosya, alanListesi);
+      if (!ham.length) setMsg("Dosyada geçerli satır bulunamadı.");
+      else {
+        const simdi = Date.now();
+        const veriler = ham.map((k) => ({ ...(hazirla ? hazirla(k) : k), olusturma: simdi }));
+        const { basarili, basarisiz } = await guvenliTopluYaz(koleksiyon, veriler, (yapilan, toplam) => {
+          setMsg(`${yapilan} / ${toplam} kayıt işleniyor…`);
+        });
+        setMsg(basarisiz > 0
+          ? `${basarili} kayıt eklendi, ${basarisiz} kayıt eklenemedi (bağlantı sorunu).`
+          : `${basarili} kayıt içe aktarıldı.`);
+      }
+    } catch (err) {
+      if (!err?.yetkiHatasi) { console.error(err); setMsg("İçe aktarma hatası: " + (err?.message || "bilinmeyen hata")); }
+    }
+    setYukleniyor(false); e.target.value = "";
+    setTimeout(() => setMsg(""), 8000);
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <button className="btn-ghost" onClick={sablonAl}><FileDown size={14} /> Excel Şablonu İndir</button>
+      {!iceKapali && koleksiyon && (
+        <>
+          <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+          <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={yukleniyor}>
+            <Upload size={14} /> {yukleniyor ? "Aktarılıyor…" : "Excel'den İçe Aktar"}
+          </button>
+        </>
+      )}
+      {disaAktar && <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaEtiketi || "Excele Aktar"}</button>}
+      {msg && <span style={{ fontSize: 12, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 6, padding: "5px 9px" }}>{msg}</span>}
+    </div>
+  );
+}
+
+// Koleksiyon bazlı şablon / içe aktarma sütunları
+const XLS_ALAN = {
+  records: [
+    { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14", esler: ["date"] },
+    { baslik: "TAKIM", alan: "takim", ornek: "Takım A" },
+    { baslik: "MAĞAZA", alan: "magaza", ornek: "Mağaza 1" },
+    { baslik: "MAKİNE", alan: "makine", ornek: "CNC-01" },
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "STK-001" },
+    { baslik: "ÜRÜN", alan: "urun", ornek: "Rulman 6204", zorunlu: true },
+    { baslik: "ADET", alan: "adet", ornek: "10", sayi: true },
+  ],
+  hammadde: [
+    { baslik: "SİPARİŞ NO", alan: "siparisEvrakNo", ornek: "PO-0001" },
+    { baslik: "CARİ KOD", alan: "cariKod", ornek: "320.01.001" },
+    { baslik: "CARİ İSMİ", alan: "cari", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["firma", "tedarikçi"] },
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "HMD-001" },
+    { baslik: "STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme", "ürün"] },
+    { baslik: "SİPARİŞ MİKTARI", alan: "miktar", ornek: "250", sayi: true, esler: ["miktar"] },
+    { baslik: "GELEN MİKTAR", alan: "gelenMiktar", ornek: "0", sayi: true },
+    { baslik: "BİRİM", alan: "birim", ornek: "Kg" },
+    { baslik: "BİRİM FİYAT", alan: "birimFiyat", ornek: "42,50", sayi: true },
+    { baslik: "TESLİM TARİHİ", alan: "teslimTarihi", ornek: "2026-09-01" },
+    { baslik: "PROJE KODU", alan: "projeKodu", ornek: "2026-092" },
+    { baslik: "KALİTE", alan: "kalite", ornek: "4140" },
+    { baslik: "AÇIKLAMA", alan: "aciklama2", ornek: "Ø30X375" },
+  ],
+  metal_talepler: [
+    { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
+    { baslik: "MALZEME", alan: "malzemeAdi", ornek: "St37", zorunlu: true },
+    { baslik: "TÜR", alan: "tur", ornek: "yuvarlak" },
+    { baslik: "ÖLÇÜ", alan: "olcu", ornek: "Ø30" },
+    { baslik: "BOY (mm)", alan: "boy", ornek: "6000", sayi: true },
+    { baslik: "ADET", alan: "adet", ornek: "5", sayi: true },
+    { baslik: "TOPLAM KG", alan: "toplamKg", ornek: "125,4", sayi: true },
+    { baslik: "PROJE", alan: "proje", ornek: "2026-092" },
+    { baslik: "TALEP EDEN", alan: "talepEden", ornek: "Fatih" },
+  ],
+  metal_malzemeler: [
+    { baslik: "MALZEME ADI", alan: "ad", ornek: "St37", zorunlu: true, esler: ["malzeme", "isim"] },
+    { baslik: "YOĞUNLUK (g/cm3)", alan: "yogunluk", ornek: "7,85", sayi: true, esler: ["yoğunluk", "yogunluk"] },
+  ],
+  depo_stok: [
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "STK-001", zorunlu: true, esler: ["kod"] },
+    { baslik: "STOK ADI", alan: "stokAdi", ornek: "Rulman 6204", zorunlu: true, esler: ["ad", "isim", "malzeme"] },
+    { baslik: "BİRİM", alan: "birim", ornek: "Adet" },
+    { baslik: "ANA GRUP KODU", alan: "anaGrupKodu", ornek: "01" },
+    { baslik: "ANA GRUP ADI", alan: "anaGrupAdi", ornek: "Rulmanlar" },
+    { baslik: "ALT GRUP KODU", alan: "altGrupKodu", ornek: "01.02" },
+    { baslik: "ALT GRUP ADI", alan: "altGrupAdi", ornek: "Bilyalı" },
+    { baslik: "MİKTAR", alan: "miktar", ornek: "120", sayi: true },
+  ],
+  depo_hareketler: [
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "STK-001", zorunlu: true },
+    { baslik: "STOK ADI", alan: "stokAdi", ornek: "Rulman 6204" },
+    { baslik: "TİP", alan: "tip", ornek: "giris", esler: ["tip", "işlem"] },
+    { baslik: "MİKTAR", alan: "miktar", ornek: "10", sayi: true },
+    { baslik: "BİRİM", alan: "birim", ornek: "Adet" },
+    { baslik: "HEDEF / MAKİNE", alan: "hedefMakine", ornek: "CNC-01" },
+    { baslik: "AÇIKLAMA", alan: "aciklama", ornek: "Sayım farkı" },
+    { baslik: "KULLANICI", alan: "kullanici", ornek: "fatih@firma.com" },
+  ],
+  fason_isler: [
+    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "İŞ-00001" },
+    { baslik: "CARİ KOD", alan: "cariKod", ornek: "320.01.001" },
+    { baslik: "CARİ İSMİ", alan: "cariAd", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["firma"] },
+    { baslik: "PROJE KODU", alan: "projeKodu", ornek: "PRJ-001" },
+    { baslik: "PROJE / PARÇA ADI", alan: "projeAdi", ornek: "Gövde İşleme", zorunlu: true, esler: ["parça", "proje adı"] },
+    { baslik: "MİKTAR", alan: "miktar", ornek: "50" },
+    { baslik: "ÜCRET", alan: "ucret", ornek: "1000" },
+    { baslik: "DURUM", alan: "durum", ornek: "bekliyor" },
+    { baslik: "TARİH", alan: "olusturmaTarihi", ornek: "2026-08-14" },
+  ],
+  cariler: [
+    { baslik: "CARİ KOD", alan: "kod", ornek: "320.01.001", esler: ["kod"] },
+    { baslik: "CARİ İSMİ", alan: "ad", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["unvan", "firma", "isim"] },
+    { baslik: "TİP", alan: "tip", ornek: "tedarikci" },
+    { baslik: "YETKİLİ", alan: "yetkili", ornek: "Ahmet Yılmaz" },
+    { baslik: "TELEFON", alan: "telefon", ornek: "0332 000 00 00" },
+    { baslik: "E-POSTA", alan: "eposta", ornek: "info@abc.com" },
+    { baslik: "VERGİ DAİRESİ", alan: "vergiDairesi", ornek: "Selçuk" },
+    { baslik: "VERGİ NO", alan: "vergiNo", ornek: "1234567890" },
+    { baslik: "ADRES", alan: "adres", ornek: "OSB 5. Sk. No:1" },
+    { baslik: "IBAN", alan: "iban", ornek: "TR00 0000 0000" },
+    { baslik: "NOT", alan: "not", ornek: "" },
+  ],
+  satinalma_kart: [
+    { baslik: "KOD", alan: "kod", ornek: "PRJ-001", zorunlu: true },
+    { baslik: "AD", alan: "ad", ornek: "ENDERUS Hattı", zorunlu: true, esler: ["isim", "açıklama"] },
+    { baslik: "AÇIKLAMA", alan: "aciklama", ornek: "" },
+  ],
+  satinalma_siparisler: [
+    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "PO-0001", zorunlu: true },
+    { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
+    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001" },
+    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari", "firma"] },
+    { baslik: "TESLİM TARİHİ", alan: "teslimTarihi", ornek: "2026-09-01" },
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "HMD-001" },
+    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme", "stok adı"] },
+    { baslik: "MİKTAR", alan: "miktar", ornek: "250", sayi: true },
+    { baslik: "BİRİM", alan: "birim", ornek: "Kg" },
+    { baslik: "BİRİM FİYAT", alan: "birimFiyat", ornek: "42,50", sayi: true },
+    { baslik: "AÇIKLAMA", alan: "aciklama", ornek: "" },
+  ],
+  satinalma_teklifler: [
+    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "TKL-0001", zorunlu: true },
+    { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
+    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001" },
+    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari", "firma"] },
+    { baslik: "PARA BİRİMİ", alan: "paraBirimi", ornek: "TRY" },
+    { baslik: "KUR", alan: "kur", ornek: "1", sayi: true },
+    { baslik: "STOK KODU", alan: "stokKodu", ornek: "HMD-001" },
+    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme"] },
+    { baslik: "MİKTAR", alan: "miktar", ornek: "250", sayi: true },
+    { baslik: "BİRİM", alan: "birim", ornek: "Kg" },
+    { baslik: "BİRİM FİYAT", alan: "birimFiyat", ornek: "42,50", sayi: true },
+    { baslik: "KDV %", alan: "kdv", ornek: "20", sayi: true },
+  ],
+};
+
+// Tek satırlık Excel kaydını evrak (başlık + 1 satır) yapısına çevirir
+const evrakaCevir = (k, ekstra) => {
+  const { stokKodu, stokAdi, miktar, birim, birimFiyat, kdv, aciklama, ...baslik } = k;
+  const satirTutar = (Number(miktar) || 0) * (Number(birimFiyat) || 0);
+  return {
+    ...baslik,
+    satirlar: [{ stokKodu: stokKodu || "", stokAdi: stokAdi || "", miktar: miktar || 0, birim: birim || "Adet", birimFiyat: birimFiyat || 0, ...(kdv != null ? { kdv } : {}), aciklama: aciklama || "", satirTutar }],
+    genelToplam: satirTutar,
+    durum: "acik",
+    ...(ekstra || {}),
+  };
+};
+
+// ---------- Hammadde Aktarım: siparişteki HMD kalemlerini hammadde takibine taşır ----------
+function HammaddeAktarim({ hammaddeler, satinalmaSiparisler, fasonFirmalar, depoStok, kullanici }) {
+  const [f, setF] = useState({ arama: "", cari: "", durum: "" });
+  const [secililer, setSecililer] = useState(new Set());
+  const [islemde, setIslemde] = useState(false);
+  const [msg, setMsg] = useState("");
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const bilgi = (m) => { setMsg(m); setTimeout(() => setMsg(""), 5000); };
+
+  // Tüm siparişlerdeki HMD kodlu satırlar + aktarım durumu
+  const kalemler = useMemo(() => {
+    const aktarilan = new Map();
+    (hammaddeler || []).forEach((h) => { if (h.kaynakAnahtar) aktarilan.set(h.kaynakAnahtar, h); });
+    const liste = [];
+    (satinalmaSiparisler || []).forEach((sip) => {
+      siparisHammaddeSatirlari(sip).forEach(({ satir, sira }) => {
+        const anahtar = hammaddeAnahtar(sip.id || sip.evrakNo || "", sira);
+        const kayit = aktarilan.get(anahtar) || null;
+        liste.push({
+          anahtar, sip, satir, sira, kayit,
+          evrakNo: sip.evrakNo || sip.id || "—",
+          tarih: sip.tarih || "",
+          cari: sip.tedarikci || "",
+          cariKod: sip.tedarikciKod || cariKodBul(fasonFirmalar, sip.tedarikci) || "",
+          stokKodu: satir.stokKodu || "",
+          stokAdi: satir.stokAdi || "",
+          miktar: sayiCevir(satir.miktar),
+          birim: satir.birim || "Adet",
+          birimFiyat: sayiCevir(satir.birimFiyat),
+          teslimTarihi: satir.teslimTarihi || sip.teslimTarihi || "",
+          stokKartiVar: satir.stokKodu ? !!stokBulKod(depoStok, satir.stokKodu) : false,
+        });
+      });
+    });
+    return liste.sort((a, b) => String(b.evrakNo).localeCompare(String(a.evrakNo), "tr"));
+  }, [hammaddeler, satinalmaSiparisler, fasonFirmalar, depoStok]);
+
+  const liste = useMemo(() => {
+    const q = f.arama.trim().toLowerCase();
+    return kalemler.filter((k) => {
+      if (f.cari && k.cari !== f.cari) return false;
+      if (f.durum === "bekleyen" && k.kayit) return false;
+      if (f.durum === "aktarilan" && !k.kayit) return false;
+      if (f.durum === "kartsiz" && k.stokKartiVar) return false;
+      if (q && ![k.evrakNo, k.cari, k.cariKod, k.stokKodu, k.stokAdi].some((x) => String(x || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [kalemler, f]);
+
+  const bekleyenler = kalemler.filter((k) => !k.kayit);
+  const kartsizlar = kalemler.filter((k) => !k.stokKartiVar);
+  const cariler = [...new Set(kalemler.map((k) => k.cari).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  const bekleyenTutar = bekleyenler.reduce((t, k) => t + k.miktar * k.birimFiyat, 0);
+
+  const secilebilir = liste.filter((k) => !k.kayit);
+  const hepsiSecili = secilebilir.length > 0 && secilebilir.every((k) => secililer.has(k.anahtar));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(secilebilir.map((k) => k.anahtar)));
+  const birSecToggle = (a) => setSecililer((s) => { const y = new Set(s); if (y.has(a)) y.delete(a); else y.add(a); return y; });
+
+  const aktar = async (hedefler) => {
+    if (!hedefler.length) { bilgi("Aktarılacak kalem yok."); return; }
+    setIslemde(true);
+    try {
+      const siparisler = [];
+      const gorulen = new Set();
+      hedefler.forEach((k) => { if (!gorulen.has(k.sip.id)) { gorulen.add(k.sip.id); siparisler.push(k.sip); } });
+      // Sadece seçilen satırlar aktarılsın: diğer satırları "zaten var" gibi göster
+      const anahtarlar = new Set(hedefler.map((k) => k.anahtar));
+      const sanalMevcut = [
+        ...(hammaddeler || []),
+        ...kalemler.filter((k) => !anahtarlar.has(k.anahtar)).map((k) => ({ kaynakAnahtar: k.anahtar })),
+      ];
+      const n = await siparistenHammaddeAktar(siparisler, sanalMevcut, kullanici?.email);
+      setSecililer(new Set());
+      bilgi(n > 0 ? `${n} kalem hammadde takibine aktarıldı.` : "Aktarılacak yeni kalem bulunamadı.");
+    } catch (err) { if (!err?.yetkiHatasi) bilgi("Aktarılamadı: " + (err?.message || "bilinmeyen hata")); }
+    setIslemde(false);
+  };
+
+  const disaAktar = () => excelIndir(
+    disaAktarKapsami(liste, secililer, (k) => k.anahtar).map((k) => ({
+      "SİPARİŞ NO": k.evrakNo, "SİPARİŞ TARİHİ": k.tarih,
+      "CARİ KOD": k.cariKod, "CARİ İSMİ": k.cari,
+      "STOK KODU": k.stokKodu, "STOK ADI": k.stokAdi,
+      "MİKTAR": k.miktar, "BİRİM": k.birim, "BİRİM FİYAT": k.birimFiyat, "TUTAR": k.miktar * k.birimFiyat,
+      "TESLİM TARİHİ": k.teslimTarihi,
+      "STOK KARTI": k.stokKartiVar ? "Var" : "Yok",
+      "AKTARIM": k.kayit ? "Aktarıldı" : "Bekliyor",
+      "TESLİM DURUMU": k.kayit ? (k.kayit.tamamlandi ? "Geldi" : "Açık") : "—",
+    })),
+    "hammadde-aktarim.xlsx", "Aktarım"
+  );
+
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
+        <Stat label={`${HAMMADDE_ONEK} Kalemi`} value={kalemler.length} />
+        <Stat label="Aktarım Bekleyen" value={bekleyenler.length} highlight />
+        <Stat label="Aktarılmış" value={kalemler.length - bekleyenler.length} />
+        <Stat label="Stok Kartı Yok" value={kartsizlar.length} />
+        <Stat label="Bekleyen Tutar" value={tutarTL(bekleyenTutar)} />
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Hammadde Aktarım</div>
+            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 4 }}>
+              Satınalma siparişlerindeki stok kodu <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{HAMMADDE_ONEK}</b> ile başlayan
+              tüm kalemler burada listelenir. Sipariş kaydedilirken otomatik aktarılır; eski siparişleri buradan elle aktarabilirsin.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={() => aktar(secililer.size ? liste.filter((k) => !k.kayit && secililer.has(k.anahtar)) : bekleyenler)}
+              disabled={islemde || bekleyenler.length === 0}
+              style={{ background: bekleyenler.length ? "#2dd4bf" : "#1b333c", color: bekleyenler.length ? "#142a30" : "#6b7178", border: "none", borderRadius: 7, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: bekleyenler.length ? "pointer" : "default", display: "flex", alignItems: "center", gap: 7 }}
+            >
+              <RefreshCw size={14} /> {islemde ? "Aktarılıyor…" : secililer.size ? `Seçilen ${secililer.size} Kalemi Aktar` : `Bekleyen ${bekleyenler.length} Kalemi Aktar`}
+            </button>
+            <ExcelSeridi
+              alanlar={XLS_ALAN.satinalma_siparisler} dosyaAdi="hammadde-aktarim" koleksiyon="satinalma_siparisler"
+              hazirla={(k) => evrakaCevir(k, { olusturanEposta: kullanici?.email || "—" })}
+              disaAktar={disaAktar} disaEtiketi={disaAktarEtiket(secililer)}
+            />
+          </div>
+        </div>
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{msg}</div>}
+        {kartsizlar.length > 0 && (
+          <div style={{ marginTop: 12, fontSize: 12.5, color: "#e8a33d", background: "#2b2415", border: "1px solid #4a3d1e", borderRadius: 7, padding: "9px 12px" }}>
+            {kartsizlar.length} kalemin stok kartı yok. Bunlar aktarılır ama "Geldi" işaretlenince depo stoğuna işlenmez — önce Stok Kartları ekranından kartı açman gerekir.
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1", position: "relative" }}>
+            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <input className="input" style={{ paddingLeft: 30 }} placeholder="Sipariş no, cari, stok kodu / adı ara…" value={f.arama} onChange={setF2("arama")} />
+          </div>
+          <div>
+            <label className="field-label">Cari</label>
+            <select className="input" value={f.cari} onChange={setF2("cari")}>
+              <option value="">Tümü</option>
+              {cariler.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="field-label">Aktarım Durumu</label>
+            <select className="input" value={f.durum} onChange={setF2("durum")}>
+              <option value="">Tümü</option>
+              <option value="bekleyen">Aktarım bekleyen</option>
+              <option value="aktarilan">Aktarılmış</option>
+              <option value="kartsiz">Stok kartı olmayan</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
+          Sipariş Kalemleri ({liste.length})
+        </div>
+        <div style={{ overflowX: "auto", maxHeight: 600, overflowY: "auto" }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} disabled={secilebilir.length === 0} /></th>
+                <th>Sipariş No</th><th>Tarih</th><th>Cari</th><th>Stok Kodu</th><th>Stok Adı</th>
+                <th style={{ textAlign: "right" }}>Miktar</th><th>Birim</th><th style={{ textAlign: "right" }}>Tutar</th>
+                <th>Stok Kartı</th><th>Aktarım</th><th style={{ width: 110 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {liste.length === 0 && <tr><td colSpan={12} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+                Siparişlerde {HAMMADDE_ONEK} ile başlayan stok kodlu kalem bulunamadı.
+              </td></tr>}
+              {liste.map((k) => (
+                <tr key={k.anahtar} style={{ background: k.kayit ? "rgba(45,212,191,0.05)" : undefined }}>
+                  <td><input type="checkbox" checked={secililer.has(k.anahtar)} onChange={() => birSecToggle(k.anahtar)} disabled={!!k.kayit} /></td>
+                  <td style={{ fontFamily: "monospace", fontSize: 12 }}>{k.evrakNo}</td>
+                  <td style={{ fontSize: 12, color: "#8b929a" }}>{k.tarih || "—"}</td>
+                  <td>
+                    {k.cariKod && <span style={{ fontFamily: "monospace", color: "#8b929a", marginRight: 6, fontSize: 11.5 }}>{k.cariKod}</span>}
+                    {k.cari || "—"}
+                  </td>
+                  <td><span style={{ fontFamily: "monospace", color: "#2dd4bf", fontSize: 12 }}>{k.stokKodu}</span></td>
+                  <td>{k.stokAdi || "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace" }}>{sayiTR(k.miktar)}</td>
+                  <td style={{ fontSize: 12, color: "#8b929a" }}>{k.birim}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", color: "#2dd4bf" }}>{sayiTR(k.miktar * k.birimFiyat)}</td>
+                  <td>{k.stokKartiVar
+                    ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Var</span>
+                    : <span className="pill" style={{ background: "#2b2415", color: "#e8a33d", borderColor: "#4a3d1e" }}>Yok</span>}</td>
+                  <td>{k.kayit
+                    ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>{k.kayit.tamamlandi ? "Aktarıldı · Geldi" : "Aktarıldı"}</span>
+                    : <span className="pill">Bekliyor</span>}</td>
+                  <td>
+                    {!k.kayit && (
+                      <button onClick={() => aktar([k])} disabled={islemde}
+                        style={{ background: "none", border: "1px solid #3d6169", color: "#2dd4bf", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>→ Aktar</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---------- Hammadde Raporu / Gelen Hammaddeler / Açık Siparişler ----------
@@ -3469,7 +4087,16 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Malzeme Tanımları</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Malzeme Tanımları</div>
+          <ExcelSeridi
+            alanlar={XLS_ALAN.metal_malzemeler} dosyaAdi="metal-malzemeleri" koleksiyon="metal_malzemeler"
+            disaAktar={() => excelIndir(
+              (metalMalzemeler || []).map((m) => ({ "MALZEME ADI": m.ad || "", "YOĞUNLUK (g/cm3)": m.yogunluk || 0 })),
+              "metal-malzemeleri.xlsx", "Malzemeler"
+            )}
+          />
+        </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Malzeme Kartı Aç
@@ -3927,6 +4554,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Geçmiş Ölçümler ({filtrelenmis.length})</div>
+          <ExcelSeridi alanlar={XLS_ALAN.metal_talepler} dosyaAdi="metal-olcumleri" koleksiyon="metal_talepler" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
@@ -4108,6 +4736,7 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
               <RefreshCw size={14} /> {tasiniyor ? "Taşınıyor…" : "Eski Metal-Erp Verilerini İçe Aktar"}
             </button>
             <button className="btn-ghost" onClick={metinKopyala}><Copy size={14} /> Metin Olarak Kopyala</button>
+            <ExcelSeridi alanlar={XLS_ALAN.metal_talepler} dosyaAdi="metal-talepleri" koleksiyon="metal_talepler" />
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
@@ -6163,6 +6792,7 @@ function SatinalmaKartYonetimi({ baslikMetni, tekilAd, koleksiyon, kayitlar, iko
           <div style={{ fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
             <Ikon size={17} color="#2dd4bf" /> {baslikMetni}
           </div>
+          <ExcelSeridi alanlar={XLS_ALAN.satinalma_kart} dosyaAdi={tekilAd.toLowerCase() + "-kartlari"} koleksiyon={koleksiyon} />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
         </div>
         <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
@@ -7273,6 +7903,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
             <div style={{ fontWeight: 700, fontSize: 16 }}>Cari Raporu</div>
             <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Her carinin sipariş, teklif, fason iş ve hammadde hareketleri tek tabloda.</div>
           </div>
+                    <ExcelSeridi alanlar={XLS_ALAN.cariler} dosyaAdi="cariler" koleksiyon="fason_firmalar" />
           <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
           <button className="btn-ghost" onClick={yazdir}><Printer size={14} /> Yazdır / PDF</button>
         </div>
@@ -8151,6 +8782,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
             <div style={{ fontWeight: 700, fontSize: 16 }}>Teklif Karşılaştırma</div>
             <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Firmaları yan yana gör, en uygun olanı tek tıkla siparişe çevir. Tüm fiyatlar TL karşılığı üzerinden karşılaştırılır.</div>
           </div>
+                    <ExcelSeridi alanlar={XLS_ALAN.satinalma_teklifler} dosyaAdi="teklifler" koleksiyon="satinalma_teklifler" hazirla={(k) => evrakaCevir(k, { olusturanEposta: kullanici?.email || "—" })} />
           <button className="btn-ghost" onClick={disaAktar} disabled={!teklifler.length}><FileSpreadsheet size={14} /> Excele Aktar</button>
           <button className="btn-ghost" onClick={yazdir} disabled={!teklifler.length}><Printer size={14} /> Yazdır / PDF</button>
         </div>
@@ -9168,7 +9800,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn-ghost" onClick={raporYazdir}><Printer size={14} /> Yazdır / PDF</button>
-            <button className="btn-ghost" onClick={altTab === "talep" ? talepDisaAktar : siparisDisaAktar}><Download size={14} /> Excele Aktar</button>
+                      <ExcelSeridi alanlar={XLS_ALAN.satinalma_siparisler} dosyaAdi="satinalma" koleksiyon="satinalma_siparisler" hazirla={(k) => evrakaCevir(k)} />
+          <button className="btn-ghost" onClick={altTab === "talep" ? talepDisaAktar : siparisDisaAktar}><Download size={14} /> Excele Aktar</button>
             <button className="btn-ghost" onClick={temizle}><RefreshCw size={14} /> Temizle</button>
           </div>
         </div>
@@ -10736,6 +11369,7 @@ function DepoHareketleri({ depoHareketler }) {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
+          <ExcelSeridi alanlar={XLS_ALAN.depo_hareketler} dosyaAdi="depo-hareketleri" koleksiyon="depo_hareketler" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
