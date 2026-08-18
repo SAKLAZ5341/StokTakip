@@ -1544,7 +1544,7 @@ function Panel({ onCikis, kullanici }) {
             {tab === "hammadde-raporu" && <HammaddeRaporlari hammaddeler={hammaddeler} />}
             {tab === "metal-raporu" && <MetalOlcuRaporu metalTalepler={metalTalepler} metalMalzemeler={metalMalzemeler} />}
             {tab === "depo-raporu" && <DepoStokRaporu depoStok={depoStok} depoHareketler={depoHareketler} />}
-            {tab === "fason-raporu" && <FasonTakipRaporu fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} />}
+            {tab === "fason-raporu" && <FasonTakipRaporu fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} formAyarlari={formAyarlari} />}
             {tab === "stok-sil" && <StokSilme records={records} />}
             {tab === "hammadde-sil" && <HammaddeSilme hammaddeler={hammaddeler} />}
             {tab === "depo-sil" && <DepoSilme depoStok={depoStok} />}
@@ -2292,7 +2292,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
 }
 
 // ---------- Fason Takip Raporu ----------
-function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
+function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyarlari }) {
   const [f, setF] = useState({ arama: "", firmaId: "", gorunum: "acik" });
   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -2341,11 +2341,75 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
       // Tek firma seçiliyse her zaman göster; aksi halde görünüm tercihine göre süz
       if (f.firmaId) return true;
       if (f.gorunum === "tumu") return true;
-      const hareketVar = r.giden !== 0 || r.gelen !== 0;
-      if (f.gorunum === "isli") return r.isSayisi > 0 || hareketVar;
-      return r.aktifIsSayisi > 0 || (hareketVar && r.bakiye !== 0); // "acik"
+      // Fason işi hiç açılmamış cariler raporda görünmez
+      if (r.isSayisi === 0) return false;
+      if (f.gorunum === "isli") return true;
+      return r.aktifIsSayisi > 0 || r.bakiye !== 0; // "acik"
     }).sort((a, b) => (b.aktifIsSayisi - a.aktifIsSayisi) || (b.bakiye - a.bakiye));
   }, [fasonFirmalar, filtrelenmisIsler, fasonHareketler, f.firmaId, f.gorunum]);
+
+  // Firma satırına tıklayınca o firmaya verilen işler fiş penceresi gibi açılır
+  const [detayFirmaId, setDetayFirmaId] = useState(null);
+  const detay = useMemo(() => {
+    if (!detayFirmaId) return null;
+    const firma = (fasonFirmalar || []).find((x) => x.id === detayFirmaId);
+    if (!firma) return null;
+    const isler = filtrelenmisIsler.filter((j) => j.firmaId === firma.id);
+    const satirlar = isler.map((j) => {
+      const hs = (fasonHareketler || []).filter((m) => m.isId === j.id);
+      let giden = 0, gelen = 0;
+      hs.forEach((m) => {
+        const t = (Number(m.miktar) || 0) * (Number(m.birimFiyat) || 0);
+        if (m.tip === "giden") giden += t; else gelen += t;
+      });
+      return { is: j, giden, gelen, bakiye: giden - gelen, hareketSayisi: hs.length, hammaddeGitti: hs.some((m) => m.tip === "giden") };
+    }).sort((a, b) => String(b.is.olusturmaTarihi || "").localeCompare(String(a.is.olusturmaTarihi || "")));
+    return {
+      firma, satirlar,
+      giden: satirlar.reduce((t, r) => t + r.giden, 0),
+      gelen: satirlar.reduce((t, r) => t + r.gelen, 0),
+      bakiye: satirlar.reduce((t, r) => t + r.bakiye, 0),
+      acik: satirlar.filter((r) => r.is.durum !== "tamamlandi").length,
+    };
+  }, [detayFirmaId, fasonFirmalar, filtrelenmisIsler, fasonHareketler]);
+
+  const detayDisaAktar = () => {
+    if (!detay) return;
+    excelIndir(detay.satirlar.map((r) => ({
+      "Cari Kod": detay.firma.kod || "", "Firma": detay.firma.ad,
+      "Evrak No": r.is.evrakNo || "", "Proje Kodu": r.is.projeKodu || "", "Proje Adı": r.is.projeAdi || "",
+      "Miktar": r.is.miktar || "", "Ücret": r.is.ucret || "",
+      "Durum": FASON_DURUM[r.is.durum]?.label || "", "Kalite": FASON_KALITE[r.is.kaliteDurumu]?.label || "",
+      "Hammadde Gönderildi": r.hammaddeGitti ? "Evet" : "Hayır",
+      "Giden": r.giden.toFixed(2), "Gelen": r.gelen.toFixed(2), "Bakiye": r.bakiye.toFixed(2),
+      "Oluşturma Tarihi": r.is.olusturmaTarihi || "",
+    })), `fason-${(detay.firma.kod || detay.firma.ad || "firma").replace(/[^\w.-]+/g, "-")}.xlsx`, "İşler");
+  };
+
+  const detayYazdir = () => {
+    if (!detay) return;
+    satinalmaFormYazdir({
+      ayarlar: formAyarlari, belgeAdi: "Fason İş Dökümü",
+      ustBilgiler: [
+        ["Cari Kod", detay.firma.kod || "—"], ["Firma", detay.firma.ad], ["Baskı Tarihi", trTarih(todayISO())],
+        ["Toplam İş", String(detay.satirlar.length)], ["Açık İş", String(detay.acik)], ["Net Bakiye", tutarTL(detay.bakiye)],
+      ],
+      kolonlar: [
+        { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+        { baslik: "Evrak No", gen: "24mm", al: (r) => r.is.evrakNo || "" },
+        { baslik: "Proje Kodu", gen: "24mm", al: (r) => r.is.projeKodu || "" },
+        { baslik: "Proje Adı", al: (r) => r.is.projeAdi || "" },
+        { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.is.miktar || "" },
+        { baslik: "Durum", gen: "22mm", hiza: "ort", al: (r) => FASON_DURUM[r.is.durum]?.label || "" },
+        { baslik: "Giden", gen: "24mm", hiza: "sag", al: (r) => sayiTR(r.giden) },
+        { baslik: "Gelen", gen: "24mm", hiza: "sag", al: (r) => sayiTR(r.gelen) },
+      ],
+      satirlar: detay.satirlar,
+      toplamSatirlari: [["Toplam Giden", tutarTL(detay.giden)], ["Toplam Gelen", tutarTL(detay.gelen)], ["Net Bakiye", tutarTL(detay.bakiye)]],
+      notBasligi: "Açıklama", notMetni: "",
+      imzalar: ["Hazırlayan", "Onaylayan"],
+    });
+  };
 
   const disaAktarFirma = () => excelIndir(firmaDetay.map((r) => ({ "Cari Kod": r.firma.kod || "", "Firma": r.firma.ad, "Toplam İş": r.isSayisi, "Aktif İş": r.aktifIsSayisi, "Giden": r.giden.toFixed(2), "Gelen": r.gelen.toFixed(2), "Bakiye": r.bakiye.toFixed(2) })), "fason-firma-raporu.xlsx", "Firma Raporu");
 
@@ -2369,7 +2433,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <label className="field-label">Listelenecek Cariler</label>
             <select className="input" value={f.gorunum} onChange={setF2("gorunum")}>
               <option value="acik">Sadece açık işi olanlar</option>
-              <option value="isli">İş kaydı olan tüm cariler</option>
+              <option value="isli">Fason işi açılmış tüm cariler</option>
               <option value="tumu">Tüm cariler ({fasonFirmalar.length})</option>
             </select>
           </div>
@@ -2418,7 +2482,8 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
           <div>
             <div style={{ fontWeight: 700, fontSize: 14 }}>Firma Bazında Detay ({firmaDetay.length})</div>
             <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 2 }}>
-              {f.firmaId ? "Seçili firma" : f.gorunum === "acik" ? "Sadece açık (tamamlanmamış) işi veya bakiyesi olan cariler" : f.gorunum === "isli" ? "İş kaydı olan cariler" : `Tüm cariler — ${fasonFirmalar.length} kayıt`}
+              {f.firmaId ? "Seçili firma" : f.gorunum === "acik" ? "Sadece açık (tamamlanmamış) işi veya bakiyesi olan cariler" : f.gorunum === "isli" ? "Fason işi açılmış cariler" : `Tüm cariler — ${fasonFirmalar.length} kayıt`}
+              {" · "}<b style={{ color: "#2dd4bf" }}>Firmaya tıklayınca iş dökümü açılır</b>
             </div>
           </div>
           <button className="btn-ghost" onClick={disaAktarFirma}><Download size={14} /> Excele Aktar</button>
@@ -2433,9 +2498,12 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                 </td></tr>
               )}
               {firmaDetay.map((r) => (
-                <tr key={r.firma.id}>
+                <tr key={r.firma.id} onClick={() => setDetayFirmaId(r.firma.id)} style={{ cursor: "pointer" }} title="İş dökümünü aç">
                   <td style={{ fontFamily: "monospace", color: r.firma.kod ? "#2dd4bf" : "#4a5560" }}>{r.firma.kod || "—"}</td>
-                  <td>{r.firma.ad}</td>
+                  <td>
+                    <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{r.firma.ad}</span>
+                    <ChevronRight size={13} style={{ verticalAlign: "middle", marginLeft: 6, color: "#6b7178" }} />
+                  </td>
                   <td style={{ fontFamily: "monospace" }}>{r.isSayisi}</td>
                   <td style={{ fontFamily: "monospace" }}>{r.aktifIsSayisi}</td>
                   <td style={{ fontFamily: "monospace", color: "#e8a33d" }}>{paraTR(r.giden)}</td>
@@ -2447,6 +2515,85 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler }) {
           </table>
         </div>
       </div>
+
+      <EvrakPenceresi
+        acik={!!detay} kapat={() => setDetayFirmaId(null)}
+        baslik={detay ? `İş Dökümü — ${cariEtiket(detay.firma)}` : ""} ikon={Building2} genislik={1080}
+        butonlar={
+          <>
+            <button style={fisAltBtn} onClick={detayDisaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
+            <button style={fisAltBtn} onClick={detayYazdir}><Printer size={14} /> Yazdır / PDF</button>
+            <button style={fisAnaBtn} onClick={() => setDetayFirmaId(null)}><X size={14} /> Kapat</button>
+          </>
+        }
+      >
+        {detay && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
+              {[
+                ["Toplam İş", String(detay.satirlar.length), "#e7e5e0"],
+                ["Açık İş", String(detay.acik), "#e8a33d"],
+                ["Giden", tutarTL(detay.giden), "#e8a33d"],
+                ["Gelen", tutarTL(detay.gelen), "#4b8f5e"],
+                ["Net Bakiye", tutarTL(detay.bakiye), detay.bakiye >= 0 ? "#2dd4bf" : "#e07a6b"],
+              ].map(([et, dg, renk]) => (
+                <div key={et} style={{ border: "1px solid #2a4b52", borderRadius: 4, background: "#16232a", padding: "10px 13px" }}>
+                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#6b7178", fontWeight: 700, marginBottom: 5 }}>{et}</div>
+                  <div style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: renk }}>{dg}</div>
+                </div>
+              ))}
+            </div>
+
+            {(detay.firma.yetkili || detay.firma.telefon) && (
+              <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 12 }}>
+                {detay.firma.yetkili && <span style={{ marginRight: 16 }}>Yetkili: <b style={{ color: "#c7cbd1" }}>{detay.firma.yetkili}</b></span>}
+                {detay.firma.telefon && <span>Telefon: <b style={{ color: "#c7cbd1" }}>{detay.firma.telefon}</b></span>}
+              </div>
+            )}
+
+            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden", maxHeight: 420, overflowY: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...fisGridTh, width: 34 }}>#</th>
+                    <th style={{ ...fisGridTh, width: 110 }}>Evrak No</th>
+                    <th style={{ ...fisGridTh, width: 110 }}>Proje Kodu</th>
+                    <th style={fisGridTh}>Proje Adı</th>
+                    <th style={{ ...fisGridTh, width: 80 }}>Miktar</th>
+                    <th style={{ ...fisGridTh, width: 96 }}>Durum</th>
+                    <th style={{ ...fisGridTh, width: 90 }}>Hammadde</th>
+                    <th style={{ ...fisGridTh, width: 104, textAlign: "right" }}>Giden</th>
+                    <th style={{ ...fisGridTh, width: 104, textAlign: "right" }}>Gelen</th>
+                    <th style={{ ...fisGridTh, width: 108, textAlign: "right" }}>Bakiye</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detay.satirlar.length === 0 && (
+                    <tr><td colSpan={10} style={{ ...fisGridTd, color: "#6b7178", textAlign: "center", padding: 20 }}>Bu firmaya verilmiş iş yok.</td></tr>
+                  )}
+                  {detay.satirlar.map((r, i) => {
+                    const d = FASON_DURUM[r.is.durum] || FASON_DURUM.bekliyor;
+                    return (
+                      <tr key={r.is.id}>
+                        <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                        <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.evrakNo || "—"}</td>
+                        <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.projeKodu || "—"}</td>
+                        <td style={fisGridTd}>{r.is.projeAdi || "—"}</td>
+                        <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.miktar || "—"}</td>
+                        <td style={fisGridTd}><span className="pill" style={{ background: "transparent", color: d.renk, borderColor: d.renk }}>{d.label}</span></td>
+                        <td style={{ ...fisGridTd, color: r.hammaddeGitti ? "#4b8f5e" : "#6b7178", fontSize: 11.5 }}>{r.hammaddeGitti ? "Gönderildi" : "Gönderilmedi"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#e8a33d" }}>{r.giden ? sayiTR(r.giden) : "—"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#4b8f5e" }}>{r.gelen ? sayiTR(r.gelen) : "—"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.bakiye >= 0 ? "#2dd4bf" : "#e07a6b" }}>{r.bakiye ? sayiTR(r.bakiye) : "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </EvrakPenceresi>
     </div>
   );
 }
@@ -2900,7 +3047,7 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
 
   const disaAktar = () => {
     excelIndir(
-      filtrelenmis.map((h) => ({
+      disaAktarKapsami(filtrelenmis, secililer).map((h) => ({
         "CARİ İSMİ": h.cari, "PROJE KODU": h.projeKodu, "PROJE ADI": h.projeAdi,
         "KALİTE": h.kalite, "AÇIKLAMA 1": h.aciklama1, "AÇIKLAMA 2": h.aciklama2, "MİKTAR (KG)": h.miktar || 0, "DURUMU": h.durumu,
       })),
@@ -3011,7 +3158,7 @@ function HammaddeTakip({ hammaddeler, fasonFirmalar }) {
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}>
               <Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excel'den İçe Aktar"}
             </button>
-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
+            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
@@ -4405,7 +4552,7 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     } catch (err) { console.error(err); setIceMsg("Hata: " + (err?.message || "bilinmeyen hata")); }
     setIceAktariliyor(false); e.target.value = ""; setTimeout(() => setIceMsg(""), 6000);
   };
-  const disaAktar = () => excelIndir(cariSirala(fasonFirmalar).map((f) => ({ "Cari Kod": f.kod || "", "Firma Adı": f.ad, "Yetkili": f.yetkili, "Not": f.not })), "cari-listesi.xlsx", "Cariler");
+  const disaAktar = () => excelIndir(disaAktarKapsami(filtrelenmis, secililer).map((f) => ({ "Cari Kod": f.kod || "", "Firma Adı": f.ad, "Yetkili": f.yetkili, "Not": f.not })), "cari-listesi.xlsx", "Cariler");
   const sablonuIndir = () => sablonIndir(
     ["Cari Kod", "Firma Adı", "Yetkili", "Not"],
     [["120.01.001", "ABC Metal Ltd. Şti.", "Ahmet Yılmaz · 0532 000 00 00", "Rulman tedarikçisi"],
@@ -4442,7 +4589,7 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
             <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
         <button onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
@@ -4633,7 +4780,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
     setIceAktariliyor(false); e.target.value = ""; setTimeout(() => setIceMsg(""), 7000);
   };
   const disaAktar = () => excelIndir(
-    fasonIsler.map((j) => ({
+    disaAktarKapsami(filtrelenmis, secililer).map((j) => ({
       "Cari Kod": fasonFirmalar.find((f) => f.id === j.firmaId)?.kod || "", "Firma Adı": fasonFirmalar.find((f) => f.id === j.firmaId)?.ad || "", "Proje Kodu": j.projeKodu, "Proje Adı": j.projeAdi,
       "Miktar": j.miktar, "Ücret": j.ucret, "Resim Referansı": j.resimRef, "Açıklama": j.aciklama,
       "Durum": FASON_DURUM[j.durum]?.label || "", "Oluşturma Tarihi": j.olusturmaTarihi,
@@ -4783,7 +4930,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <button className="btn-ghost" onClick={() => sablonIndir(["FİRMA ADI", "PROJE KODU", "PROJE ADI", "MİKTAR", "ÜCRET", "RESİM REFERANSI", "AÇIKLAMA", "DURUM", "OLUŞTURMA TARİHİ"], [["Örnek Fason Ltd.", "PRJ-001", "Örnek Proje", "100", "5000", "TR-001", "", "Bekliyor", "2026-01-15"]], "fason-is-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
             <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
         <button
@@ -5424,6 +5571,12 @@ const teklifSatiriniSiparise = (r) => ({
 // Kalem eşleştirme anahtarı — kod varsa kod, yoksa isim
 const kalemAnahtar = (r) => String(r?.stokKodu || r?.kodu || "").trim().toLowerCase() || String(r?.stokAdi || r?.ismi || "").trim().toLowerCase();
 
+// "Excele Aktar" kapsamı: seçili kayıt varsa sadece onlar, hiçbiri seçili değilse listenin tamamı
+const disaAktarKapsami = (liste, secililer, idAl = (x) => x.id) =>
+  (secililer && secililer.size ? (liste || []).filter((x) => secililer.has(idAl(x))) : (liste || []));
+const disaAktarEtiket = (secililer, toplam) =>
+  (secililer && secililer.size ? `Excele Aktar (${secililer.size} seçili)` : `Excele Aktar${toplam != null ? ` (${toplam})` : ""}`);
+
 // Kayıtlardaki mevcut değerlerden lookup listesi üretir (Mikro'daki [?] penceresi)
 const benzersizDegerler = (kayitlar, alan) =>
   [...new Set(kayitlar.map((k) => String(k[alan] || "").trim()).filter(Boolean))].sort().map((d) => ({ deger: d }));
@@ -6022,7 +6175,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   };
 
   const disaAktar = () => excelIndir(
-    satinalmaTalepler.flatMap((t) => (t.satirlar || []).map((r) => ({
+    disaAktarKapsami(filtrelenmis, secililer).flatMap((t) => (t.satirlar || []).map((r) => ({
       "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Belge Tarihi": t.belgeTarihi,
       "Proje Kodu": t.proje, "Depo": t.depo, "Talep Eden Personel": t.talepEdenPersonel,
       "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi, "Satır Proje Kodu": r.projeKodu,
@@ -6280,7 +6433,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}>
               <Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}
             </button>
-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
@@ -6547,7 +6700,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
   };
 
   const disaAktar = () => excelIndir(
-    cariSirala(fasonFirmalar).map((c) => ({
+    disaAktarKapsami(filtrelenmis, secililer).map((c) => ({
       "Cari Kod": c.kod || "", "Cari İsmi": c.ad || "", "Tip": cariTipEtiket(c.tip),
       "Yetkili": c.yetkili || "", "Telefon": c.telefon || "", "E-posta": c.eposta || "",
       "Vergi Dairesi": c.vergiDairesi || "", "Vergi No": c.vergiNo || "",
@@ -6627,7 +6780,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
           <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
           <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
           <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
-          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
+          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> {disaAktarEtiket(secililer)}</button>
           <button onClick={kartAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Cari
           </button>
@@ -7134,7 +7287,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   };
 
   const disaAktar = () => excelIndir(
-    satinalmaTeklifler.flatMap((t) => (t.satirlar || []).map((r) => ({
+    disaAktarKapsami(filtrelenmis, secililer).flatMap((t) => (t.satirlar || []).map((r) => ({
       "Teklif No": t.evrakNo, "Tarih": t.tarih, "Talep No": t.talepEvrakNo, "Cari Kod": t.tedarikciKod || "", "Tedarikçi": t.tedarikci,
       "Para Birimi": t.paraBirimi || "TRY", "Kur": t.kur || 1,
       "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi, "Miktar": r.miktar, "Birim": r.birim,
@@ -7371,7 +7524,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
           <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
           <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
           <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
-          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
+          <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> {disaAktarEtiket(secililer)}</button>
           <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Teklif
           </button>
@@ -8187,7 +8340,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   };
 
   const disaAktar = () => excelIndir(
-    satinalmaSiparisler.flatMap((s) => (s.satirlar || []).map((r) => ({
+    disaAktarKapsami(filtrelenmis, secililer).flatMap((s) => (s.satirlar || []).map((r) => ({
       "Evrak No": s.evrakNo, "Belge No": s.belgeNo, "Tarih": s.tarih, "Cari Kod": s.tedarikciKod || "", "Tedarikçi": s.tedarikci,
       "Talep No": s.talepEvrakNo || "", "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi,
       "Miktar": r.miktar, "Birim": r.birim, "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar,
@@ -8414,7 +8567,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}>
               <Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}
             </button>
-            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
+            <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
