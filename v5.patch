@@ -1,0 +1,601 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index fc39d47..2b5df42 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -475,41 +475,199 @@ function UyariPenceresi({ acik, kapat, baslik, mesaj, ikincilButon }) {
+   );
+ }
+ 
+-// ---------- Lookup (Mikro'daki [?] butonu) ----------
+-function SecimPenceresi({ acik, kapat, baslik, secenekler, sec }) {
++// ---------- Ortak kart seçme penceresi (stok / cari / iş … hepsi bunu kullanır) ----------
++// sutunlar: [{ baslik, al: (k) => "...", genislik, mono, renk, sag }]
++// filtreler: [{ ad, etiket, al: (k) => "..." }]
++function SecimPenceresi({
++  acik, kapat, baslik, ikon: Ikon = Search,
++  secenekler, kayitlar, sutunlar, filtreler,
++  sec, genislik = 820, bosMesaj = "Kayıt bulunamadı.",
++  serbest = false, serbestEtiket = "Listede yok, yazdığımı kullan",
++}) {
+   const [q, setQ] = useState("");
+-  useEffect(() => { if (acik) setQ(""); }, [acik]);
++  const [fd, setFd] = useState({});
++  const [vurgu, setVurgu] = useState(0);
++  useEffect(() => { if (acik) { setQ(""); setFd({}); setVurgu(0); } }, [acik]);
++
++  // Eski kullanım: secenekler = [{ deger, aciklama }]
++  const eskiUsul = !kayitlar && Array.isArray(secenekler);
++  const veri = eskiUsul ? secenekler : (kayitlar || []);
++  const kolonlar = eskiUsul
++    ? [{ baslik: "Değer", al: (o) => o.deger, mono: true, renk: "#2dd4bf" }, { baslik: "Açıklama", al: (o) => o.aciklama }]
++    : (sutunlar || []);
++  const filtreTanim = filtreler || [];
++
++  const secenekListesi = useMemo(() => filtreTanim.map((f) => ({
++    ...f, degerler: [...new Set(veri.map((k) => String(f.al(k) || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr")),
++  })), [veri, acik]);
++
++  const liste = useMemo(() => {
++    const ara = q.trim().toLowerCase();
++    return veri.filter((k) => {
++      for (const f of filtreTanim) {
++        const secilen = fd[f.ad];
++        if (secilen && String(f.al(k) || "").trim() !== secilen) return false;
++      }
++      if (!ara) return true;
++      return kolonlar.some((c) => String(c.al(k) || "").toLowerCase().includes(ara));
++    });
++  }, [veri, q, fd, acik]);
++
++  useEffect(() => { setVurgu(0); }, [q, fd]);
++  useEffect(() => {
++    if (!acik) return;
++    const tus = (e) => {
++      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); kapat(); return; }
++      if (e.key === "ArrowDown") { e.preventDefault(); setVurgu((v) => Math.min(liste.length - 1, v + 1)); }
++      else if (e.key === "ArrowUp") { e.preventDefault(); setVurgu((v) => Math.max(0, v - 1)); }
++      else if (e.key === "Enter") {
++        e.preventDefault();
++        if (liste[vurgu]) { sec(liste[vurgu]); kapat(); }
++        else if (serbest && q.trim()) { sec({ __serbest: q.trim() }); kapat(); }
++      }
++    };
++    window.addEventListener("keydown", tus, true);
++    return () => window.removeEventListener("keydown", tus, true);
++  }, [acik, liste, vurgu, q]);
++
+   if (!acik) return null;
+-  const filtre = q.trim().toLowerCase();
+-  const liste = filtre
+-    ? secenekler.filter((o) => String(o.deger).toLowerCase().includes(filtre) || String(o.aciklama || "").toLowerCase().includes(filtre))
+-    : secenekler;
+   return (
+-    <div onMouseDown={kapat} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 85, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 14px" }}>
+-      <div onMouseDown={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", maxHeight: "70vh" }}>
+-        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
+-          <Search size={14} color="#2dd4bf" />
+-          <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{baslik}</span>
+-          <button onClick={kapat} style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
++    <div onMouseDown={kapat} className="secim-katman"
++      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 85, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "50px 14px" }}>
++      <div onMouseDown={(e) => e.stopPropagation()} className="secim-kutu"
++        style={{ width: "100%", maxWidth: genislik, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 6, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
++        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "10px 12px", borderRadius: "5px 5px 0 0" }}>
++          <Ikon size={15} color="#2dd4bf" />
++          <span style={{ fontSize: 13.5, fontWeight: 700, flex: 1 }}>{baslik}</span>
++          <span style={{ fontSize: 11.5, color: "#6b7178" }}>{liste.length} kayıt</span>
++          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
+         </div>
+-        <div style={{ padding: 10, borderBottom: "1px solid #2a4b52" }}>
+-          <input autoFocus style={fisInput} placeholder="Ara…" value={q} onChange={(e) => setQ(e.target.value)} />
++
++        <div style={{ padding: 11, borderBottom: "1px solid #2a4b52", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 9 }}>
++          <div style={{ gridColumn: "1 / -1", position: "relative" }}>
++            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
++            <input autoFocus className="input" style={{ paddingLeft: 30 }} placeholder="Kod, ad veya herhangi bir alanda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
++          </div>
++          {secenekListesi.filter((f) => f.degerler.length > 1).map((f) => (
++            <div key={f.ad}>
++              <label className="field-label">{f.etiket}</label>
++              <select className="input" value={fd[f.ad] || ""} onChange={(e) => setFd((s) => ({ ...s, [f.ad]: e.target.value }))}>
++                <option value="">Tümü</option>
++                {f.degerler.map((d) => <option key={d} value={d}>{d}</option>)}
++              </select>
++            </div>
++          ))}
+         </div>
++
+         <div style={{ overflowY: "auto", flex: 1 }}>
+-          {liste.length === 0 && <div style={{ padding: 18, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Kayıt bulunamadı.</div>}
+-          {liste.slice(0, 300).map((o, i) => (
+-            <button key={`${o.deger}-${i}`} onClick={() => { sec(o); kapat(); }}
+-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, width: "100%", padding: "9px 13px", background: "transparent", border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left" }}>
+-              <span style={{ fontSize: 12.5, color: "#e7e5e0" }}>{o.deger}</span>
+-              {o.aciklama && <span style={{ fontSize: 11.5, color: "#6b7178", flexShrink: 0 }}>{o.aciklama}</span>}
++          {liste.length === 0 && <div style={{ padding: 22, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>{bosMesaj}</div>}
++          {liste.length > 0 && (
++            <table>
++              <thead>
++                <tr>{kolonlar.map((c, i) => <th key={i} style={{ width: c.genislik, textAlign: c.sag ? "right" : "left", position: "sticky", top: 0, background: "#1b333c", zIndex: 1 }}>{c.baslik}</th>)}</tr>
++              </thead>
++              <tbody>
++                {liste.slice(0, 400).map((k, i) => (
++                  <tr key={k.id || i} onClick={() => { sec(k); kapat(); }} onMouseEnter={() => setVurgu(i)}
++                    style={{ cursor: "pointer", background: i === vurgu ? "#274852" : undefined }}>
++                    {kolonlar.map((c, j) => (
++                      <td key={j} style={{ textAlign: c.sag ? "right" : "left", fontFamily: c.mono ? "monospace" : undefined, color: c.renk || undefined, whiteSpace: c.sarma ? undefined : "nowrap" }}>
++                        {c.al(k) || "—"}
++                      </td>
++                    ))}
++                  </tr>
++                ))}
++              </tbody>
++            </table>
++          )}
++          {liste.length > 400 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 400 kayıt gösteriliyor — aramayı daraltın.</div>}
++        </div>
++
++        <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid #2a4b52", background: "#16232a", borderRadius: "0 0 5px 5px", flexWrap: "wrap", alignItems: "center" }}>
++          <span style={{ fontSize: 11.5, color: "#6b7178", marginRight: "auto" }}>↑↓ ile gez, Enter ile seç, Esc ile kapat</span>
++          {serbest && q.trim() && (
++            <button onClick={() => { sec({ __serbest: q.trim() }); kapat(); }} style={fisAltBtn}>
++              <Plus size={13} /> {serbestEtiket}: <b style={{ marginLeft: 4 }}>{q.trim()}</b>
+             </button>
+-          ))}
++          )}
++          <button onClick={kapat} style={fisAltBtn}><X size={13} /> Kapat</button>
+         </div>
+       </div>
+     </div>
+   );
+ }
+ 
++// Seçim alanı: tıklanınca seçme penceresini açan, seçileni gösteren kutu
++function SecimAlani({ deger, ipucu, ac, temizle, hucre, uyari }) {
++  const temel = hucre
++    ? { ...fisHucreInput, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", minHeight: 26 }
++    : { ...fisInput, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", minHeight: 30 };
++  return (
++    <div
++      role="button" tabIndex={0} onClick={ac}
++      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ac(); } }}
++      title={deger || ipucu}
++      style={{ ...temel, borderColor: uyari ? "#6b3a33" : temel.borderColor }}
++    >
++      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: deger ? "#e7e5e0" : "#6b7178" }}>
++        {deger || ipucu || "Seçin…"}
++      </span>
++      {deger && temizle && (
++        <span role="button" title="Temizle" onClick={(e) => { e.stopPropagation(); temizle(); }}
++          style={{ color: "#6b7178", display: "flex", flexShrink: 0 }}><X size={12} /></span>
++      )}
++      <Search size={12} color="#2dd4bf" style={{ flexShrink: 0 }} />
++    </div>
++  );
++}
++
++// --- Hazır seçiciler ---
++const STOK_SUTUNLARI = [
++  { baslik: "Stok Kodu", al: (s) => s.stokKodu, mono: true, renk: "#2dd4bf", genislik: 160 },
++  { baslik: "Stok Adı", al: (s) => s.stokAdi, sarma: true },
++  { baslik: "Birim", al: (s) => s.birim, genislik: 75 },
++  { baslik: "Ana Grup", al: (s) => [s.anaGrupKodu, s.anaGrupAdi].filter(Boolean).join(" · "), genislik: 170 },
++  { baslik: "Alt Grup", al: (s) => [s.altGrupKodu, s.altGrupAdi].filter(Boolean).join(" · "), genislik: 170 },
++  { baslik: "Depoda", al: (s) => sayiTR(Number(s.miktar) || 0), sag: true, genislik: 100 },
++];
++const STOK_FILTRELERI = [
++  { ad: "anaGrup", etiket: "Ana Grup", al: (s) => [s.anaGrupKodu, s.anaGrupAdi].filter(Boolean).join(" · ") },
++  { ad: "altGrup", etiket: "Alt Grup", al: (s) => [s.altGrupKodu, s.altGrupAdi].filter(Boolean).join(" · ") },
++  { ad: "birim", etiket: "Birim", al: (s) => s.birim },
++];
++function StokSecici({ acik, kapat, depoStok, sec, baslik = "Stok Kartı Seç", serbest = false }) {
++  return (
++    <SecimPenceresi
++      acik={acik} kapat={kapat} baslik={baslik} ikon={Boxes}
++      kayitlar={stokSirala(depoStok)} sutunlar={STOK_SUTUNLARI} filtreler={STOK_FILTRELERI}
++      sec={sec} bosMesaj="Stok kartı bulunamadı. Stok Kartları ekranından ekleyebilirsin."
++      serbest={serbest} serbestEtiket="Stok kodu olarak kullan"
++    />
++  );
++}
++
++const CARI_SUTUNLARI = [
++  { baslik: "Cari Kod", al: (c) => c.kod, mono: true, renk: "#2dd4bf", genislik: 160 },
++  { baslik: "Cari İsmi", al: (c) => c.ad, sarma: true },
++  { baslik: "Tip", al: (c) => (CARI_TIPLERI[c.tip] || {}).label || c.tip || "", genislik: 115 },
++  { baslik: "Yetkili", al: (c) => c.yetkili, genislik: 160 },
++  { baslik: "Telefon", al: (c) => c.telefon, genislik: 140 },
++];
++const CARI_FILTRELERI = [
++  { ad: "tip", etiket: "Cari Tipi", al: (c) => (CARI_TIPLERI[c.tip] || {}).label || c.tip || "" },
++];
++function CariSecici({ acik, kapat, cariler, sec, baslik = "Cari Seç", sadeceAktif = true, serbest = false }) {
++  const liste = cariSirala((cariler || []).filter((c) => (sadeceAktif ? c.aktif !== false : true)));
++  return (
++    <SecimPenceresi
++      acik={acik} kapat={kapat} baslik={baslik} ikon={Building2}
++      kayitlar={liste} sutunlar={CARI_SUTUNLARI} filtreler={CARI_FILTRELERI}
++      sec={sec} bosMesaj="Cari bulunamadı. Cariler ekranından ekleyebilirsin."
++      serbest={serbest} serbestEtiket="Cari adı olarak kullan"
++    />
++  );
++}
++
+ // Etiket + alan + [?] butonu — Mikro fiş başlığındaki satırın aynısı
+ function FisAlan({ etiket, deger, degistir, tip = "text", placeholder, lookup, lookupAc, genisEtiket }) {
+   return (
+@@ -817,7 +975,12 @@ function useTabloEtiketleri(etkin, tetik) {
+ function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, genislik = 1080 }) {
+   useEffect(() => {
+     if (!acik) return;
+-    const esc = (e) => { if (e.key === "Escape") kapat(); };
++    // Üstte bir seçim penceresi açıksa Esc önce onu kapatsın, fişi kapatmasın
++    const esc = (e) => {
++      if (e.key !== "Escape") return;
++      if (typeof document !== "undefined" && document.querySelector(".secim-katman")) return;
++      kapat();
++    };
+     window.addEventListener("keydown", esc);
+     document.body.style.overflow = "hidden";
+     return () => { window.removeEventListener("keydown", esc); document.body.style.overflow = ""; };
+@@ -1568,6 +1731,15 @@ function Panel({ onCikis, kullanici }) {
+           tfoot td { display: block; width: 100%; text-align: right; }
+           tfoot td::before { display: none; }
+ 
++          /* Seçim penceresi de tam ekran */
++          .secim-katman { padding: 0 !important; align-items: stretch !important; }
++          .secim-kutu { max-width: 100% !important; max-height: 100% !important; border-radius: 0 !important; border: none !important; }
++          /* Seçim listesinde mobilde sadece kod + ad göster (kompakt) */
++          .secim-kutu tbody tr { margin-bottom: 7px; }
++          .secim-kutu tbody td { padding: 7px 11px; }
++          .secim-kutu tbody td:nth-child(n+3) { display: none; }
++          .secim-kutu tbody td::before { flex-basis: 74px; min-width: 74px; }
++
+           /* Fişler tam ekran */
+           .evrak-katman { padding: 0 !important; align-items: stretch !important; }
+           .evrak-kutu { max-width: 100% !important; min-height: 100%; border-radius: 0 !important; border: none !important; }
+@@ -1957,6 +2129,7 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
+ // ---------- Kayıt Ekle ----------
+ function KayitEkle({ teams, machines, records, depoStok }) {
+   const [fisAcik, setFisAcik] = useState(false);
++  const [stokSecici, setStokSecici] = useState(false);
+   const [form, setForm] = useState({ tarih: todayISO(), takim: "", magaza: "", makine: "", stokKodu: "", urun: "", adet: "" });
+   const [msg, setMsg] = useState("");
+   const [arama, setArama] = useState("");
+@@ -2093,17 +2266,17 @@ function KayitEkle({ teams, machines, records, depoStok }) {
+             <div style={fisSatir}><span style={fisEtiket}>Mağaza</span><input style={fisInput} placeholder="Mağaza / müşteri adı" value={form.magaza} onChange={set("magaza")} /></div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Stok Kodu</span>
+-              <select style={fisInput} value={form.stokKodu} onChange={(e) => {
+-                const st = stokBulKod(depoStok, e.target.value);
+-                setForm((x) => ({ ...x, stokKodu: e.target.value, urun: st ? st.stokAdi : x.urun }));
+-              }}>
+-                <option value="">— Stok kartı seç (opsiyonel) —</option>
+-                {stokSirala(depoStok).map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+-              </select>
++              <SecimAlani deger={form.stokKodu} ipucu="Stok kartı seç (opsiyonel)"
++                ac={() => setStokSecici(true)}
++                temizle={() => setForm((x) => ({ ...x, stokKodu: "" }))} />
+             </div>
+             <div style={fisSatir}><span style={fisEtiket}>Ürün / Model</span><input style={fisInput} placeholder="Opsiyonel" value={form.urun} onChange={set("urun")} /></div>
+             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Adet</span><input style={fisInput} type="number" min="0" placeholder="0" value={form.adet} onChange={set("adet")} /></div>
+           </div>
++        <StokSecici
++          acik={stokSecici} kapat={() => setStokSecici(false)} depoStok={depoStok} serbest
++          sec={(st) => setForm((x) => ({ ...x, stokKodu: st.__serbest || st.stokKodu, urun: st.stokAdi || x.urun }))}
++        />
+         </EvrakPenceresi>
+         {iceMsg && (
+           <div style={{ marginTop: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+@@ -2512,6 +2685,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
+ 
+ // ---------- Fason Takip Raporu ----------
+ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyarlari }) {
++  const [firmaSecici, setFirmaSecici] = useState(false);
+   const [f, setF] = useState({ arama: "", firmaId: "", gorunum: "acik" });
+   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+ 
+@@ -2643,10 +2817,17 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
+           </div>
+           <div>
+             <label className="field-label">Firma</label>
+-            <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
+-              <option value="">Tümü</option>
+-              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
+-            </select>
++            <SecimAlani
++              deger={(() => { const c = (fasonFirmalar || []).find((x) => x.id === f.firmaId); return c ? cariEtiket(c) : ""; })()}
++              ipucu="Tümü — tıkla, ara, filtrele"
++              ac={() => setFirmaSecici(true)}
++              temizle={() => setF((x) => ({ ...x, firmaId: "" }))}
++            />
++            <CariSecici
++              acik={firmaSecici} kapat={() => setFirmaSecici(false)} cariler={fasonFirmalar}
++              baslik="Firma (Cari) Seç" sadeceAktif={false}
++              sec={(c) => setF((x) => ({ ...x, firmaId: c.id }))}
++            />
+           </div>
+           <div>
+             <label className="field-label">Listelenecek Cariler</label>
+@@ -5207,6 +5388,8 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+   const [satirlar, setSatirlar] = useState([bosFasonSatiri()]);
+   const [hamSatirlar, setHamSatirlar] = useState([bosHamSatiri()]);
+   const [depodanDus, setDepodanDus] = useState(true);
++  const [secici, setSecici] = useState(null); // {tur:"cari"|"stok", key?}
++  const [firmaSecici, setFirmaSecici] = useState(false);
+   const [kaydediliyor, setKaydediliyor] = useState(false);
+   const [msg, setMsg] = useState("");
+   const [f, setF] = useState({ arama: "", firmaId: "", durum: "" });
+@@ -5443,10 +5626,12 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+           <div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Firma (Cari)</span>
+-              <select style={fisInput} value={baslik.firmaId} onChange={(e) => setBaslik((s) => ({ ...s, firmaId: e.target.value }))}>
+-                <option value="">Seçin…</option>
+-                {cariSirala(fasonFirmalar).map((f) => <option key={f.id} value={f.id}>{cariEtiket(f)}</option>)}
+-              </select>
++              <SecimAlani
++                deger={(() => { const f = (fasonFirmalar || []).find((x) => x.id === baslik.firmaId); return f ? cariEtiket(f) : ""; })()}
++                ipucu="Cari seç — tıkla, ara, filtrele"
++                ac={() => setSecici({ tur: "cari" })}
++                temizle={() => setBaslik((x) => ({ ...x, firmaId: "" }))}
++              />
+             </div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Satır Sayısı</span>
+@@ -5533,10 +5718,9 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+                   <tr key={r.key}>
+                     <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                     <td style={fisGridTd}>
+-                      <select style={{ ...fisHucreInput, cursor: "pointer" }} value={r.stokKodu} onChange={(e) => hamStokSec(r.key, e.target.value)}>
+-                        <option value="">— Stok kartı seç —</option>
+-                        {stoklar.map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+-                      </select>
++                      <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
++                        ac={() => setSecici({ tur: "stok", key: r.key })}
++                        temizle={() => hamGuncelle(r.key, "stokKodu", "")} />
+                     </td>
+                     <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => hamGuncelle(r.key, "stokAdi", e.target.value)} placeholder="Stok kartında yoksa elle yaz" /></td>
+                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", color: yetersiz ? "#e07a6b" : undefined }} value={r.miktar} onChange={(e) => hamGuncelle(r.key, "miktar", e.target.value)} /></td>
+@@ -5567,6 +5751,15 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+             </tfoot>
+           </table>
+         </div>
++        <CariSecici
++          acik={secici?.tur === "cari"} kapat={() => setSecici(null)} cariler={fasonFirmalar}
++          baslik="Fason Firma (Cari) Seç"
++          sec={(c) => setBaslik((x) => ({ ...x, firmaId: c.id }))}
++        />
++        <StokSecici
++          acik={secici?.tur === "stok"} kapat={() => setSecici(null)} depoStok={depoStok} serbest
++          sec={(st) => hamStokSec(secici.key, st.__serbest || st.stokKodu)}
++        />
+       </EvrakPenceresi>
+ 
+       <div className="card" style={{ padding: 20 }}>
+@@ -5598,10 +5791,17 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+           </div>
+           <div>
+             <label className="field-label">Firma</label>
+-            <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
+-              <option value="">Tümü</option>
+-              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
+-            </select>
++            <SecimAlani
++              deger={(() => { const c = (fasonFirmalar || []).find((x) => x.id === f.firmaId); return c ? cariEtiket(c) : ""; })()}
++              ipucu="Tümü — tıkla, ara, filtrele"
++              ac={() => setFirmaSecici(true)}
++              temizle={() => setF((x) => ({ ...x, firmaId: "" }))}
++            />
++            <CariSecici
++              acik={firmaSecici} kapat={() => setFirmaSecici(false)} cariler={fasonFirmalar}
++              baslik="Firma (Cari) Seç" sadeceAktif={false}
++              sec={(c) => setF((x) => ({ ...x, firmaId: c.id }))}
++            />
+           </div>
+           <div>
+             <label className="field-label">Durum</label>
+@@ -5716,6 +5916,8 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
+ // ---------- Fason Hareketler ----------
+ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok }) {
+   const [fisAcik, setFisAcik] = useState(false);
++  const [stokSecici, setStokSecici] = useState(false);
++  const [firmaSecici, setFirmaSecici] = useState(false);
+   const [form, setForm] = useState({ isId: "", tip: "giden", stokKodu: "", urunAdi: "", malzemeCinsi: "", kalite: "", aciklama: "", miktar: "", birim: "", birimFiyat: "", tarih: todayISO(), not: "" });
+   const [msg, setMsg] = useState("");
+   const [f, setF] = useState({ arama: "", tip: "", firmaId: "" });
+@@ -5828,13 +6030,9 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok
+             <div>
+               <div style={fisSatir}>
+                 <span style={fisEtiket}>Stok Kodu</span>
+-                <select style={fisInput} value={form.stokKodu} onChange={(e) => {
+-                  const st = stokBulKod(depoStok, e.target.value);
+-                  setForm((x) => ({ ...x, stokKodu: e.target.value, urunAdi: st ? st.stokAdi : x.urunAdi, birim: st?.birim || x.birim }));
+-                }}>
+-                  <option value="">— Stok kartı seç (opsiyonel) —</option>
+-                  {stokSirala(depoStok).map((st) => <option key={st.id} value={st.stokKodu}>{stokEtiket(st)}</option>)}
+-                </select>
++                <SecimAlani deger={form.stokKodu} ipucu="Stok kartı seç (opsiyonel)"
++                  ac={() => setStokSecici(true)}
++                  temizle={() => setForm((x) => ({ ...x, stokKodu: "" }))} />
+               </div>
+               <div style={fisSatir}><span style={fisEtiket}>{form.tip === "giden" ? "Malzeme İsmi" : "Ürün Adı"}</span><input style={fisInput} value={form.urunAdi} onChange={(e) => setForm((s) => ({ ...s, urunAdi: e.target.value }))} /></div>
+               {form.tip === "giden" && (
+@@ -5855,6 +6053,10 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok
+               </div>
+             </div>
+           </div>
++        <StokSecici
++          acik={stokSecici} kapat={() => setStokSecici(false)} depoStok={depoStok} serbest
++          sec={(st) => setForm((x) => ({ ...x, stokKodu: st.__serbest || st.stokKodu, urunAdi: st.stokAdi || x.urunAdi, birim: st.birim || x.birim }))}
++        />
+         </EvrakPenceresi>
+         {fasonIsler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce İşler sekmesinden bir iş ekleyin.</div>}
+         {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+@@ -5874,10 +6076,17 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok
+           </div>
+           <div>
+             <label className="field-label">Firma</label>
+-            <select className="input" value={f.firmaId} onChange={setF2("firmaId")}>
+-              <option value="">Tümü</option>
+-              {cariSirala(fasonFirmalar).map((fm) => <option key={fm.id} value={fm.id}>{cariEtiket(fm)}</option>)}
+-            </select>
++            <SecimAlani
++              deger={(() => { const c = (fasonFirmalar || []).find((x) => x.id === f.firmaId); return c ? cariEtiket(c) : ""; })()}
++              ipucu="Tümü — tıkla, ara, filtrele"
++              ac={() => setFirmaSecici(true)}
++              temizle={() => setF((x) => ({ ...x, firmaId: "" }))}
++            />
++            <CariSecici
++              acik={firmaSecici} kapat={() => setFirmaSecici(false)} cariler={fasonFirmalar}
++              baslik="Firma (Cari) Seç" sadeceAktif={false}
++              sec={(c) => setF((x) => ({ ...x, firmaId: c.id }))}
++            />
+           </div>
+         </div>
+       </div>
+@@ -6626,6 +6835,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
+   const [kaydediliyor, setKaydediliyor] = useState(false);
+   const [uyari, setUyari] = useState(null);
+   const [lookup, setLookup] = useState(null); // {baslik, secenekler, sec}
++  const [stokSecici, setStokSecici] = useState(null); // seçilen satırın key'i
+   const [iceAktariliyor, setIceAktariliyor] = useState(false);
+   const [iceMsg, setIceMsg] = useState("");
+   const dosyaRef = useRef(null);
+@@ -6948,6 +7158,10 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
+         baslik={lookup?.baslik} secenekler={lookup?.secenekler || []}
+         sec={(o) => lookup?.sec(o)}
+       />
++      <StokSecici
++        acik={!!stokSecici} kapat={() => setStokSecici(null)} depoStok={depoStok} serbest
++        sec={(st) => stokSec(stokSecici, st.__serbest || st.stokKodu)}
++      />
+ 
+       <EvrakPenceresi
+         acik={fisAcik} kapat={() => setFisAcik(false)}
+@@ -7060,12 +7274,10 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
+                         {CINS_SECENEKLERI.map((c) => <option key={c} value={c}>{c}</option>)}
+                       </select>
+                     </td>
+-                    <td style={{ ...fisGridTd, position: "relative" }}>
+-                      <div style={{ display: "flex", alignItems: "center" }}>
+-                        <input style={fisHucreInput} value={r.kodu} onChange={(e) => stokSec(r.key, e.target.value)} />
+-                        <button onClick={() => setLookup({ baslik: "Stok Kartı Seç", secenekler: stokListesi, sec: (o) => stokSec(r.key, o.deger) })}
+-                          title="Stok seç" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: "0 6px", fontWeight: 700, fontSize: 12 }}>?</button>
+-                      </div>
++                    <td style={fisGridTd}>
++                      <SecimAlani hucre deger={r.kodu} ipucu="stok kartı seç"
++                        ac={() => setStokSecici(r.key)}
++                        temizle={() => satirGuncelle(r.key, "kodu", "")} />
+                     </td>
+                     <td style={fisGridTd}><input style={fisHucreInput} value={r.ismi} onChange={(e) => satirGuncelle(r.key, "ismi", e.target.value)} /></td>
+                     <td style={fisGridTd}>
+@@ -7823,6 +8035,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
+ 
+   // Talep seçilince kalemler otomatik gelsin (fiyatlar boş)
+   const tedarikciSec = (ad) => setBaslik((s) => ({ ...s, tedarikci: ad, tedarikciKod: cariKodBul(fasonFirmalar, ad) }));
++  const [secici, setSecici] = useState(null); // {tur:"cari"|"stok", key?}
+ 
+   const talepSec = (talepId) => {
+     const t = (satinalmaTalepler || []).find((x) => x.id === talepId);
+@@ -8093,11 +8306,11 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
+               </select>
+             </div>
+             <div style={fisSatir}><span style={fisEtiket}>Tedarikçi (Cari)</span>
+-              <select style={fisInput} value={baslik.tedarikci} onChange={(e) => tedarikciSec(e.target.value)}>
+-                <option value="">— Cari seç —</option>
+-                {cariler.map((c) => <option key={c.id} value={c.ad}>{cariEtiket(c)}</option>)}
+-                {baslik.tedarikci && !cariler.some((c) => c.ad === baslik.tedarikci) && <option value={baslik.tedarikci}>{baslik.tedarikci} (listede yok)</option>}
+-              </select>
++              <SecimAlani
++                deger={baslik.tedarikci} ipucu="Cari seç — tıkla, ara, filtrele"
++                ac={() => setSecici({ tur: "cari" })}
++                temizle={() => setBaslik((x) => ({ ...x, tedarikci: "", tedarikciKod: "" }))}
++              />
+             </div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Cari Kod</span>
+@@ -8152,7 +8365,9 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
+                 <tr key={r.key}>
+                   <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                   <td style={fisGridTd}>
+-                    <input style={fisHucreInput} list="teklif-stok-list" value={r.stokKodu} onChange={(e) => stokSec(r.key, e.target.value)} />
++                    <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
++                      ac={() => setSecici({ tur: "stok", key: r.key })}
++                      temizle={() => satirGuncelle(r.key, "stokKodu", "")} />
+                   </td>
+                   <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => satirGuncelle(r.key, "stokAdi", e.target.value)} /></td>
+                   <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
+@@ -8167,7 +8382,15 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
+               ))}
+             </tbody>
+           </table>
+-          <datalist id="teklif-stok-list">{depoStok.map((s) => <option key={s.id} value={s.stokKodu}>{s.stokAdi}</option>)}</datalist>
++          <CariSecici
++            acik={secici?.tur === "cari"} kapat={() => setSecici(null)} cariler={fasonFirmalar}
++            baslik="Tedarikçi (Cari) Seç" serbest
++            sec={(c) => (c.__serbest ? tedarikciSec(c.__serbest) : setBaslik((x) => ({ ...x, tedarikci: c.ad || "", tedarikciKod: c.kod || "" })))}
++          />
++          <StokSecici
++            acik={secici?.tur === "stok"} kapat={() => setSecici(null)} depoStok={depoStok} serbest
++            sec={(st) => stokSec(secici.key, st.__serbest || st.stokKodu)}
++          />
+         </div>
+ 
+         <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+@@ -8849,6 +9072,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
+   }, [taslak]);
+ 
+   const tedarikciSec = (ad) => setBaslik((s) => ({ ...s, tedarikci: ad, tedarikciKod: cariKodBul(fasonFirmalar, ad) }));
++  const [secici, setSecici] = useState(null); // {tur:"cari"|"stok", key?}
+   const satirGuncelle = (key, alan, deger) => setSatirlar((s) => s.map((r) => (r.key === key ? { ...r, [alan]: deger } : r)));
+   const satirEkle = () => setSatirlar((s) => [...s, bosSiparisSatiri()]);
+   const satirSil = (key) => setSatirlar((s) => (s.length > 1 ? s.filter((r) => r.key !== key) : s));
+@@ -9194,11 +9418,12 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
+           <div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Tedarikçi (Cari)</span>
+-              <select style={fisInput} value={baslik.tedarikci} onChange={(e) => tedarikciSec(e.target.value)}>
+-                <option value="">Seçin…</option>
+-                {cariler.map((c) => <option key={c.id} value={c.ad}>{cariEtiket(c)}</option>)}
+-                {baslik.tedarikci && !cariler.some((c) => c.ad === baslik.tedarikci) && <option value={baslik.tedarikci}>{baslik.tedarikci} (listede yok)</option>}
+-              </select>
++              <SecimAlani
++                deger={baslik.tedarikci}
++                ipucu="Cari seç — tıkla, ara, filtrele"
++                ac={() => setSecici({ tur: "cari" })}
++                temizle={() => setBaslik((x) => ({ ...x, tedarikci: "", tedarikciKod: "" }))}
++              />
+             </div>
+             <div style={fisSatir}>
+               <span style={fisEtiket}>Cari Kod</span>
+@@ -9264,7 +9489,11 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
+                   <tr key={r.key}>
+                     <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
+                     <td style={fisGridTd}><input style={{ ...fisHucreInput, color: "#e8a33d" }} list="sa-proje-kodlari-sip" value={r.projeKodu || ""} onChange={(e) => satirGuncelle(r.key, "projeKodu", e.target.value)} placeholder={baslik.projeKodu || "seç / yaz"} /></td>
+-                    <td style={fisGridTd}><input style={fisHucreInput} list="sa-stok-kodlari-sip" value={r.stokKodu} onChange={(e) => stokSec(r.key, e.target.value)} placeholder="depodan seç / yaz" /></td>
++                    <td style={fisGridTd}>
++                      <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
++                        ac={() => setSecici({ tur: "stok", key: r.key })}
++                        temizle={() => satirGuncelle(r.key, "stokKodu", "")} />
++                    </td>
+                     <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => satirGuncelle(r.key, "stokAdi", e.target.value)} /></td>
+                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
+                     <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
+@@ -9292,7 +9521,15 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
+             </table>
+           </div>
+         </div>
+-        <datalist id="sa-stok-kodlari-sip">{depoStok.map((s) => <option key={s.id} value={s.stokKodu}>{s.stokAdi}</option>)}</datalist>
++        <CariSecici
++          acik={secici?.tur === "cari"} kapat={() => setSecici(null)} cariler={fasonFirmalar}
++          baslik="Tedarikçi (Cari) Seç" serbest
++          sec={(c) => (c.__serbest ? tedarikciSec(c.__serbest) : setBaslik((x) => ({ ...x, tedarikci: c.ad || "", tedarikciKod: c.kod || "" })))}
++        />
++        <StokSecici
++          acik={secici?.tur === "stok"} kapat={() => setSecici(null)} depoStok={depoStok} serbest
++          sec={(st) => stokSec(secici.key, st.__serbest || st.stokKodu)}
++        />
+       </EvrakPenceresi>
+ 
+       <div className="card" style={{ padding: 20 }}>
