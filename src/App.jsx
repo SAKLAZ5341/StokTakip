@@ -76,7 +76,13 @@ const MENU = [
       { id: "satinalma-ayar", label: "Form Ayarları" },
     ],
   },
-  { id: "fason-listesi", label: "Fason Listesi", icon: ClipboardList },
+  {
+    id: "fason-listesi", label: "Fason Listesi", icon: ClipboardList,
+    children: [
+      { id: "fason-liste", label: "Fason Listesi" },
+      { id: "fason-liste-rapor", label: "Fason Rapor" },
+    ],
+  },
   { id: "stok-kart", label: "Stok Kartları", icon: Boxes },
   {
     id: "cari", label: "Cariler", icon: Building2,
@@ -141,7 +147,8 @@ const GEC_YUKLENEN = {
   "fason-hareketler": ["fason_hareketler"],
   "fason-raporu": ["fason_hareketler"],
   "cari-rapor": ["fason_hareketler"],
-  "fason-listesi": ["fason_listesi"],
+  "fason-liste": ["fason_listesi"],
+  "fason-liste-rapor": ["fason_listesi"],
 };
 
 // Bu ekranlar herkese açıktır (Ana Sayfa olmadan programa girilemez, Yardım zararsızdır)
@@ -168,6 +175,9 @@ const YETKI_ESDEGER = {
   // Ana sayfa kartı, mobil alt çubuk ve yardım ekranı hâlâ eski "depo-kart"
   // adresine gidiyor; yetki tablosunda karşılığı "stok-kart".
   "depo-kart": "stok-kart",
+  // Fason Listesi tek ekrandan iki ekrana bölündü; eski yetki ikisinde de geçerli
+  "fason-liste": "fason-listesi",
+  "fason-liste-rapor": "fason-listesi",
 };
 function ekranYetkisi(kayit, eposta, ekranId) {
   if (yoneticiMi(kayit, eposta)) return "duzenle";
@@ -2252,7 +2262,8 @@ function Panel({ onCikis, kullanici }) {
               fasonFirmalar={fasonFirmalar} formAyarlari={formAyarlari}
             />}
             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
-            {tab === "fason-listesi" && <FasonListesi fasonListesi={fasonListesi} kullanici={kullanici} />}
+            {tab === "fason-liste" && <FasonListesi key="liste" fasonListesi={fasonListesi} kullanici={kullanici} gorunum="liste" />}
+            {tab === "fason-liste-rapor" && <FasonListesi key="rapor" fasonListesi={fasonListesi} kullanici={kullanici} gorunum="rapor" />}
             {tab === "stok-kart" && <DepoStokKart depoStok={depoStok} kullanici={kullanici} />}
             {tab === "cari-kart" && <CariKartlari fasonFirmalar={fasonFirmalar} kullanici={kullanici} />}
             {tab === "cari-rapor" && <CariRaporu
@@ -6437,11 +6448,41 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
 // senin işaretlediğin durumlar (Gönderildi / Üretimde) korunur.
 const FASON_LISTE_DURUM = {
   gonderilmedi: { label: "Gönderilmedi", renk: "#e8a33d", zemin: "#2b2415", kenar: "#4a3d1e", excel: "FFFFD966" },
-  gonderildi: { label: "Gönderildi", renk: "#2dd4bf", zemin: "#113330", kenar: "#1f4d47", excel: "FF00B050" },
   uretimde: { label: "Üretimde", renk: "#e07a6b", zemin: "#3a1f1f", kenar: "#6b3a33", excel: "FFFF0000" },
+  gonderildi: { label: "Gönderildi", renk: "#2dd4bf", zemin: "#113330", kenar: "#1f4d47", excel: "FF00B050" },
+  geldi: { label: "Geldi", renk: "#4ade80", zemin: "#14331f", kenar: "#1f4d2e", excel: "FF008000" },
 };
-const FASON_LISTE_DURUMLARI = ["gonderilmedi", "gonderildi", "uretimde"];
+// Fason Listesi ekranında seçilebilen durumlar (gönderilmemiş işler)
+const FASON_LISTE_DURUMLARI = ["gonderilmedi", "uretimde", "gonderildi"];
+// Fason Rapor ekranında seçilebilen durumlar (gönderilmiş işler)
+const FASON_RAPOR_DURUMLARI = ["gonderildi", "geldi"];
+// Gönderildi/Geldi işaretlenen iş listeden kalkar, rapora geçer
+const FASON_RAPOR_DURUMU = (d) => d === "gonderildi" || d === "geldi";
 const fasonListeDurumu = (k) => (FASON_LISTE_DURUM[k && k.durum] ? k.durum : "gonderilmedi");
+
+// Satırın rengi: gönderilen/gelen işler yeşil, gönderilmemişlerde tarih belirler.
+// Fason Listesi'nde gönderim (başlangıç) tarihi, Fason Rapor'da dönüş (bitiş)
+// tarihi esas alınır — hangi tarihin geçtiği o ekranda anlamlı olan tarihtir.
+const FASON_RENK = {
+  geldi: { ad: "Geldi", zemin: "#14331f", cizgi: "#2f7d4f", excel: "FF008000" },
+  gonderildi: { ad: "Gönderildi", zemin: "#113330", cizgi: "#1f6f66", excel: "FF00B050" },
+  gecikti: { ad: "Tarihi geçti", zemin: "#3a1f1f", cizgi: "#8c3b32", excel: "FFFF0000" },
+  bugun: { ad: "Günü geldi", zemin: "#3a2a12", cizgi: "#b3701c", excel: "FFFFA500" },
+  uretimde: { ad: "Üretimde", zemin: "#3a1f1f", cizgi: "#6b3a33", excel: "FFFF0000" },
+  bekliyor: { ad: "Bekliyor", zemin: "#2b2415", cizgi: "#4a3d1e", excel: "FFFFD966" },
+};
+function fasonSatirRenkAnahtari(k, gorunum = "liste", bugun = todayISO()) {
+  const d = fasonListeDurumu(k);
+  if (d === "geldi") return "geldi";
+  if (d === "gonderildi" && gorunum !== "rapor") return "gonderildi";
+  const tarih = String((gorunum === "rapor" ? k.bitisTarihi : k.baslangicTarihi) || "").slice(0, 10);
+  if (tarih && tarih < bugun) return "gecikti";
+  if (tarih && tarih === bugun) return "bugun";
+  if (d === "uretimde") return "uretimde";
+  if (d === "gonderildi") return "gonderildi";
+  return "bekliyor";
+}
+const fasonSatirRengi = (k, gorunum, bugun) => FASON_RENK[fasonSatirRenkAnahtari(k, gorunum, bugun)];
 
 // Excel'deki bir hücreyi gg.aa.yyyy / Date / seri numara fark etmeksizin ISO tarihe çevirir
 function excelTarih(v) {
@@ -6483,67 +6524,94 @@ function fasonListeKimlik(anahtar) {
   return `${sade}-${h.toString(36)}`;
 }
 
+// Sütunlar dosyadaki başlık metninden bulunur; bulunamazsa FSN-01 formundaki
+// sabit sıraya (yer) düşülür. Böylece başlık yazımı değişse bile veri doğru
+// sütuna gider — "yanlış sütuna düştü" hatası kapanır.
 const FASON_LISTE_SUTUNLARI = [
-  { alan: "musteri", baslik: "Müşteri Adı", esler: ["müşteri", "musteri"], gen: 20 },
-  { alan: "siparisNo", baslik: "Sipariş No", esler: ["sip no", "sipariş no", "siparis no", "şensan"], gen: 14 },
-  { alan: "urun", baslik: "Ürün", esler: ["ürün", "urun"], gen: 38 },
-  { alan: "ebat", baslik: "Ebat", esler: ["ebat"], gen: 12 },
-  { alan: "islem", baslik: "İşlem", esler: ["işlem", "islem"], gen: 20 },
-  { alan: "firma", baslik: "Gönderilecek Firma", esler: ["gönderilecek", "gonderilecek", "firma"], gen: 30 },
-  { alan: "adet", baslik: "Adet", esler: ["adet"], gen: 8, sayi: true },
-  { alan: "baslangicTarihi", baslik: "Başlangıç Tarihi", esler: ["başlangıç tarihi", "baslangic tarihi"], gen: 15, tarih: true },
-  { alan: "baslangicSaati", baslik: "Başlangıç Saati", esler: ["başlangıç saati", "baslangic saati"], gen: 12, saat: true },
-  { alan: "bitisTarihi", baslik: "Bitiş Tarihi", esler: ["bitiş tarihi", "bitis tarihi"], gen: 15, tarih: true },
-  { alan: "bitisSaati", baslik: "Bitiş Saati", esler: ["bitiş saati", "bitis saati"], gen: 12, saat: true },
-  { alan: "bitenAdet", baslik: "Biten Adet", esler: ["biten"], gen: 10, sayi: true },
-  { alan: "fireAdet", baslik: "Fire Adet", esler: ["fire"], gen: 10, sayi: true },
-  { alan: "sonrakiOperasyon", baslik: "Sonraki Operasyon", esler: ["sonraki operasyon"], gen: 20 },
+  { alan: "musteri", baslik: "Müşteri Adı", esler: ["müşteri adı", "müşteri", "musteri"], yer: 0, gen: 20 },
+  { alan: "siparisNo", baslik: "Sipariş No", esler: ["sip no", "sipariş no", "siparis no", "şensan"], yer: 1, gen: 14 },
+  { alan: "urun", baslik: "Ürün", esler: ["ürün", "urun"], yer: 2, gen: 38 },
+  { alan: "ebat", baslik: "Ebat", esler: ["ebat"], yer: 3, gen: 12 },
+  { alan: "islem", baslik: "İşlem", esler: ["işlem", "islem"], yer: 4, gen: 20, ilkEslesme: true },
+  { alan: "firma", baslik: "Gönderilecek Firma", esler: ["gönderilecek firma", "gönderilecek", "gonderilecek", "firma"], yer: 5, gen: 30 },
+  { alan: "adet", baslik: "Adet", esler: ["adet"], yer: 8, gen: 8, sayi: true, ilkEslesme: true },
+  { alan: "baslangicTarihi", baslik: "Başlangıç Tarihi", esler: ["başlangıç tarihi", "baslangic tarihi"], yer: 9, gen: 15, tarih: true },
+  { alan: "baslangicSaati", baslik: "Başlangıç Saati", esler: ["başlangıç saati", "baslangic saati"], yer: 10, gen: 12, saat: true },
+  { alan: "bitisTarihi", baslik: "Bitiş Tarihi", esler: ["bitiş tarihi", "bitis tarihi"], yer: 11, gen: 15, tarih: true },
+  { alan: "bitisSaati", baslik: "Bitiş Saati", esler: ["bitiş saati", "bitis saati"], yer: 12, gen: 12, saat: true },
+  { alan: "bitenAdet", baslik: "Biten Adet", esler: ["biten adet", "biten"], yer: 13, gen: 10, sayi: true },
+  { alan: "fireAdet", baslik: "Fire Adet", esler: ["fire adet", "fire"], yer: 14, gen: 10, sayi: true },
+  { alan: "sonrakiOperasyon", baslik: "Sonraki Operasyon", esler: ["sonraki operasyon"], yer: 15, gen: 20 },
 ];
 
 // Gelen dosyadaki satırları okur. Başlık satırı nerede olursa olsun bulunur;
 // üstteki logo/başlık satırları ve alttaki boş satırlar atlanır.
 function fasonListeSatirlariniAyikla(rows) {
   const norm = (v) => sadeAnahtar(v);
+  const doluMu = (v) => String(v == null ? "" : v).trim() !== "";
   let basSatir = -1;
-  for (let i = 0; i < Math.min(rows.length, 30); i++) {
-    const r = (rows[i] || []).map(norm);
+  for (let i = 0; i < Math.min(rows.length, 40); i++) {
+    const r = Array.from(rows[i] || [], (x) => norm(x));
     if (r.some((h) => h.includes("müşteri") || h.includes("musteri")) && r.some((h) => h.includes("ürün") || h.includes("urun"))) { basSatir = i; break; }
   }
-  if (basSatir === -1) return { satirlar: [], atlanan: 0, basliksiz: true };
+  if (basSatir === -1) return { satirlar: [], atlanan: 0, basliksiz: true, sutunlar: [] };
+
   // Bazı sütunların gerçek adı üstteki birleşik hücrededir (ör. "SONRAKİ OPERASYON"
   // P1:P2'de yazar, başlık satırında sadece "İŞLEM" görünür). Üstteki iki satır da
   // başlığa eklenir ki sütun doğru tanınsın.
-  const basliklar = (rows[basSatir] || []).map((h, i) => {
-    const ust = [basSatir - 2, basSatir - 1].filter((x) => x >= 0).map((x) => (rows[x] || [])[i]);
-    return norm([...ust, h].filter(Boolean).join(" "));
-  });
+  const enGenis = Math.max(...[basSatir - 2, basSatir - 1, basSatir].filter((x) => x >= 0).map((x) => (rows[x] || []).length), 0);
+  const basliklar = [];
+  for (let i = 0; i < enGenis; i++) {
+    const parcalar = [basSatir - 2, basSatir - 1, basSatir]
+      .filter((x) => x >= 0).map((x) => (rows[x] || [])[i]).filter(doluMu);
+    basliklar.push(norm(parcalar.join(" ")));
+  }
+
+  // Önce başlık metninden bul; bulunamazsa formdaki sabit yere düş.
+  const kullanilan = new Set();
+  const sutunBilgisi = [];
   const idx = {};
   FASON_LISTE_SUTUNLARI.forEach((s) => {
-    idx[s.alan] = basliklar.findIndex((h) => h && s.esler.some((e) => h.includes(norm(e))));
+    let yer = -1, kaynak = "başlık";
+    for (let i = 0; i < basliklar.length; i++) {
+      if (!basliklar[i]) continue;
+      if (!s.esler.some((e) => basliklar[i].includes(norm(e)))) continue;
+      if (kullanilan.has(i)) continue;          // aynı sütun iki alana verilmesin
+      yer = i;
+      break;                                     // ilk eşleşen sütun geçerli
+    }
+    if (yer === -1 && s.yer != null && !kullanilan.has(s.yer) && s.yer < Math.max(enGenis, s.yer + 1)) {
+      yer = s.yer; kaynak = "sabit yer";
+    }
+    if (yer > -1) kullanilan.add(yer);
+    idx[s.alan] = yer;
+    sutunBilgisi.push({ alan: s.alan, baslik: s.baslik, sutun: yer, kaynak: yer === -1 ? "bulunamadı" : kaynak, dosyaBasligi: yer > -1 ? (basliklar[yer] || "") : "" });
   });
+
   const satirlar = [];
   const sayac = {};
   let atlanan = 0;
   for (let i = basSatir + 1; i < rows.length; i++) {
     const r = rows[i] || [];
-    if (!r.some((h) => String(h == null ? "" : h).trim())) continue;
+    if (!Array.from(r, (x) => x).some(doluMu)) continue;
     const kayit = {};
     FASON_LISTE_SUTUNLARI.forEach((s) => {
       const ham = idx[s.alan] > -1 ? r[idx[s.alan]] : "";
       if (s.tarih) kayit[s.alan] = excelTarih(ham);
       else if (s.saat) kayit[s.alan] = excelSaat(ham);
-      else if (s.sayi) kayit[s.alan] = ham === "" || ham == null ? "" : sayiCevir(ham);
+      else if (s.sayi) kayit[s.alan] = doluMu(ham) ? sayiCevir(ham) : "";
       else kayit[s.alan] = sadeMetin(ham);
     });
     // Ürün ve işlem boşsa satır anlamsızdır (ara başlık / toplam satırı olabilir)
     if (!kayit.urun && !kayit.islem) { atlanan++; continue; }
+    kayit.sira = satirlar.length + 1;            // dosyadaki sıra korunur
     const temel = fasonListeAnahtar(kayit);
     // Dosyada birebir aynı satır iki kez geçiyorsa ikisi de korunur
     const kacinci = (sayac[temel] = (sayac[temel] || 0) + 1);
     kayit.anahtar = kacinci > 1 ? `${temel}#${kacinci}` : temel;
     satirlar.push(kayit);
   }
-  return { satirlar, atlanan, basliksiz: false };
+  return { satirlar, atlanan, basliksiz: false, sutunlar: sutunBilgisi };
 }
 
 // Mevcut listeyi gelen dosyaya göre günceller.
@@ -6590,11 +6658,14 @@ async function fasonListesiniGuncelle(mevcutlar, gelenler, eposta, dosyaAdi) {
   return { eklenen, guncellenen, dusen, geriDonen, toplam: gelenler.length };
 }
 
-function FasonListesi({ fasonListesi, kullanici }) {
+function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
+  const rapor = gorunum === "rapor";
+  const bugun = todayISO();
   const [f, setF] = useState({ arama: "", musteri: "", firma: "", islem: "", durum: "", dusenGizle: true });
   const [msg, setMsg] = useState("");
   const [yukleniyor, setYukleniyor] = useState(false);
   const [secililer, setSecililer] = useState(new Set());
+  const [onizleme, setOnizleme] = useState(null); // yazmadan önce ne okundu
   const dosyaRef = useRef(null);
   const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const bilgi = (m, sure = 6000) => { setMsg(m); setTimeout(() => setMsg(""), sure); };
@@ -6602,6 +6673,8 @@ function FasonListesi({ fasonListesi, kullanici }) {
   const liste = useMemo(() => {
     const q = f.arama.trim().toLocaleLowerCase("tr");
     return (fasonListesi || []).filter((k) => {
+      // Gönderildi/Geldi işaretlenen iş listeden kalkar, Fason Rapor'a geçer
+      if (FASON_RAPOR_DURUMU(fasonListeDurumu(k)) !== rapor) return false;
       if (f.dusenGizle && k.listeDisi) return false;
       if (f.musteri && sadeMetin(k.musteri) !== f.musteri) return false;
       if (f.firma && sadeMetin(k.firma) !== f.firma) return false;
@@ -6610,14 +6683,17 @@ function FasonListesi({ fasonListesi, kullanici }) {
       if (q && ![k.musteri, k.siparisNo, k.urun, k.ebat, k.islem, k.firma, k.sonrakiOperasyon]
         .some((x) => String(x || "").toLocaleLowerCase("tr").includes(q))) return false;
       return true;
-    }).sort((a, b) => String(a.bitisTarihi || "9999").localeCompare(String(b.bitisTarihi || "9999")) ||
-      String(a.musteri || "").localeCompare(String(b.musteri || ""), "tr"));
-  }, [fasonListesi, f]);
+    }).sort((a, b) => (Number(a.sira) || 9999) - (Number(b.sira) || 9999) ||
+      String(a.bitisTarihi || "9999").localeCompare(String(b.bitisTarihi || "9999")));
+  }, [fasonListesi, f, rapor]);
 
   const benzersiz = (alan) => [...new Set((fasonListesi || []).map((k) => sadeMetin(k[alan])).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
-  const sayac = (d) => (fasonListesi || []).filter((k) => !k.listeDisi && fasonListeDurumu(k) === d).length;
-  const aktifSayi = (fasonListesi || []).filter((k) => !k.listeDisi).length;
-  const dusenSayi = (fasonListesi || []).filter((k) => k.listeDisi).length;
+  const ekranKayitlari = (fasonListesi || []).filter((k) => FASON_RAPOR_DURUMU(fasonListeDurumu(k)) === rapor);
+  const sayac = (d) => ekranKayitlari.filter((k) => !k.listeDisi && fasonListeDurumu(k) === d).length;
+  const renkSayaci = (anahtar) => ekranKayitlari.filter((k) => !k.listeDisi && fasonSatirRenkAnahtari(k, gorunum, bugun) === anahtar).length;
+  const aktifSayi = ekranKayitlari.filter((k) => !k.listeDisi).length;
+  const dusenSayi = ekranKayitlari.filter((k) => k.listeDisi).length;
+  const secilebilir = rapor ? FASON_RAPOR_DURUMLARI : FASON_LISTE_DURUMLARI;
 
   const durumSec = async (kayit, yeniDurum) => {
     try {
@@ -6664,6 +6740,7 @@ function FasonListesi({ fasonListesi, kullanici }) {
     setYukleniyor(false);
   };
 
+  // Dosya okunur ama HEMEN yazılmaz: önce ne okunduğu gösterilir, onaydan sonra yazılır.
   const iceAktar = async (e) => {
     const dosya = e.target.files?.[0];
     e.target.value = "";
@@ -6671,22 +6748,32 @@ function FasonListesi({ fasonListesi, kullanici }) {
     setYukleniyor(true); setMsg("");
     try {
       const rows = await dosyaOku(dosya);
-      const { satirlar, atlanan, basliksiz } = fasonListeSatirlariniAyikla(rows);
-      if (basliksiz) { bilgi("Dosyada başlık satırı bulunamadı. \"Müşteri Adı\" ve \"Ürün\" sütunları olan bir liste olmalı."); }
-      else if (!satirlar.length) { bilgi("Dosyada işlenecek satır bulunamadı."); }
-      else {
-        const sonuc = await fasonListesiniGuncelle(fasonListesi || [], satirlar, kullanici?.email, dosya.name);
-        bilgi(
-          `${sonuc.toplam} satır okundu · ${sonuc.eklenen} yeni · ${sonuc.guncellenen} güncellendi` +
-          `${sonuc.geriDonen ? ` · ${sonuc.geriDonen} satır listeye geri döndü` : ""}` +
-          `${sonuc.dusen ? ` · ${sonuc.dusen} satır listeden düştü` : ""}` +
-          `${atlanan ? ` · ${atlanan} boş/başlıksız satır atlandı` : ""}. İşaretlediğin durumlar korundu.`,
-          11000
-        );
-      }
+      const { satirlar, atlanan, basliksiz, sutunlar } = fasonListeSatirlariniAyikla(rows);
+      if (basliksiz) bilgi("Dosyada başlık satırı bulunamadı. \"Müşteri Adı\" ve \"Ürün\" sütunları olan bir liste olmalı.");
+      else if (!satirlar.length) bilgi("Dosyada işlenecek satır bulunamadı.");
+      else setOnizleme({ satirlar, atlanan, sutunlar, dosyaAdi: dosya.name });
     } catch (err) {
       console.error(err);
       bilgi("Dosya okunamadı: " + (err?.message || "bilinmeyen hata"));
+    }
+    setYukleniyor(false);
+  };
+
+  const onizlemeyiOnayla = async () => {
+    if (!onizleme) return;
+    setYukleniyor(true);
+    try {
+      const sonuc = await fasonListesiniGuncelle(fasonListesi || [], onizleme.satirlar, kullanici?.email, onizleme.dosyaAdi);
+      setOnizleme(null);
+      bilgi(
+        `${sonuc.toplam} satır işlendi · ${sonuc.eklenen} yeni · ${sonuc.guncellenen} güncellendi` +
+        `${sonuc.geriDonen ? ` · ${sonuc.geriDonen} satır listeye geri döndü` : ""}` +
+        `${sonuc.dusen ? ` · ${sonuc.dusen} satır listeden düştü` : ""}` +
+        `${onizleme.atlanan ? ` · ${onizleme.atlanan} boş satır atlandı` : ""}. İşaretlediğin durumlar korundu.`,
+        11000
+      );
+    } catch (err) {
+      if (!err?.yetkiHatasi) bilgi("Yazılamadı: " + (err?.message || "bilinmeyen hata"));
     }
     setYukleniyor(false);
   };
@@ -6696,15 +6783,22 @@ function FasonListesi({ fasonListesi, kullanici }) {
     const kapsam = secililer.size ? liste.filter((k) => secililer.has(k.id)) : liste;
     const basliklar = [...FASON_LISTE_SUTUNLARI.map((c) => c.baslik), "Durum", "Liste Dışı"];
     const satirlar = kapsam.map((k) => [
-      ...FASON_LISTE_SUTUNLARI.map((c) => (c.sayi ? (k[c.alan] === "" || k[c.alan] == null ? "" : Number(k[c.alan])) : String(k[c.alan] || ""))),
+      ...FASON_LISTE_SUTUNLARI.map((c) => {
+        if (c.sayi) return k[c.alan] === "" || k[c.alan] == null ? "" : Number(k[c.alan]);
+        if (c.tarih) return trTarih(k[c.alan]);
+        return String(k[c.alan] || "");
+      }),
       FASON_LISTE_DURUM[fasonListeDurumu(k)].label,
       k.listeDisi ? "Listeden düştü" : "",
     ]);
     renkliExcelIndir({
       basliklar, satirlar,
-      satirRenkleri: kapsam.map((k) => FASON_LISTE_DURUM[fasonListeDurumu(k)].excel),
+      // Ekranda görünen rengin aynısı: geldi/gönderildi yeşil, tarihi geçen kırmızı,
+      // günü gelen turuncu, geri kalan sarı
+      satirRenkleri: kapsam.map((k) => fasonSatirRengi(k, gorunum, bugun).excel),
       sutunGenislikleri: [...FASON_LISTE_SUTUNLARI.map((c) => c.gen), 14, 12],
-      dosyaAdi: `fason-listesi-${todayISO()}.xlsx`, sayfaAdi: "Fason Listesi",
+      dosyaAdi: `${rapor ? "fason-rapor" : "fason-listesi"}-${todayISO()}.xlsx`,
+      sayfaAdi: rapor ? "Fason Rapor" : "Fason Listesi",
     });
   };
   const sablonAl = () => sablonIndir(
@@ -6727,27 +6821,58 @@ function FasonListesi({ fasonListesi, kullanici }) {
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
-        <KutuStat etiket="Listedeki İş" deger={aktifSayi} />
-        <KutuStat etiket="Gönderilmedi" deger={sayac("gonderilmedi")} renk={FASON_LISTE_DURUM.gonderilmedi.renk} />
-        <KutuStat etiket="Gönderildi" deger={sayac("gonderildi")} renk={FASON_LISTE_DURUM.gonderildi.renk} />
-        <KutuStat etiket="Üretimde" deger={sayac("uretimde")} renk={FASON_LISTE_DURUM.uretimde.renk} />
-        <KutuStat etiket="Listeden Düşen" deger={dusenSayi} renk="#6b7178" />
+        <KutuStat etiket={rapor ? "Gönderilen İş" : "Listedeki İş"} deger={aktifSayi} />
+        {rapor ? (
+          <>
+            <KutuStat etiket="Gelmedi" deger={sayac("gonderildi")} renk={FASON_LISTE_DURUM.gonderildi.renk} />
+            <KutuStat etiket="Geldi" deger={sayac("geldi")} renk={FASON_LISTE_DURUM.geldi.renk} />
+            <KutuStat etiket="Dönüşü Gecikti" deger={renkSayaci("gecikti")} renk="#e07a6b" />
+            <KutuStat etiket="Bugün Dönmeli" deger={renkSayaci("bugun")} renk="#e8a33d" />
+          </>
+        ) : (
+          <>
+            <KutuStat etiket="Tarihi Geçti" deger={renkSayaci("gecikti")} renk="#e07a6b" />
+            <KutuStat etiket="Günü Geldi" deger={renkSayaci("bugun")} renk="#e8a33d" />
+            <KutuStat etiket="Üretimde" deger={sayac("uretimde")} renk={FASON_LISTE_DURUM.uretimde.renk} />
+            <KutuStat etiket="Listeden Düşen" deger={dusenSayi} renk="#6b7178" />
+          </>
+        )}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Günlük Fason Listesi</div>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{rapor ? "Fason Rapor — Gönderilen İşler" : "Günlük Fason Listesi"}</div>
         <div style={{ fontSize: 12.5, color: "#8b929a", lineHeight: 1.6, marginBottom: 14 }}>
-          Her gün gelen fason Excel'ini <b>"Listeyi Excel'den Güncelle"</b> ile yükle. Aynı iş satırları üzerine yazılır,
-          yeni satırlar eklenir, dosyada olmayanlar <b>"listeden düştü"</b> diye işaretlenir.
-          <b style={{ color: "#2dd4bf" }}> Senin işaretlediğin Gönderildi / Üretimde durumları silinmez.</b>
+          {rapor ? (
+            <>
+              Fason Listesi'nde <b>"Gönderildi"</b> işaretlediğin işler buraya düşer ve listeden kalkar.
+              Parça geri geldiğinde <b style={{ color: "#4ade80" }}>"Geldi"</b> de — satır yeşile döner.
+              Dönüş tarihi geçmiş işler <b style={{ color: "#e07a6b" }}>kırmızı</b>,
+              bugün dönmesi gerekenler <b style={{ color: "#e8a33d" }}>turuncu</b> görünür.
+            </>
+          ) : (
+            <>
+              Her gün gelen fason Excel'ini <b>"Listeyi Excel'den Güncelle"</b> ile yükle. Dosya önce ekranda gösterilir,
+              sen onaylayana kadar listende hiçbir şey değişmez. Onaylayınca aynı iş satırları üzerine yazılır,
+              yeni satırlar eklenir, dosyada olmayanlar <b>"listeden düştü"</b> diye işaretlenir.
+              <b style={{ color: "#2dd4bf" }}> Senin işaretlediğin durumlar silinmez.</b> Satırlar ve sütunlar dosyadaki sırayla durur.
+              <br />
+              Gönderim tarihi geçmiş işler <b style={{ color: "#e07a6b" }}>kırmızı</b>,
+              bugün gönderilmesi gerekenler <b style={{ color: "#e8a33d" }}>turuncu</b>.
+              <b style={{ color: "#2dd4bf" }}> "Gönderildi"</b> dediğinde satır yeşile döner ve <b>Fason Rapor</b> ekranına geçer.
+            </>
+          )}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
-          <button style={fisAnaBtn} disabled={yukleniyor} onClick={() => dosyaRef.current && dosyaRef.current.click()}>
-            <Upload size={14} /> {yukleniyor ? "İşleniyor…" : "Listeyi Excel'den Güncelle"}
-          </button>
+          {!rapor && (
+            <>
+              <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+              <button style={fisAnaBtn} disabled={yukleniyor} onClick={() => dosyaRef.current && dosyaRef.current.click()}>
+                <Upload size={14} /> {yukleniyor ? "İşleniyor…" : "Listeyi Excel'den Güncelle"}
+              </button>
+            </>
+          )}
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Renkli Excele Aktar</button>
-          <button className="btn-ghost" onClick={sablonAl}><FileDown size={14} /> Şablon İndir</button>
+          {!rapor && <button className="btn-ghost" onClick={sablonAl}><FileDown size={14} /> Şablon İndir</button>}
         </div>
         {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 6, padding: "9px 12px" }}>{msg}</div>}
       </div>
@@ -6765,7 +6890,7 @@ function FasonListesi({ fasonListesi, kullanici }) {
           <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>İşlem</div>
             <select className="input" value={f.islem} onChange={setF2("islem")}><option value="">Tümü</option>{benzersiz("islem").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
           <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Durum</div>
-            <select className="input" value={f.durum} onChange={setF2("durum")}><option value="">Tümü</option>{FASON_LISTE_DURUMLARI.map((k) => <option key={k} value={k}>{FASON_LISTE_DURUM[k].label}</option>)}</select></div>
+            <select className="input" value={f.durum} onChange={setF2("durum")}><option value="">Tümü</option>{secilebilir.map((k) => <option key={k} value={k}>{FASON_LISTE_DURUM[k].label}</option>)}</select></div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#c7cbd1", alignSelf: "end", paddingBottom: 9 }}>
             <input type="checkbox" checked={f.dusenGizle} onChange={(e) => setF((s) => ({ ...s, dusenGizle: e.target.checked }))} />
             Listeden düşenleri gizle
@@ -6777,7 +6902,7 @@ function FasonListesi({ fasonListesi, kullanici }) {
         <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#2dd4bf" }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{secililer.size} satır seçili</span>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {FASON_LISTE_DURUMLARI.map((k) => (
+            {secilebilir.map((k) => (
               <button key={k} onClick={() => topluDurum(k)} disabled={yukleniyor}
                 style={{ background: FASON_LISTE_DURUM[k].zemin, border: `1px solid ${FASON_LISTE_DURUM[k].kenar}`, color: FASON_LISTE_DURUM[k].renk, borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 {FASON_LISTE_DURUM[k].label} yap
@@ -6789,43 +6914,121 @@ function FasonListesi({ fasonListesi, kullanici }) {
         </div>
       )}
 
+      {/* Yazmadan önce: dosyadan ne okunduğu burada görünür, onaylayınca yazılır */}
+      <EvrakPenceresi
+        acik={!!onizleme} kapat={() => setOnizleme(null)}
+        baslik={onizleme ? `Dosyadan Okunanlar — ${onizleme.dosyaAdi}` : ""}
+        ikon={FileSpreadsheet} genislik={1250}
+        butonlar={
+          <>
+            <button style={fisAltBtn} onClick={() => setOnizleme(null)}><X size={14} /> Vazgeç</button>
+            <button style={fisAnaBtn} onClick={onizlemeyiOnayla} disabled={yukleniyor}>
+              <Check size={14} /> {yukleniyor ? "Yazılıyor…" : `Onayla ve Listeye Yaz (${onizleme ? onizleme.satirlar.length : 0} satır)`}
+            </button>
+          </>
+        }
+      >
+        {onizleme && (
+          <>
+            <div style={{ fontSize: 12.5, color: "#c7cbd1", background: "#16232a", border: "1px solid #2a4b52", borderRadius: 5, padding: "10px 12px", marginBottom: 12, lineHeight: 1.6 }}>
+              <b style={{ color: "#2dd4bf" }}>{onizleme.satirlar.length} satır</b> okundu
+              {onizleme.atlanan ? ` · ${onizleme.atlanan} boş satır atlandı` : ""}.
+              Aşağıda dosyadan ne alındığını gör, doğruysa <b>"Onayla ve Listeye Yaz"</b> de.
+              Bu adıma kadar listende hiçbir şey değişmedi.
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#8b929a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Sütun eşleşmesi</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {(onizleme.sutunlar || []).map((c) => (
+                  <span key={c.alan} className="pill" title={c.dosyaBasligi ? `Dosyadaki başlık: ${c.dosyaBasligi}` : "Dosyada bu sütun bulunamadı"}
+                    style={{
+                      background: "transparent",
+                      color: c.kaynak === "başlık" ? "#2dd4bf" : c.kaynak === "sabit yer" ? "#e8a33d" : "#e07a6b",
+                      borderColor: c.kaynak === "başlık" ? "#1f4d47" : c.kaynak === "sabit yer" ? "#4a3d1e" : "#6b3a33",
+                    }}>
+                    {c.baslik}{c.kaynak === "sabit yer" ? " (yerinden)" : c.kaynak === "bulunamadı" ? " (yok)" : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto", maxHeight: 420, overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr>
+                    <th style={{ ...fisGridTh, width: 34, textAlign: "center" }}>#</th>
+                    {FASON_LISTE_SUTUNLARI.map((c) => <th key={c.alan} style={fisGridTh}>{c.baslik}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {onizleme.satirlar.map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ ...fisGridTd, textAlign: "center", padding: "5px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{r.sira}</td>
+                        {FASON_LISTE_SUTUNLARI.map((c) => (
+                          <td key={c.alan} style={{ ...fisGridTd, padding: "5px 8px", fontSize: 12 }}>
+                            {c.tarih ? trTarih(r[c.alan]) : String(r[c.alan] === "" || r[c.alan] == null ? "—" : r[c.alan])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </EvrakPenceresi>
+
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Fason Listesi ({liste.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>{rapor ? "Fason Rapor" : "Fason Listesi"} ({liste.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
             <thead>
               <tr>
                 <th style={{ width: 32 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th>
-                <th>Müşteri</th><th>Sipariş No</th><th>Ürün</th><th>Ebat</th><th>İşlem</th><th>Gönderilecek Firma</th>
-                <th style={{ textAlign: "right" }}>Adet</th><th>Başlangıç</th><th>Bitiş</th>
-                <th style={{ textAlign: "right" }}>Biten</th><th style={{ textAlign: "right" }}>Fire</th>
-                <th>Sonraki Operasyon</th><th style={{ width: 250 }}>Durum</th><th style={{ width: 34 }}></th>
+                <th style={{ width: 34, textAlign: "right" }}>#</th>
+                {/* Sütunlar Excel dosyasındaki sırayla */}
+                {FASON_LISTE_SUTUNLARI.map((c) => (
+                  <th key={c.alan} style={c.sayi ? { textAlign: "right" } : undefined}>{c.baslik}</th>
+                ))}
+                <th style={{ width: rapor ? 190 : 250 }}>Durum</th><th style={{ width: rapor ? 120 : 34 }}></th>
               </tr>
             </thead>
             <tbody>
-              {liste.length === 0 && <tr><td colSpan={15} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
-                Liste boş. "Listeyi Excel'den Güncelle" ile günlük fason dosyanı yükle.
+              {liste.length === 0 && <tr><td colSpan={FASON_LISTE_SUTUNLARI.length + 4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+                {rapor
+                  ? "Henüz gönderilen iş yok. Fason Listesi ekranında bir işe \"Gönderildi\" dediğinde buraya düşer."
+                  : "Liste boş. \"Listeyi Excel'den Güncelle\" ile günlük fason dosyanı yükle."}
               </td></tr>}
               {liste.map((k) => {
                 const d = fasonListeDurumu(k);
+                const renk = fasonSatirRengi(k, gorunum, bugun);
                 return (
-                  <tr key={k.id} style={{ background: k.listeDisi ? "rgba(107,113,120,0.10)" : FASON_LISTE_DURUM[d].zemin, opacity: k.listeDisi ? 0.65 : 1 }}>
+                  <tr key={k.id} style={{
+                    background: k.listeDisi ? "rgba(107,113,120,0.10)" : renk.zemin,
+                    boxShadow: k.listeDisi ? undefined : `inset 4px 0 0 ${renk.cizgi}`,
+                    opacity: k.listeDisi ? 0.65 : 1,
+                  }}>
                     <td><input type="checkbox" checked={secililer.has(k.id)} onChange={() => birSecToggle(k.id)} /></td>
-                    <td style={{ fontSize: 12.5 }}>{k.musteri || "—"}{k.listeDisi && <div style={{ fontSize: 10.5, color: "#6b7178" }}>listeden düştü</div>}</td>
-                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#e8a33d" }}>{k.siparisNo || "—"}</td>
-                    <td style={{ fontSize: 12.5, minWidth: 180 }}>{k.urun || "—"}</td>
-                    <td style={{ fontSize: 12.5 }}>{k.ebat || "—"}</td>
-                    <td style={{ fontSize: 12.5 }}>{k.islem || "—"}</td>
-                    <td style={{ fontSize: 12.5 }}>{k.firma || "—"}</td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace" }}>{k.adet === "" || k.adet == null ? "—" : sayiTR(k.adet)}</td>
-                    <td style={{ fontSize: 12, color: "#8b929a" }}>{k.baslangicTarihi || "—"}</td>
-                    <td style={{ fontSize: 12, color: "#8b929a" }}>{k.bitisTarihi || "—"}</td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12 }}>{k.bitenAdet === "" || k.bitenAdet == null ? "—" : sayiTR(k.bitenAdet)}</td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12 }}>{k.fireAdet === "" || k.fireAdet == null ? "—" : sayiTR(k.fireAdet)}</td>
-                    <td style={{ fontSize: 12.5 }}>{k.sonrakiOperasyon || "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 11.5, color: "#6b7178" }}>{k.sira || "—"}</td>
+                    {FASON_LISTE_SUTUNLARI.map((c) => {
+                      const ham = k[c.alan];
+                      const bos = ham === "" || ham == null;
+                      const metin = c.tarih ? trTarih(ham) : c.sayi ? (bos ? "—" : sayiTR(ham)) : (bos ? "—" : String(ham));
+                      return (
+                        <td key={c.alan} style={{
+                          fontSize: 12.5,
+                          textAlign: c.sayi ? "right" : undefined,
+                          fontFamily: c.sayi || c.tarih || c.alan === "siparisNo" ? "monospace" : undefined,
+                          color: c.alan === "siparisNo" ? "#e8a33d" : (c.tarih || c.saat) ? "#8b929a" : undefined,
+                          minWidth: c.alan === "urun" ? 170 : undefined,
+                        }}>
+                          {metin || "—"}
+                          {c.alan === "musteri" && k.listeDisi && <div style={{ fontSize: 10.5, color: "#6b7178" }}>listeden düştü</div>}
+                        </td>
+                      );
+                    })}
                     <td>
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                        {FASON_LISTE_DURUMLARI.map((x) => (
+                        {secilebilir.map((x) => (
                           <button key={x} onClick={() => durumSec(k, x)} title={`${FASON_LISTE_DURUM[x].label} olarak işaretle`}
                             style={{
                               background: d === x ? FASON_LISTE_DURUM[x].renk : "transparent",
@@ -6838,7 +7041,15 @@ function FasonListesi({ fasonListesi, kullanici }) {
                         ))}
                       </div>
                     </td>
-                    <td><button onClick={() => sil(k)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      {rapor && (
+                        <button onClick={() => durumSec(k, "gonderilmedi")} title="Yanlışlıkla gönderildi dendiyse listeye geri al"
+                          style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 5, padding: "3px 7px", fontSize: 10.5, cursor: "pointer", marginRight: 5 }}>
+                          ↩ Listeye al
+                        </button>
+                      )}
+                      <button onClick={() => sil(k)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                    </td>
                   </tr>
                 );
               })}
