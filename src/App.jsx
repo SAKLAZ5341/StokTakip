@@ -3408,7 +3408,7 @@ function hammaddeKaydiOlustur(siparis, satir, sira, eposta) {
     satirNo: sira, kaynakAnahtar: anahtar,
     cari: siparis.tedarikci || "", cariKod: siparis.tedarikciKod || "",
     stokKodu: satir.stokKodu || "", stokAdi: satir.stokAdi || "",
-    aciklama1: satir.stokAdi || "", aciklama2: satir.aciklama || "",
+    aciklama1: satir.aciklama || "", aciklama2: satir.aciklama2 || "",
     projeKodu: satir.projeKodu || siparis.projeKodu || "", projeAdi: "", kalite: "",
     miktar: sayiCevir(satir.miktar), birim: satir.birim || "Adet",
     birimFiyat: sayiCevir(satir.birimFiyat),
@@ -3583,7 +3583,8 @@ const XLS_ALAN = {
     { baslik: "TESLİM TARİHİ", alan: "teslimTarihi", ornek: "2026-09-01" },
     { baslik: "PROJE KODU", alan: "projeKodu", ornek: "2026-092" },
     { baslik: "KALİTE", alan: "kalite", ornek: "4140" },
-    { baslik: "AÇIKLAMA", alan: "aciklama2", ornek: "Ø30X375" },
+    { baslik: "AÇIKLAMA 1", alan: "aciklama1", ornek: "Ø30X375" },
+    { baslik: "AÇIKLAMA 2", alan: "aciklama2", ornek: "Tolerans h9" },
   ],
   metal_talepler: [
     { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
@@ -3816,7 +3817,7 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
       "STOK KODU": h.stokKodu || "", "STOK ADI": ad(h),
       "SİPARİŞ MİKTARI": siparisAl(h), "GELEN MİKTAR": gelenAl(h), "KALAN": kalanAl(h), "BİRİM": h.birim || "",
       "TESLİM TARİHİ": h.teslimTarihi || "", "DURUM": durumAdi(h),
-      "KALİTE": h.kalite || "", "AÇIKLAMA": h.aciklama2 || h.aciklama1 || "",
+      "KALİTE": h.kalite || "", "AÇIKLAMA 1": h.aciklama1 || "", "AÇIKLAMA 2": h.aciklama2 || "",
     })),
     gorunum === "kapali" ? "kapanmis-hammaddeler.xlsx" : gorunum === "acik" ? "acik-hammaddeler.xlsx" : "hammadde-raporu.xlsx",
     "Hammadde"
@@ -3925,12 +3926,13 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
               <tr>
                 <th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th>
                 <th>Sipariş No</th><th>Proje Kodu</th><th>Cari</th><th>Stok Kodu</th><th>Stok Adı</th>
+                <th>Açıklama 1</th><th>Açıklama 2</th>
                 <th style={{ textAlign: "right" }}>Sipariş</th><th style={{ width: 110, textAlign: "right" }}>Gelen</th><th style={{ textAlign: "right" }}>Kalan</th>
                 <th>Birim</th><th>Teslim</th><th>Durum</th><th style={{ width: 150 }}></th>
               </tr>
             </thead>
             <tbody>
-              {liste.length === 0 && <tr><td colSpan={13} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+              {liste.length === 0 && <tr><td colSpan={15} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
                 {gorunum === "kapali" ? "Kapanmış hammadde yok." : gorunum === "acik" ? "Açık hammadde yok." : `Kayıt yok. Satınalma siparişlerinde ${HAMMADDE_ONEK} kodlu kalem varsa "Siparişlerden Aktar" ile çekebilirsin.`}
               </td></tr>}
               {liste.map((h) => {
@@ -3950,6 +3952,8 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
                         : <span style={{ color: "#4a5560" }}>—</span>}
                     </td>
                     <td>{ad(h)}</td>
+                    <td style={{ fontSize: 12.5, color: h.aciklama1 ? "#c7cbd1" : "#4a5560" }}>{h.aciklama1 || "—"}</td>
+                    <td style={{ fontSize: 12.5, color: h.aciklama2 ? "#c7cbd1" : "#4a5560" }}>{h.aciklama2 || "—"}</td>
                     <td style={{ textAlign: "right", fontFamily: "monospace" }}>{sayiTR(siparisAl(h))}</td>
                     <td style={{ textAlign: "right" }}>
                       <input
@@ -6317,8 +6321,8 @@ function talepSiparisNo(talep, siparisler) {
 }
 
 const CINS_SECENEKLERI = ["Stok", "Hizmet", "Masraf", "Demirbaş", "Diğer"];
-const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), cinsi: "Stok", kodu: "", ismi: "", projeKodu: "", miktar: "", birim: "Adet", teslimTarihi: "" });
-const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), projeKodu: "", stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "" });
+const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), cinsi: "Stok", kodu: "", ismi: "", projeKodu: "", miktar: "", birim: "Adet", teslimTarihi: "", aciklama: "", aciklama2: "" });
+const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), projeKodu: "", stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "", aciklama2: "" });
 
 // Fişte kullanılan yeni proje kodlarını Proje Kartları ekranına otomatik kaydeder.
 async function projeKodlariniKaydet(kodlar, mevcutProjeler) {
@@ -6407,6 +6411,7 @@ const talepSatiriniSiparise = (r) => ({
   birim: r.birim || "Adet",
   teslimTarihi: r.teslimTarihi || "",
   aciklama: r.aciklama || "",
+  aciklama2: r.aciklama2 || "",
   birimFiyat: "",
 });
 
@@ -6428,7 +6433,7 @@ const TEKLIF_DURUM = {
   iptal: { label: "İptal", renk: "#e07a6b" },
 };
 const sayiCevir = (v) => Number(String(v == null ? "" : v).replace(/\s/g, "").replace(",", ".")) || 0;
-const bosTeklifSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", kdv: "20", aciklama: "" });
+const bosTeklifSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", kdv: "20", aciklama: "", aciklama2: "" });
 const teklifSatirAra = (r) => sayiCevir(r.miktar) * sayiCevir(r.birimFiyat);
 const teklifSatirKdv = (r) => (teklifSatirAra(r) * sayiCevir(r.kdv)) / 100;
 const teklifSatirToplam = (r) => teklifSatirAra(r) + teklifSatirKdv(r);
@@ -6589,6 +6594,7 @@ const talepSatiriniTeklife = (r) => ({
   miktar: r.miktar || "",
   birim: r.birim || "Adet",
   aciklama: r.aciklama || "",
+  aciklama2: r.aciklama2 || "",
 });
 // Teklif satırı -> sipariş satırı (fiyat taşınır)
 const teklifSatiriniSiparise = (r) => ({
@@ -6599,6 +6605,7 @@ const teklifSatiriniSiparise = (r) => ({
   birim: r.birim || "Adet",
   birimFiyat: r.birimFiyat || "",
   aciklama: r.aciklama || "",
+  aciklama2: r.aciklama2 || "",
 });
 // Kalem eşleştirme anahtarı — kod varsa kod, yoksa isim
 const kalemAnahtar = (r) => String(r?.stokKodu || r?.kodu || "").trim().toLowerCase() || String(r?.stokAdi || r?.ismi || "").trim().toLowerCase();
@@ -6694,7 +6701,7 @@ function FormAyarlari({ formAyarlari }) {
       { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
       { baslik: "Cinsi", gen: "20mm", al: (r) => r.cinsi },
       { baslik: "Kodu", gen: "28mm", al: (r) => r.kodu },
-      { baslik: "İsmi", al: (r) => r.ismi },
+      { baslik: "İsmi", al: (r) => [r.ismi, r.aciklama, r.aciklama2].filter(Boolean).join(" · ") },
       { baslik: "Proje Kodu", gen: "24mm", al: (r) => r.projeKodu },
       { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.miktar },
       { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
@@ -7172,7 +7179,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
         { baslik: "Cinsi", gen: "20mm", al: (r) => r.cinsi },
         { baslik: "Kodu", gen: "28mm", al: (r) => r.kodu },
-        { baslik: "İsmi", al: (r) => r.ismi },
+        { baslik: "İsmi", al: (r) => [r.ismi, r.aciklama, r.aciklama2].filter(Boolean).join(" · ") },
         { baslik: "Proje Kodu", gen: "24mm", al: (r) => r.projeKodu },
         { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.miktar },
         { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
@@ -7214,15 +7221,16 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
       "Proje Kodu": t.proje, "Depo": t.depo, "Talep Eden Personel": t.talepEdenPersonel,
       "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi, "Satır Proje Kodu": r.projeKodu,
       "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
+      "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
     }))), "satinalma-talepleri.xlsx", "Talepler"
   );
 
   const sablonuIndir = () => sablonIndir(
-    ["Evrak No", "Tarih", "Belge No", "Belge Tarihi", "Proje Kodu", "Depo", "Talep Eden Personel", "Cinsi", "Kodu", "İsmi", "Satır Proje Kodu", "Miktar", "Birim", "Teslim Tarihi"],
+    ["Evrak No", "Tarih", "Belge No", "Belge Tarihi", "Proje Kodu", "Depo", "Talep Eden Personel", "Cinsi", "Kodu", "İsmi", "Satır Proje Kodu", "Miktar", "Birim", "Teslim Tarihi", "Açıklama 1", "Açıklama 2"],
     [
-      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Stok", "STK-0001", "Örnek Malzeme", "PRJ-001", "10", "Adet", todayISO()],
-      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Hizmet", "", "Örnek Hizmet", "PRJ-001", "1", "Adet", ""],
+      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Stok", "STK-0001", "Örnek Malzeme", "PRJ-001", "10", "Adet", todayISO(), "Ø30X375", "Tolerans h9"],
+      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Hizmet", "", "Örnek Hizmet", "PRJ-001", "1", "Adet", "", "", ""],
     ],
     "satinalma-talep-sablonu.xlsx", "Şablon"
   );
@@ -7239,6 +7247,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         b_proje: ["proje kodu", "proje"], b_depo: ["depo"], b_talepEdenPersonel: ["talep eden", "personel"],
         cinsi: ["cinsi", "cins"], kodu: ["kodu", "stok kodu"], ismi: ["ismi", "malzeme", "isim"],
         projeKodu: ["satır proje", "satir proje"], miktar: ["miktar"], birim: ["birim"], teslimTarihi: ["teslim tarihi"],
+        aciklama: ["açıklama 1", "aciklama 1", "açıklama", "aciklama"], aciklama2: ["açıklama 2", "aciklama 2"],
       });
       if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve İsmi sütunları dolu olmalı."); }
       else {
@@ -7279,7 +7288,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         (t.proje || "").toLowerCase().includes(q) ||
         (t.depo || "").toLowerCase().includes(q) ||
         (t.talepEdenPersonel || "").toLowerCase().includes(q) ||
-        (t.satirlar || []).some((r) => (r.ismi || "").toLowerCase().includes(q) || (r.kodu || "").toLowerCase().includes(q))
+        (t.satirlar || []).some((r) => (r.ismi || "").toLowerCase().includes(q) || (r.kodu || "").toLowerCase().includes(q) || (r.aciklama || "").toLowerCase().includes(q) || (r.aciklama2 || "").toLowerCase().includes(q))
       )) return false;
       return true;
     }).sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
@@ -7409,6 +7418,8 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                   <th style={{ ...fisGridTh, width: 95 }}>Miktar</th>
                   <th style={{ ...fisGridTh, width: 85 }}>Birim</th>
                   <th style={{ ...fisGridTh, width: 140 }}>Teslim tarihi</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Açıklama 1</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Açıklama 2</th>
                   <th style={{ ...fisGridTh, width: 32, borderRight: "none" }}></th>
                 </tr>
               </thead>
@@ -7437,20 +7448,22 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} type="date" value={r.teslimTarihi} onChange={(e) => satirGuncelle(r.key, "teslimTarihi", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama || ""} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} placeholder="açıklama 1" /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama2 || ""} onChange={(e) => satirGuncelle(r.key, "aciklama2", e.target.value)} placeholder="açıklama 2" /></td>
                     <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
                       <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={9} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
+                  <td colSpan={11} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
                     <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={9} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  <td colSpan={11} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
                     Toplam Kalem: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{doluSatirSayisi}</span>
                   </td>
                 </tr>
@@ -9393,7 +9406,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       kolonlar: [
         { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
         { baslik: "Stok Kodu", gen: "28mm", al: (r) => r.stokKodu },
-        { baslik: "Malzeme / Hizmet", al: (r) => r.stokAdi },
+        { baslik: "Malzeme / Hizmet", al: (r) => [r.stokAdi, r.aciklama, r.aciklama2].filter(Boolean).join(" · ") },
         { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.miktar },
         { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
         { baslik: `Birim Fiyat (${paraSembol(pb)})`, gen: "24mm", hiza: "sag", al: (r) => sayiTR(r.birimFiyat) },
@@ -9442,15 +9455,16 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       "Para Birimi": s.paraBirimi || "TRY", "Kur": evrakKuru(s),
       "Talep No": s.talepEvrakNo || "", "Satır Proje Kodu": r.projeKodu || s.projeKodu || "", "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi,
       "Miktar": r.miktar, "Birim": r.birim, "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar,
-      "Teslim Tarihi": r.teslimTarihi, "Satır Tutar (TL)": sayiCevir(r.satirTutar) * evrakKuru(s), "Durum": SIPARIS_DURUM[s.durum]?.label || "",
+      "Teslim Tarihi": r.teslimTarihi, "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
+      "Satır Tutar (TL)": sayiCevir(r.satirTutar) * evrakKuru(s), "Durum": SIPARIS_DURUM[s.durum]?.label || "",
     }))), "satinalma-siparisleri.xlsx", "Siparişler"
   );
 
   const sablonuIndir = () => sablonIndir(
-    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Teslim Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat"],
+    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Teslim Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "Açıklama 1", "Açıklama 2"],
     [
-      ["PO-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0001", "Örnek Hammadde", "10", "Kg", "150"],
-      ["PO-00002", todayISO(), "BLG-2", "Örnek Tedarikçi Ltd.", "PRJ-002", "USD", "41,50", todayISO(), "Peşin", "PRJ-002", "STK-0001", "Örnek İthal Malzeme", "1", "Adet", "2500"],
+      ["PO-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0001", "Örnek Hammadde", "10", "Kg", "150", "Ø30X375", "Tolerans h9"],
+      ["PO-00002", todayISO(), "BLG-2", "Örnek Tedarikçi Ltd.", "PRJ-002", "USD", "41,50", todayISO(), "Peşin", "PRJ-002", "STK-0001", "Örnek İthal Malzeme", "1", "Adet", "2500", "", ""],
     ],
     "satinalma-siparis-sablonu.xlsx", "Şablon"
   );
@@ -9470,6 +9484,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         projeKodu: ["satır proje kodu", "satir proje kodu"],
         stokKodu: ["stok kodu"], stokAdi: ["malzeme", "stok adı", "stok adi", "ismi"],
         miktar: ["miktar"], birim: ["birim fiyat", "birim"], birimFiyat: ["birim fiyat", "fiyat"],
+        aciklama: ["açıklama 1", "aciklama 1", "açıklama", "aciklama"], aciklama2: ["açıklama 2", "aciklama 2"],
       });
       if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve Malzeme sütunları dolu olmalı."); }
       else {
@@ -9524,7 +9539,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         (s.belgeNo || "").toLowerCase().includes(q) ||
         (s.tedarikci || "").toLowerCase().includes(q) ||
         (s.talepEvrakNo || "").toLowerCase().includes(q) ||
-        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q))
+        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q) || (r.aciklama || "").toLowerCase().includes(q) || (r.aciklama2 || "").toLowerCase().includes(q))
       )) return false;
       return true;
     }).sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0));
@@ -9637,7 +9652,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
 
         <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1000 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1280 }}>
               <thead>
                 <tr>
                   <th style={{ ...fisGridTh, width: 34, textAlign: "center" }}>#</th>
@@ -9649,6 +9664,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                   <th style={{ ...fisGridTh, width: 110 }}>Birim Fiyat ({paraSembol(baslik.paraBirimi)})</th>
                   <th style={{ ...fisGridTh, width: 120 }}>Tutar ({paraSembol(baslik.paraBirimi)})</th>
                   <th style={{ ...fisGridTh, width: 140 }}>Teslim Tarihi</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Açıklama 1</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Açıklama 2</th>
                   <th style={{ ...fisGridTh, width: 34, borderRight: "none" }}></th>
                 </tr>
               </thead>
@@ -9668,20 +9685,22 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.birimFiyat} onChange={(e) => satirGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: "#2dd4bf" }}>{tutarYaz(satirToplam(r), baslik.paraBirimi)}</td>
                     <td style={fisGridTd}><input style={fisHucreInput} type="date" value={r.teslimTarihi} onChange={(e) => satirGuncelle(r.key, "teslimTarihi", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama || ""} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} placeholder="açıklama 1" /></td>
+                    <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama2 || ""} onChange={(e) => satirGuncelle(r.key, "aciklama2", e.target.value)} placeholder="açıklama 2" /></td>
                     <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
                       <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={10} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
+                  <td colSpan={12} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
                     <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={10} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  <td colSpan={12} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
                     Genel Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{tutarYaz(genelToplam, baslik.paraBirimi)}</span>
                     {baslik.paraBirimi !== "TRY" && (
                       <span style={{ fontWeight: 600, fontSize: 12, color: "#8b929a", marginLeft: 14 }}>
@@ -9838,7 +9857,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       if (q && !(
         (t.evrakNo || "").toLowerCase().includes(q) || (t.belgeNo || "").toLowerCase().includes(q) ||
         (t.talepEdenPersonel || "").toLowerCase().includes(q) ||
-        (t.satirlar || []).some((r) => (r.ismi || "").toLowerCase().includes(q) || (r.kodu || "").toLowerCase().includes(q))
+        (t.satirlar || []).some((r) => (r.ismi || "").toLowerCase().includes(q) || (r.kodu || "").toLowerCase().includes(q) || (r.aciklama || "").toLowerCase().includes(q) || (r.aciklama2 || "").toLowerCase().includes(q))
       )) return false;
       return true;
     }).sort((a, b) => String(b.tarih || "").localeCompare(String(a.tarih || "")));
@@ -9854,7 +9873,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       if (q && !(
         (s.evrakNo || "").toLowerCase().includes(q) || (s.belgeNo || "").toLowerCase().includes(q) ||
         (s.talepEvrakNo || "").toLowerCase().includes(q) ||
-        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q))
+        (s.satirlar || []).some((r) => (r.stokAdi || "").toLowerCase().includes(q) || (r.stokKodu || "").toLowerCase().includes(q) || (r.aciklama || "").toLowerCase().includes(q) || (r.aciklama2 || "").toLowerCase().includes(q))
       )) return false;
       return true;
     }).sort((a, b) => String(b.tarih || "").localeCompare(String(a.tarih || "")));
@@ -9884,6 +9903,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Proje Kodu": t.proje, "Depo": t.depo,
       "Talep Eden": t.talepEdenPersonel, "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi,
       "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
+      "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
       "Düzenlendi": (t.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
     }))), "satinalma-talep-raporu.xlsx", "Talep Raporu"
@@ -9893,6 +9913,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       "Evrak No": s.evrakNo, "Tarih": s.tarih, "Cari Kod": s.tedarikciKod || "", "Tedarikçi": s.tedarikci, "Talep No": s.talepEvrakNo || "",
       "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi, "Miktar": r.miktar, "Birim": r.birim,
       "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar, "Teslim Tarihi": r.teslimTarihi,
+      "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": SIPARIS_DURUM[s.durum]?.label || "",
       "Düzenlendi": (s.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
     }))), "satinalma-siparis-raporu.xlsx", "Sipariş Raporu"
@@ -9976,8 +9997,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                   <thead><tr>
                     <th style={{ ...fisGridTh, width: 32, textAlign: "center" }}>#</th>
                     {detay.tip === "talep"
-                      ? <><th style={fisGridTh}>Cinsi</th><th style={fisGridTh}>Kodu</th><th style={fisGridTh}>İsmi</th><th style={fisGridTh}>Proje</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={{ ...fisGridTh, borderRight: "none" }}>Birim</th></>
-                      : <><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Malzeme</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={fisGridTh}>Birim</th><th style={{ ...fisGridTh, textAlign: "right" }}>Birim Fiyat</th><th style={{ ...fisGridTh, textAlign: "right", borderRight: "none" }}>Tutar</th></>}
+                      ? <><th style={fisGridTh}>Cinsi</th><th style={fisGridTh}>Kodu</th><th style={fisGridTh}>İsmi</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={fisGridTh}>Proje</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={{ ...fisGridTh, borderRight: "none" }}>Birim</th></>
+                      : <><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Malzeme</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={fisGridTh}>Birim</th><th style={{ ...fisGridTh, textAlign: "right" }}>Birim Fiyat</th><th style={{ ...fisGridTh, textAlign: "right", borderRight: "none" }}>Tutar</th></>}
                   </tr></thead>
                   <tbody>
                     {(detay.kayit.satirlar || []).map((r, i) => (
@@ -9988,6 +10009,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.cinsi}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.kodu || "—"}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.projeKodu || "—"}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, borderRight: "none" }}>{r.birim}</td>
@@ -9996,6 +10019,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                           <>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.stokKodu || "—"}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.stokAdi}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.birim}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{paraTR(r.birimFiyat)}</td>
