@@ -12,6 +12,18 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      # Güvenlik kuralları da her push'ta yüklenir. Servis hesabının kural
+      # yükleme yetkisi yoksa bu adım hata verir ama yayını engellemez —
+      # o durumda kuralları Firebase Console > Firestore > Rules ekranından
+      # bir kez elle yapıştırmak yeterlidir.
+      - name: Deploy Firestore rules
+        continue-on-error: true
+        run: |
+          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STOKTAKIP }}' > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" \
+            npx --yes firebase-tools@13 deploy --only firestore:rules --project stok-takip-f84a2 --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
