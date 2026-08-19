@@ -1965,6 +1965,12 @@ function Panel({ onCikis, kullanici }) {
         .card { background: #1b333c; border: 1px solid #2a4b52; border-radius: 10px; }
         .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8b929a; margin-bottom: 6px; display: block; font-weight: 600; }
         .input { width: 100%; background: #142a30; border: 1px solid #3d6169; border-radius: 7px; padding: 10px 12px; color: #e7e5e0; font-size: 14px; outline: none; transition: border-color .15s; }
+        /* Açılır listelerin (select) açılan seçenekleri: işletim sistemi varsayılanı
+           beyaz zemin/açık yazı olduğu için koyu temada okunmuyordu. */
+        select { color-scheme: dark; }
+        select option { background: #1b333c; color: #e7e5e0; }
+        select option:checked, select option:hover { background: #2a4b52; color: #ffffff; }
+        select optgroup { background: #142a30; color: #8b929a; }
         /* Sayı kutularındaki artır/azalt okları görünmesin — rakam elle yazılır */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
@@ -7250,14 +7256,16 @@ const bosTalepSatiri = () => ({ key: Math.random().toString(36).slice(2), cinsi:
 const bosSiparisSatiri = () => ({ key: Math.random().toString(36).slice(2), projeKodu: "", stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", teslimTarihi: "", aciklama: "", aciklama2: "" });
 
 // Fişte kullanılan yeni proje kodlarını Proje Kartları ekranına otomatik kaydeder.
-async function projeKodlariniKaydet(kodlar, mevcutProjeler) {
+// Kartı olmayan proje kodları için otomatik kart açar. Kartı zaten olanlara
+// hiç dokunmaz (isim/açıklama üzerine yazılmaz).
+async function projeKodlariniKaydet(kodlar, mevcutProjeler, kaynak) {
   const nrm = (v) => String(v || "").trim().toUpperCase();
   const varOlan = new Set((mevcutProjeler || []).map((p) => nrm(p.kod)).filter(Boolean));
   const yeniler = [];
   [...new Set((kodlar || []).map((k) => String(k || "").trim()).filter(Boolean))].forEach((kod) => {
     if (varOlan.has(nrm(kod))) return;
     varOlan.add(nrm(kod));
-    yeniler.push({ kod, ad: kod, aciklama: "Sipariş fişinden otomatik eklendi", olusturma: Date.now() });
+    yeniler.push({ kod, ad: kod, aciklama: kaynak || "Fişten otomatik eklendi", olusturma: Date.now() });
   });
   if (!yeniler.length) return 0;
   const batch = writeBatch(db);
@@ -7592,7 +7600,7 @@ function FormAyarlari({ formAyarlari }) {
     belgeAdi: "Satınalma Sipariş Formu",
     ustBilgiler: [
       ["Sipariş No", "PO-00001"], ["Tarih", trTarih(todayISO())], ["Tedarikçi", "120.01.001 · Örnek Tedarikçi Ltd."],
-      ["Belge No", "BLG-123"], ["Teslim Tarihi", trTarih(todayISO())], ["Ödeme Şekli", "30 gün vadeli"],
+      ["Belge No", "BLG-123"], ["Termin Tarihi", trTarih(todayISO())], ["Ödeme Şekli", "30 gün vadeli"],
     ],
     kolonlar: [
       { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
@@ -7630,7 +7638,7 @@ function FormAyarlari({ formAyarlari }) {
       { baslik: "Proje Kodu", gen: "24mm", al: (r) => r.projeKodu },
       { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.miktar },
       { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
-      { baslik: "Teslim Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
+      { baslik: "Termin Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
     ],
     satirlar: [
       { cinsi: "Stok", kodu: "STK-0001", ismi: "Örnek Malzeme Adı", projeKodu: "PRJ-001", miktar: "10", birim: "Adet", teslimTarihi: todayISO() },
@@ -7903,7 +7911,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   }, [kullanicilar, kullanici]);
 
   const bosBaslik = () => ({
-    evrakNo: "", tarih: todayISO(), belgeNo: "", belgeTarihi: "",
+    evrakNo: "", tarih: todayISO(), belgeNo: "", belgeTarihi: "", terminTarihi: "",
     proje: "", depo: "", talepEdenPersonel: girisYapanAd,
   });
   const [fisAcik, setFisAcik] = useState(false);
@@ -7971,6 +7979,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
     setAcilisDamgasi(kayitDamgasi(t));
     setBaslik({
       evrakNo: t.evrakNo || "", tarih: t.tarih || todayISO(), belgeNo: t.belgeNo || "", belgeTarihi: t.belgeTarihi || "",
+      terminTarihi: t.terminTarihi || "",
       proje: t.proje || "", depo: t.depo || "", talepEdenPersonel: t.talepEdenPersonel || t.talepEden || "",
     });
     setSatirlar((t.satirlar || []).length ? t.satirlar.map((r) => ({ ...bosTalepSatiri(), ...r })) : [bosTalepSatiri()]);
@@ -7981,9 +7990,13 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   // Başlıktan proje seçilince kalemlere otomatik yazılır.
   // Kullanıcı bir satırı elle değiştirmişse o satıra dokunulmaz.
   const projeSec = (yeniProje) => {
-    const eski = baslik.proje;
     setBaslik((s) => ({ ...s, proje: yeniProje }));
-    setSatirlar((s) => s.map((r) => (!String(r.projeKodu || "").trim() || r.projeKodu === eski ? { ...r, projeKodu: yeniProje } : r)));
+    if (yeniProje) setSatirlar((s) => s.map((r) => ({ ...r, projeKodu: yeniProje })));
+  };
+  // Başlıkta termin tarihi seçilince bütün kalemlere uygulanır
+  const terminSec = (tarih) => {
+    setBaslik((s) => ({ ...s, terminTarihi: tarih }));
+    if (tarih) setSatirlar((s) => s.map((r) => ({ ...r, teslimTarihi: tarih })));
   };
   const onceki = () => {
     if (sirali.length === 0) return;
@@ -8030,6 +8043,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
     const veri = {
       evrakNo: baslik.evrakNo.trim(), tarih: baslik.tarih,
       belgeNo: baslik.belgeNo.trim(), belgeTarihi: baslik.belgeTarihi,
+      terminTarihi: baslik.terminTarihi || "",
       proje: baslik.proje.trim(), depo: baslik.depo.trim(),
       talepEdenPersonel: baslik.talepEdenPersonel.trim(),
       satirlar: gecerli.map(({ key, ...r }) => r),
@@ -8063,6 +8077,13 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         setDuzenlenenId(yeniId);
         setMsg(`${baslik.evrakNo} kaydedildi (${gecerli.length} satır).`);
       }
+      // Kalemlere yazılan proje kodlarından kartı olmayanlar otomatik açılır
+      try {
+        await projeKodlariniKaydet(
+          [baslik.proje, ...gecerli.map((r) => r.projeKodu)], satinalmaProjeler,
+          "Talep fişinden otomatik eklendi"
+        );
+      } catch (e) { console.error("Proje kodu kaydı:", e); }
       setTimeout(() => { setFisAcik(false); setMsg(""); }, 1200);
     } catch (err) {
       if (err?.message === "EVRAK_NO_MEVCUT") {
@@ -8109,7 +8130,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
       ustBilgiler: [
         ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Proje Kodu", b.proje ? `${b.proje}${projeAdi ? " — " + projeAdi : ""}` : ""],
         ["Belge No", b.belgeNo], ["Belge Tarihi", trTarih(b.belgeTarihi)], ["Depo", b.depo ? `${b.depo}${depoAdi ? " — " + depoAdi : ""}` : ""],
-        ["Talep Eden", b.talepEdenPersonel], ["Toplam Kalem", String(rs.length)], ["Durum", durum],
+        ["Talep Eden", b.talepEdenPersonel], ["Termin Tarihi", trTarih(b.terminTarihi)], ["Toplam Kalem", String(rs.length)], ["Durum", durum],
       ],
       kolonlar: [
         { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
@@ -8119,7 +8140,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         { baslik: "Proje Kodu", gen: "24mm", al: (r) => r.projeKodu },
         { baslik: "Miktar", gen: "18mm", hiza: "sag", al: (r) => r.miktar },
         { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
-        { baslik: "Teslim Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
+        { baslik: "Termin Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
       ],
       satirlar: rs,
       toplamSatirlari: [["Toplam Kalem", String(rs.length)]],
@@ -8154,19 +8175,20 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   const disaAktar = () => excelIndir(
     disaAktarKapsami(filtrelenmis, secililer).flatMap((t) => (t.satirlar || []).map((r) => ({
       "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Belge Tarihi": t.belgeTarihi,
+      "Termin Tarihi": t.terminTarihi || "",
       "Proje Kodu": t.proje, "Depo": t.depo, "Talep Eden Personel": t.talepEdenPersonel,
       "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi, "Satır Proje Kodu": r.projeKodu,
-      "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
+      "Miktar": r.miktar, "Birim": r.birim, "Termin Tarihi (Kalem)": r.teslimTarihi,
       "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
     }))), "satinalma-talepleri.xlsx", "Talepler"
   );
 
   const sablonuIndir = () => sablonIndir(
-    ["Evrak No", "Tarih", "Belge No", "Belge Tarihi", "Proje Kodu", "Depo", "Talep Eden Personel", "Cinsi", "Kodu", "İsmi", "Satır Proje Kodu", "Miktar", "Birim", "Teslim Tarihi", "Açıklama 1", "Açıklama 2"],
+    ["Evrak No", "Tarih", "Belge No", "Belge Tarihi", "Termin Tarihi", "Proje Kodu", "Depo", "Talep Eden Personel", "Cinsi", "Kodu", "İsmi", "Satır Proje Kodu", "Miktar", "Birim", "Termin Tarihi (Kalem)", "Açıklama 1", "Açıklama 2"],
     [
-      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Stok", "STK-0001", "Örnek Malzeme", "PRJ-001", "10", "Adet", todayISO(), "Ø30X375", "Tolerans h9"],
-      ["TLP-00001", todayISO(), "BLG-1", todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Hizmet", "", "Örnek Hizmet", "PRJ-001", "1", "Adet", "", "", ""],
+      ["TLP-00001", todayISO(), "BLG-1", todayISO(), todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Stok", "STK-0001", "Örnek Malzeme", "PRJ-001", "10", "Adet", todayISO(), "Ø30X375", "Tolerans h9"],
+      ["TLP-00001", todayISO(), "BLG-1", todayISO(), todayISO(), "PRJ-001", "DEP-01", "Örnek Personel", "Hizmet", "", "Örnek Hizmet", "PRJ-001", "1", "Adet", "", "", ""],
     ],
     "satinalma-talep-sablonu.xlsx", "Şablon"
   );
@@ -8181,21 +8203,27 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         evrakNo: ["evrak no", "evrak"],
         b_tarih: ["tarih"], b_belgeNo: ["belge no"], b_belgeTarihi: ["belge tarihi"],
         b_proje: ["proje kodu", "proje"], b_depo: ["depo"], b_talepEdenPersonel: ["talep eden", "personel"],
+        b_terminTarihi: ["termin tarihi", "termin"],
         cinsi: ["cinsi", "cins"], kodu: ["kodu", "stok kodu"], ismi: ["ismi", "malzeme", "isim"],
-        projeKodu: ["satır proje", "satir proje"], miktar: ["miktar"], birim: ["birim"], teslimTarihi: ["teslim tarihi"],
+        projeKodu: ["satır proje", "satir proje"], miktar: ["miktar"], birim: ["birim"],
+        teslimTarihi: ["termin tarihi (kalem)", "teslim tarihi", "termin"],
         aciklama: ["açıklama 1", "aciklama 1", "açıklama", "aciklama"], aciklama2: ["açıklama 2", "aciklama 2"],
       });
       if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve İsmi sütunları dolu olmalı."); }
       else {
         let eklenen = 0, cakisan = 0;
+        const projeKodlari = [];
         for (const fis of fisler) {
           try {
+            const rs = fis.satirlar.map((r) => ({ ...bosTalepSatiri(), ...r, cinsi: r.cinsi || "Stok", birim: r.birim || "Adet", key: undefined })).map(({ key, ...r }) => r);
+            projeKodlari.push(fis.baslik.proje || "", ...rs.map((r) => r.projeKodu));
             await benzersizEvrakKaydet("satinalma_talepler", fis.evrakNo, {
               evrakNo: fis.evrakNo, tarih: fis.baslik.tarih || todayISO(),
               belgeNo: fis.baslik.belgeNo || "", belgeTarihi: fis.baslik.belgeTarihi || "",
+              terminTarihi: fis.baslik.terminTarihi || "",
               proje: fis.baslik.proje || "", depo: fis.baslik.depo || "",
               talepEdenPersonel: fis.baslik.talepEdenPersonel || "",
-              satirlar: fis.satirlar.map((r) => ({ ...bosTalepSatiri(), ...r, cinsi: r.cinsi || "Stok", birim: r.birim || "Adet", key: undefined })).map(({ key, ...r }) => r),
+              satirlar: rs,
               durum: "bekliyor", siparisEvrakNo: "",
               olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
             });
@@ -8204,7 +8232,9 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
             if (err?.message === "EVRAK_NO_MEVCUT") cakisan++; else throw err;
           }
         }
-        setIceMsg(`${eklenen} talep fişi eklendi${cakisan ? `, ${cakisan} tanesi aynı evrak no olduğu için atlandı` : ""}${atlanan ? `, ${atlanan} satır eksik bilgi nedeniyle atlandı` : ""}.`);
+        let yeniProje = 0;
+        try { yeniProje = await projeKodlariniKaydet(projeKodlari, satinalmaProjeler, "Talep fişinden otomatik eklendi"); } catch (e) { console.error("Proje kodu kaydı:", e); }
+        setIceMsg(`${eklenen} talep fişi eklendi${cakisan ? `, ${cakisan} tanesi aynı evrak no olduğu için atlandı` : ""}${atlanan ? `, ${atlanan} satır eksik bilgi nedeniyle atlandı` : ""}${yeniProje ? `, ${yeniProje} yeni proje kodu Proje Kartları'na eklendi` : ""}.`);
       }
     } catch (err) {
       console.error(err);
@@ -8293,21 +8323,25 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
               })} title="Kayıtlı fişlerden seç" style={{ ...fisAltBtn, padding: "5px 9px", flexShrink: 0, fontWeight: 700 }}>?</button>
               <button onClick={numarayiGuncelle} title="Sıradaki boş numarayı al" style={{ ...fisAltBtn, padding: "5px 9px", flexShrink: 0 }}><RefreshCw size={13} /></button>
             </div>
-            <div style={{ ...fisSatir, marginBottom: 0 }}>
+            <div style={fisSatir}>
               <span style={{ ...fisEtiket, width: 78 }}>Belge No</span>
               <input style={fisInput} value={baslik.belgeNo} onChange={(e) => setB("belgeNo")(e.target.value)} />
             </div>
+            <div style={{ ...fisSatir, marginBottom: 0 }}>
+              <span style={{ ...fisEtiket, width: 78 }}>Belge Tarihi</span>
+              <input style={fisInput} type="date" value={baslik.belgeTarihi} onChange={(e) => setB("belgeTarihi")(e.target.value)} />
+            </div>
           </div>
 
-          {/* Orta: Tarih / Tarih (evrak ve belge tarihi) */}
+          {/* Orta: Evrak tarihi / Termin tarihi (termin bütün kalemlere uygulanır) */}
           <div>
             <div style={fisSatir}>
-              <span style={{ ...fisEtiket, width: 52 }}>Tarih</span>
+              <span style={{ ...fisEtiket, width: 78 }}>Tarih</span>
               <input style={fisInput} type="date" value={baslik.tarih} onChange={(e) => setB("tarih")(e.target.value)} />
             </div>
             <div style={{ ...fisSatir, marginBottom: 0 }}>
-              <span style={{ ...fisEtiket, width: 52 }}>Tarih</span>
-              <input style={fisInput} type="date" value={baslik.belgeTarihi} onChange={(e) => setB("belgeTarihi")(e.target.value)} title="Belge tarihi" />
+              <span style={{ ...fisEtiket, width: 78 }}>Termin Tarihi</span>
+              <input style={fisInput} type="date" value={baslik.terminTarihi || ""} onChange={(e) => terminSec(e.target.value)} title="Buraya yazdığın tarih bütün kalemlere uygulanır" />
             </div>
           </div>
 
@@ -8361,7 +8395,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                   <th style={{ ...fisGridTh, width: 150 }}>Proje kodu</th>
                   <th style={{ ...fisGridTh, width: 95 }}>Miktar</th>
                   <th style={{ ...fisGridTh, width: 85 }}>Birim</th>
-                  <th style={{ ...fisGridTh, width: 140 }}>Teslim tarihi</th>
+                  <th style={{ ...fisGridTh, width: 140 }}>Termin tarihi</th>
                   <th style={{ ...fisGridTh, width: 170 }}>Açıklama 1</th>
                   <th style={{ ...fisGridTh, width: 170 }}>Açıklama 2</th>
                   <th style={{ ...fisGridTh, width: 32, borderRight: "none" }}></th>
@@ -10085,6 +10119,11 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
     setBaslik((s) => ({ ...s, projeKodu: kod }));
     if (kod) setSatirlar((liste) => liste.map((r) => ({ ...r, projeKodu: kod })));
   };
+  // Başlıkta termin tarihi seçilince bütün kalemlere uygulanır
+  const baslikTerminSec = (tarih) => {
+    setBaslik((s) => ({ ...s, teslimTarihi: tarih }));
+    if (tarih) setSatirlar((liste) => liste.map((r) => ({ ...r, teslimTarihi: tarih })));
+  };
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [detay, setDetay] = useState(null); // salt okunur detay penceresi
@@ -10258,7 +10297,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       // Fişte kullanılan proje kodlarını Proje Kartları'na ekle
       try {
         await projeKodlariniKaydet(
-          [baslik.projeKodu, ...gecerli.map((r) => r.projeKodu)], satinalmaProjeler
+          [baslik.projeKodu, ...gecerli.map((r) => r.projeKodu)], satinalmaProjeler,
+          "Sipariş fişinden otomatik eklendi"
         );
       } catch (e) { console.error("Proje kodu kaydı:", e); }
       // Stok kodu HMD ile başlayan kalemleri hammadde takibine aktar
@@ -10364,7 +10404,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       belgeAdi: "Satınalma Sipariş Fişi",
       ustBilgiler: [
         ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Tedarikçi", [b.tedarikciKod, b.tedarikci].filter(Boolean).join(" · ")],
-        ["Belge No", b.belgeNo], ["Teslim Tarihi", trTarih(b.teslimTarihi)], ["Ödeme Şekli", b.odemeSekli],
+        ["Belge No", b.belgeNo], ["Termin Tarihi", trTarih(b.teslimTarihi)], ["Ödeme Şekli", b.odemeSekli],
         ["Kaynak Talep No", b.talepEvrakNo], ["Proje Kodu", b.projeKodu || ""], ["Durum", durum],
         ["Para Birimi", (PARA_BIRIMLERI.find((x) => x.id === pb) || PARA_BIRIMLERI[0]).label],
         ["Kur", pb === "TRY" ? "—" : `1 ${pb} = ${sayiTR(kur)} ₺`],
@@ -10378,7 +10418,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim },
         { baslik: `Birim Fiyat (${paraSembol(pb)})`, gen: "24mm", hiza: "sag", al: (r) => sayiTR(r.birimFiyat) },
         { baslik: `Tutar (${paraSembol(pb)})`, gen: "26mm", hiza: "sag", al: (r) => sayiTR(r.satirTutar != null ? r.satirTutar : satirToplam(r)) },
-        { baslik: "Teslim Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
+        { baslik: "Termin Tarihi", gen: "24mm", hiza: "ort", al: (r) => trTarih(r.teslimTarihi) },
       ],
       satirlar: rs,
       toplamSatirlari: [
@@ -10422,13 +10462,13 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       "Para Birimi": s.paraBirimi || "TRY", "Kur": evrakKuru(s),
       "Talep No": s.talepEvrakNo || "", "Satır Proje Kodu": r.projeKodu || s.projeKodu || "", "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi,
       "Miktar": r.miktar, "Birim": r.birim, "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar,
-      "Teslim Tarihi": r.teslimTarihi, "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
+      "Termin Tarihi": r.teslimTarihi, "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Satır Tutar (TL)": sayiCevir(r.satirTutar) * evrakKuru(s), "Durum": SIPARIS_DURUM[s.durum]?.label || "",
     }))), "satinalma-siparisleri.xlsx", "Siparişler"
   );
 
   const sablonuIndir = () => sablonIndir(
-    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Teslim Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "Açıklama 1", "Açıklama 2"],
+    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Termin Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "Açıklama 1", "Açıklama 2"],
     [
       ["PO-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0001", "Örnek Hammadde", "10", "Kg", "150", "Ø30X375", "Tolerans h9"],
       ["PO-00002", todayISO(), "BLG-2", "Örnek Tedarikçi Ltd.", "PRJ-002", "USD", "41,50", todayISO(), "Peşin", "PRJ-002", "STK-0001", "Örnek İthal Malzeme", "1", "Adet", "2500", "", ""],
@@ -10445,7 +10485,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       const { fisler, atlanan } = await satinalmaExcelOku(dosya, {
         evrakNo: ["evrak no", "evrak"],
         b_tarih: ["tarih"], b_belgeNo: ["belge no"], b_tedarikci: ["tedarik"],
-        b_teslimTarihi: ["teslim tarihi"], b_odemeSekli: ["ödeme", "odeme"],
+        b_teslimTarihi: ["termin tarihi", "teslim tarihi"], b_odemeSekli: ["ödeme", "odeme"],
         b_projeKodu: ["proje kodu", "proje"],
         b_paraBirimi: ["para birimi", "para", "döviz"], b_kur: ["kur"],
         projeKodu: ["satır proje kodu", "satir proje kodu"],
@@ -10598,7 +10638,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
               paraBirimi={baslik.paraBirimi} kur={baslik.kur} tcmb={tcmb}
               degistir={(d) => setBaslik((x) => ({ ...x, ...(d.paraBirimi !== undefined ? { paraBirimi: d.paraBirimi } : {}), ...(d.kur !== undefined ? { kur: d.kur } : {}) }))}
             />
-            <div style={fisSatir}><span style={fisEtiket}>Teslim Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => setBaslik((s) => ({ ...s, teslimTarihi: e.target.value }))} /></div>
+            <div style={fisSatir}><span style={fisEtiket}>Termin Tarihi</span><input style={fisInput} type="date" value={baslik.teslimTarihi} onChange={(e) => baslikTerminSec(e.target.value)} title="Buraya yazdığın tarih bütün kalemlere uygulanır" /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Ödeme Şekli</span><input style={fisInput} value={baslik.odemeSekli} onChange={(e) => setBaslik((s) => ({ ...s, odemeSekli: e.target.value }))} placeholder="Örn: 30 gün vadeli" /></div>
           </div>
           <div>
@@ -10638,7 +10678,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                   <th style={{ ...fisGridTh, width: 85 }}>Birim</th>
                   <th style={{ ...fisGridTh, width: 110 }}>Birim Fiyat ({paraSembol(baslik.paraBirimi)})</th>
                   <th style={{ ...fisGridTh, width: 120 }}>Tutar ({paraSembol(baslik.paraBirimi)})</th>
-                  <th style={{ ...fisGridTh, width: 140 }}>Teslim Tarihi</th>
+                  <th style={{ ...fisGridTh, width: 140 }}>Termin Tarihi</th>
                   <th style={{ ...fisGridTh, width: 170 }}>Açıklama 1</th>
                   <th style={{ ...fisGridTh, width: 170 }}>Açıklama 2</th>
                   <th style={{ ...fisGridTh, width: 34, borderRight: "none" }}></th>
@@ -10860,7 +10900,7 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
                    ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
                    ["Durum", TALEP_DURUM[talepEtkinDurum(detay.kayit, satinalmaSiparisler)]?.label], ["Sipariş No", talepSiparisNo(detay.kayit, satinalmaSiparisler)]]
                 : [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
-                   ["Tedarikçi", detay.kayit.tedarikci], ["Teslim Tarihi", detay.kayit.teslimTarihi], ["Ödeme Şekli", detay.kayit.odemeSekli],
+                   ["Tedarikçi", detay.kayit.tedarikci], ["Termin Tarihi", trTarih(detay.kayit.teslimTarihi)], ["Ödeme Şekli", detay.kayit.odemeSekli],
                    ["Talep No", detay.kayit.talepEvrakNo], ["Durum", SIPARIS_DURUM[detay.kayit.durum]?.label],
                    ["Genel Toplam", tutarYaz(detay.kayit.genelToplam || 0, detay.kayit.paraBirimi)],
                    ...(String(detay.kayit.paraBirimi || "TRY") !== "TRY" ? [["TL Karşılığı", tutarTL(siparisTL(detay.kayit))]] : [])]
@@ -10998,7 +11038,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
     talepler.flatMap((t) => (t.satirlar || []).map((r) => ({
       "Evrak No": t.evrakNo, "Tarih": t.tarih, "Belge No": t.belgeNo, "Proje Kodu": t.proje, "Depo": t.depo,
       "Talep Eden": t.talepEdenPersonel, "Cinsi": r.cinsi, "Kodu": r.kodu, "İsmi": r.ismi,
-      "Miktar": r.miktar, "Birim": r.birim, "Teslim Tarihi": r.teslimTarihi,
+      "Miktar": r.miktar, "Birim": r.birim, "Termin Tarihi": r.teslimTarihi,
       "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "", "Sipariş No": talepSiparisNo(t, satinalmaSiparisler) || "",
       "Düzenlendi": (t.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",
@@ -11008,7 +11048,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
     siparisler.flatMap((s) => (s.satirlar || []).map((r) => ({
       "Evrak No": s.evrakNo, "Tarih": s.tarih, "Cari Kod": s.tedarikciKod || "", "Tedarikçi": s.tedarikci, "Talep No": s.talepEvrakNo || "",
       "Stok Kodu": r.stokKodu, "Malzeme": r.stokAdi, "Miktar": r.miktar, "Birim": r.birim,
-      "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar, "Teslim Tarihi": r.teslimTarihi,
+      "Birim Fiyat": r.birimFiyat, "Satır Tutar": r.satirTutar, "Termin Tarihi": r.teslimTarihi,
       "Açıklama 1": r.aciklama || "", "Açıklama 2": r.aciklama2 || "",
       "Durum": SIPARIS_DURUM[s.durum]?.label || "",
       "Düzenlendi": (s.guncellemeSayisi || 0) > 0 ? "Evet" : "Hayır",

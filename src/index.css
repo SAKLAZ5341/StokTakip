@@ -5,3 +5,8 @@ body { font-family: 'Inter', system-ui, sans-serif; background: #14181c; }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Açılır listelerin seçenekleri koyu temada da okunsun */
+select { color-scheme: dark; }
+select option { background: #1b333c; color: #e7e5e0; }
+select option:checked { background: #2a4b52; color: #ffffff; }
