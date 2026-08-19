@@ -1,5 +1,10 @@
 import { initializeApp, deleteApp, getApps, getApp } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,14 +18,27 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
 
-// Yazma işlemleri tarayıcıda kalıcı olarak (IndexedDB) kuyruklanır; bağlantı
-// kesilse veya sayfa yenilense bile bekleyen yazılar kaybolmaz, bağlantı
-// geri gelince otomatik gönderilir. Birden fazla sekme açıksa bu devre dışı
-// kalabilir, sorun değil - o zaman normal (bellek içi) modda çalışır.
-enableIndexedDbPersistence(db).catch(() => {});
+// Veriler tarayıcıda kalıcı olarak (IndexedDB) saklanır. Faydası iki yönlü:
+//  1) Sayfa her yenilendiğinde tüm kayıtlar baştan indirilmez; Firestore
+//     sadece DEĞİŞEN kayıtları çeker. Çok kullanıcıda okuma sayısı (ve fatura)
+//     buna bağlı olarak düşer.
+//  2) Bağlantı kesilse bile program açık kalır, bekleyen yazılar kaybolmaz ve
+//     internet gelince otomatik gönderilir.
+// persistentMultipleTabManager: aynı kullanıcı birden fazla sekme açtığında da
+// önbellek çalışmaya devam eder (önceki yöntem yalnızca tek sekmede çalışıyordu).
+let _db;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  });
+} catch (err) {
+  // Tarayıcı IndexedDB'ye izin vermiyorsa (gizli sekme vb.) bellek içi moda düşer.
+  console.warn("Kalıcı önbellek açılamadı, bellek içi moda geçildi:", err);
+  _db = initializeFirestore(app, {});
+}
+export const db = _db;
+export const auth = getAuth(app);
 
 // Yönetici, oturumu bozulmadan (kendi girişinden çıkmadan) yeni kullanıcı
 // oluşturabilsin diye geçici, ikincil bir Firebase bağlantısı açıp orada

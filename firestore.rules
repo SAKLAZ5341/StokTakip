@@ -1,0 +1,212 @@
+rules_version = '2';
+
+// =====================================================================
+//  STOK TAKİP — Firestore Güvenlik Kuralları
+//
+//  Programın içindeki yetki tablosunun aynısı burada, sunucu tarafında
+//  tekrar denetlenir. Böylece bir kullanıcı tarayıcı konsolundan ya da
+//  başka bir programdan doğrudan veritabanına yazmaya kalksa bile
+//  yetkisi yoksa reddedilir.
+//
+//  Özet kural:
+//   - Giriş yapmamış kimse hiçbir şey yapamaz.
+//   - Giriş yapmış personel tüm iş verilerini OKUYABİLİR.
+//   - YAZMA (ekleme / değiştirme / silme) yalnızca o bölümde "Düzenle"
+//     yetkisi olanlara açıktır.
+//   - Kullanıcı ve yetki yönetimi yalnızca yöneticilerdedir.
+//   - Sahip e-postası her şeyi yapabilir, bu kilit kırılamaz.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function sahipEposta() {
+      return 'fatihsak.lyoness@gmail.com';
+    }
+
+    function girisYapti() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function epostam() {
+      return request.auth.token.email.lower();
+    }
+
+    function sahipMiyim() {
+      return girisYapti() && epostam() == sahipEposta();
+    }
+
+    function kayitYolu() {
+      return /databases/$(database)/documents/kullanicilar/$(epostam());
+    }
+
+    function kaydimVar() {
+      return girisYapti() && exists(kayitYolu());
+    }
+
+    function kaydim() {
+      return get(kayitYolu()).data;
+    }
+
+    function yoneticiyim() {
+      return sahipMiyim() || (kaydimVar() && kaydim().get('yonetici', false) == true);
+    }
+
+    // Not: aşağıdaki iki fonksiyon aynı dokümana en fazla bir kez daha bakar.
+    // (Kurallarda tek istek başına 10 doküman okuma sınırı var.)
+
+    // Bu koleksiyona yazma hakkı veren ekranlardan en az birine "Düzenle"
+    // yetkisi var mı? Program, yetki kaydederken düzenlenebilir ekranların düz
+    // listesini kullanıcı kaydına yazar; kurallar dili harita içinde değere göre
+    // arama yapamadığı için tek bakışta bu listeye bakılır.
+    function yazabilir(ekranlar) {
+      return sahipMiyim() || (kaydimVar() && (
+        kaydim().get('yonetici', false) == true ||
+        kaydim().get('duzenleEkranlari', []).hasAny(ekranlar)
+      ));
+    }
+
+    // Okuma hakkı: kullanıcı listesinde kayıtlı OLMAK ve en az bir bölümde
+    // yetkisi bulunmak gerekir. Böylece rastgele bir Google hesabıyla giriş
+    // yapan biri firma verilerini göremez — yönetici ona yetki verene kadar
+    // ekranlar boş gelir.
+    function okuyabilirim() {
+      return sahipMiyim() || (kaydimVar() && (
+        kaydim().get('yonetici', false) == true ||
+        kaydim().get('yetkiler', {}).values().hasAny(['goruntule', 'duzenle'])
+      ));
+    }
+
+    // ---------------- Kullanıcılar ve yetkiler ----------------
+    // Doküman kimliği kişinin e-postasıdır: kullanicilar/ahmet@firma.com
+    match /kullanicilar/{eposta} {
+      // Bu koleksiyon giriş yapan herkese açık olmak zorunda: program kendi
+      // yetkisini buradan öğreniyor. İçinde iş verisi yok, sadece ad/e-posta
+      // ve yetki tablosu var.
+      allow read: if girisYapti();
+
+      // Yönetici her şeyi yapabilir.
+      allow create, update, delete: if yoneticiyim();
+
+      // Kişi ilk girişinde kendi kaydını açabilir — ama SADECE bu alanlarla.
+      // (Yetki alanlarını kara listeye almak yetmez: yazma hakkı duzenleEkranlari
+      //  listesinden okunuyor, o yüzden beyaz liste kullanılıyor.)
+      allow create: if girisYapti() && eposta == epostam()
+        && request.resource.data.keys().hasOnly(['ad', 'email', 'emailKucuk', 'tur', 'eklenmeTarihi']);
+
+      // Kişi yalnızca kendi adını değiştirebilir.
+      allow update: if girisYapti() && eposta == epostam()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ad']);
+    }
+
+    // ---------------- Üretim ----------------
+    match /records/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['stok-kayit', 'stok-sil', 'stok-raporu']);
+    }
+    match /teams/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['takimlar']);
+    }
+    match /machines/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['makineler']);
+    }
+
+    // ---------------- Hammadde ----------------
+    // Satınalma siparişi kaydedilince HMD kalemleri buraya otomatik düşer,
+    // o yüzden sipariş yetkisi de yazabilir.
+    match /hammadde/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['hammadde-acik', 'hammadde-kapali', 'hammadde-raporu', 'hammadde-kayit', 'satinalma-siparis', 'satinalma-karsilastir']);
+    }
+
+    // ---------------- Depo ----------------
+    // Depo stoğu; hammadde teslim alma ve fason hareket fişleri de düşer/artırır.
+    match /depo_stok/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['depo-giris', 'depo-cikis', 'depo-sil', 'depo-kart', 'stok-kart', 'hammadde-acik', 'hammadde-kapali', 'hammadde-raporu', 'hammadde-kayit', 'fason-isler', 'fason-hareketler', 'stok-kayit']);
+    }
+    match /depo_hareketler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['depo-giris', 'depo-cikis', 'depo-hareketler', 'depo-raporu', 'depo-sil', 'depo-kart', 'stok-kart', 'hammadde-acik', 'hammadde-kapali', 'hammadde-raporu', 'hammadde-kayit', 'fason-isler', 'fason-hareketler', 'stok-kayit']);
+    }
+
+    // ---------------- Metal ölçü ----------------
+    match /metal_talepler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['metal-hizli', 'metal-gecmis', 'metal-raporu']);
+    }
+    match /metal_malzemeler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['metal-malzeme', 'metal-raporu']);
+    }
+
+    // ---------------- Fason / Cari ----------------
+    // Cari kartları da bu koleksiyonda tutuluyor.
+    match /fason_firmalar/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['fason-firmalar', 'cari-kart']);
+    }
+    match /fason_isler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['fason-isler', 'fason-ozet', 'fason-raporu']);
+    }
+    match /fason_hareketler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['fason-hareketler', 'fason-isler']);
+    }
+    match /fason_hatirlaticilar/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['fason-hatirlaticilar', 'fason-ozet']);
+    }
+
+    // ---------------- Satınalma ----------------
+    // Sipariş kaydedilince/silinince kaynak talebin durumu güncellenir,
+    // rapor ekranından Excel ile toplu talep aktarılabilir.
+    match /satinalma_talepler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-talep', 'satinalma-siparis', 'satinalma-rapor']);
+    }
+    match /satinalma_teklifler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-teklif', 'satinalma-karsilastir', 'satinalma-siparis']);
+    }
+    match /satinalma_siparisler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-siparis', 'satinalma-karsilastir', 'satinalma-rapor']);
+    }
+    // Sipariş fişine yazılan proje kodu otomatik olarak proje kartlarına eklenir.
+    match /satinalma_projeler/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-proje', 'satinalma-siparis', 'satinalma-talep']);
+    }
+    match /satinalma_depolar/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-depo']);
+    }
+
+    // ---------------- Ayarlar ----------------
+    // ayarlar/form  -> yazdırma formu ayarları (Form Ayarları ekranı ve yöneticiler)
+    // ayarlar/kurlar -> TCMB günlük kur önbelleği (programın kendi kaydı,
+    //                   giriş yapan herkes tazeleyebilir)
+    match /ayarlar/form {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['satinalma-ayar']);
+    }
+    match /ayarlar/kurlar {
+      allow read: if okuyabilirim();
+      allow write: if okuyabilirim();
+    }
+    match /ayarlar/{belge} {
+      allow read: if okuyabilirim();
+      allow write: if yoneticiyim();
+    }
+
+    // ---------------- Geri kalan her şey ----------------
+    // Yeni bir koleksiyon eklenirse kurala bağlanana kadar kapalı kalır.
+    match /{belge=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -119,8 +119,37 @@ const YETKI_AGACI = [
   ),
 ];
 const TUM_EKRANLAR = YETKI_AGACI.flatMap((g) => g.children.map((c) => c.id));
+// Hangi ekran hangi ağır koleksiyona ihtiyaç duyuyor? Bu koleksiyonlar zamanla
+// sürekli büyür (her üretim kaydı, her stok hareketi bir satır) ve yalnızca kendi
+// ekranlarında kullanılır — bu yüzden açılışta değil, ekran açılınca yüklenir.
+const GEC_YUKLENEN = {
+  "stok-kayit": ["records"],
+  "stok-raporu": ["records"],
+  "stok-sil": ["records"],
+  "metal-hizli": ["metal_malzemeler"],
+  "metal-gecmis": ["metal_malzemeler"],
+  "metal-malzeme": ["metal_malzemeler"],
+  "metal-raporu": ["metal_malzemeler"],
+  "depo-giris": ["depo_hareketler"],
+  "depo-cikis": ["depo_hareketler"],
+  "depo-hareketler": ["depo_hareketler"],
+  "depo-raporu": ["depo_hareketler"],
+  "fason-ozet": ["fason_hareketler"],
+  "fason-firmalar": ["fason_hareketler"],
+  "fason-isler": ["fason_hareketler"],
+  "fason-hareketler": ["fason_hareketler"],
+  "fason-raporu": ["fason_hareketler"],
+  "cari-rapor": ["fason_hareketler"],
+};
+
 // Bu ekranlar herkese açıktır (Ana Sayfa olmadan programa girilemez, Yardım zararsızdır)
 const HERKESE_ACIK = ["ana-sayfa", "yardim"];
+
+// Kullanıcı kayıtları e-posta ile isimlendirilir (kullanicilar/ahmet@firma.com).
+// Firestore güvenlik kuralları sorgu yapamaz, yalnızca doğrudan doküman okuyabilir;
+// bu yüzden kuralların "giriş yapan kişinin yetkisi ne?" sorusunu cevaplayabilmesi
+// için doküman kimliğinin e-posta olması gerekir.
+const kullaniciKimligi = (eposta) => String(eposta || "").trim().toLowerCase().replace(/[/#[\]*]/g, "_");
 
 function yoneticiMi(kayit, eposta) {
   if (String(eposta || "").trim().toLowerCase() === SAHIP_EPOSTA) return true;
@@ -134,6 +163,9 @@ const YETKI_ESDEGER = {
   "hammadde-acik": "hammadde-kayit",
   "hammadde-kapali": "hammadde-raporu",
   "stok-kart": "depo-kart",
+  // Ana sayfa kartı, mobil alt çubuk ve yardım ekranı hâlâ eski "depo-kart"
+  // adresine gidiyor; yetki tablosunda karşılığı "stok-kart".
+  "depo-kart": "stok-kart",
 };
 function ekranYetkisi(kayit, eposta, ekranId) {
   if (yoneticiMi(kayit, eposta)) return "duzenle";
@@ -144,6 +176,13 @@ function ekranYetkisi(kayit, eposta, ekranId) {
   if (s !== "duzenle" && s !== "goruntule" && YETKI_ESDEGER[ekranId]) s = tablo[YETKI_ESDEGER[ekranId]];
   return s === "duzenle" || s === "goruntule" ? s : "yok";
 }
+// Güvenlik kuralları bir haritanın içinde değer bazlı arama yapamaz; bu yüzden
+// "düzenle" yetkisi verilen ekranların düz listesi kaydın içine ayrıca yazılır.
+// Kurallar tek bakışta "bu koleksiyona yazabilir mi?" sorusunu cevaplayabilir.
+function duzenleEkranListesi(kayit, eposta) {
+  return TUM_EKRANLAR.filter((id) => ekranYetkisi(kayit, eposta, id) === "duzenle");
+}
+
 function verilenYetkiSayisi(kayit) {
   const y = (kayit && kayit.yetkiler) || {};
   return TUM_EKRANLAR.filter((id) => y[id] === "goruntule" || y[id] === "duzenle").length;
@@ -446,6 +485,44 @@ async function benzersizEvrakKaydet(koleksiyon, evrakNo, veri) {
     tx.set(ref, veri);
   });
   return id;
+}
+
+// Bir kaydın "sürüm damgası": fiş her güncellendiğinde değişir.
+const kayitDamgasi = (k) => Number((k && (k.guncellemeTarihi || k.olusturma)) || 0);
+
+// Aynı fişi iki kişi aynı anda açıp kaydederse, sonradan kaydeden diğerinin
+// yazdıklarını sessizce siler. Bunu engellemek için kayıt, fişin açıldığı andaki
+// damga ile sunucudaki damganın aynı olduğu tek bir işlemde (transaction) yapılır.
+// Bu arada birisi değiştirmişse KAYIT_DEGISTI hatası döner ve kullanıcıya sorulur.
+async function guvenliGuncelle(koleksiyon, id, veri, damga) {
+  const ref = doc(db, koleksiyon, id);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) {
+      const hata = new Error("KAYIT_SILINMIS");
+      throw hata;
+    }
+    if (damga != null) {
+      const mevcut = snap.data() || {};
+      if (kayitDamgasi(mevcut) !== Number(damga)) {
+        const hata = new Error("KAYIT_DEGISTI");
+        hata.kim = mevcut.guncelleyen || mevcut.olusturanEposta || "başka bir kullanıcı";
+        hata.zaman = kayitDamgasi(mevcut);
+        throw hata;
+      }
+    }
+    tx.update(ref, veri);
+  });
+}
+
+// Çakışma uyarısının metni — üç fiş ekranı da aynısını kullanır.
+function cakismaUyarisi(evrakNo, err, uzerineYaz) {
+  const zaman = err?.zaman ? new Date(err.zaman).toLocaleString("tr-TR") : "";
+  return {
+    baslik: "Bu Fiş Sen Açtıktan Sonra Değişti",
+    mesaj: `"${evrakNo}" fişini sen açtıktan sonra ${err?.kim || "başka bir kullanıcı"} ${zaman ? zaman + " tarihinde " : ""}değiştirdi. Şimdi kaydedersen onun yaptığı değişiklikler silinir. Önce "Tamam" deyip fişi kapat, listeden yeniden aç ve güncel hâlini gör — ya da yine de üzerine yaz.`,
+    uzerineYaz,
+  };
 }
 
 // ---------- Uyarı penceresi (fişin üstünde açılır) ----------
@@ -1273,10 +1350,10 @@ function GirisEkrani() {
     setHata("");
     try {
       const sonuc = await createUserWithEmailAndPassword(auth, email.trim(), sifre);
-      await addDoc(collection(db, "kullanicilar"), {
+      await _setDoc(doc(db, "kullanicilar", kullaniciKimligi(email)), {
         ad: ad.trim(), email: email.trim(), emailKucuk: email.trim().toLowerCase(),
         tur: "sifreli", eklenmeTarihi: Date.now(),
-      });
+      }, { merge: true });
     } catch (err) {
       const kod = err?.code || "";
       if (kod.includes("email-already-in-use")) setHata("Bu e-posta zaten kayıtlı, giriş yapmayı dene.");
@@ -1418,10 +1495,10 @@ export default function App() {
           const sonuc = await getDocs(sorgu);
           if (sonuc.empty) {
             const googleIle = u.providerData.some((p) => p.providerId === "google.com");
-            await addDoc(collection(db, "kullanicilar"), {
+            await _setDoc(doc(db, "kullanicilar", kullaniciKimligi(u.email)), {
               ad: u.displayName || "", email: u.email, emailKucuk,
               tur: googleIle ? "google" : "sifreli", eklenmeTarihi: Date.now(),
-            });
+            }, { merge: true });
           }
         } catch (err) {
           console.error(err);
@@ -1515,68 +1592,104 @@ function Panel({ onCikis, kullanici }) {
   const [formAyarlari, setFormAyarlari] = useState(null);
   const [siparisTaslak, setSiparisTaslak] = useState(null);
 
-  // Firestore canlı dinleme - herkes aynı anda güncel veriyi görür
+  // Firestore canlı dinleme - herkes aynı anda güncel veriyi görür.
+  // Yetkisi olmayan bir bölümde sunucu "permission-denied" döner; bu normaldir,
+  // liste boş kalır ve program çalışmaya devam eder.
+  const dinle = (kaynak, ata) =>
+    onSnapshot(kaynak, ata, (err) => {
+      if (err && err.code === "permission-denied") return;
+      console.error("Veri dinlenemedi:", err);
+    });
+
   useEffect(() => {
-    const unsub1 = onSnapshot(collection(db, "teams"), (snap) =>
+    const unsub1 = dinle(collection(db, "teams"), (snap) =>
       setTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub2 = onSnapshot(collection(db, "machines"), (snap) =>
+    const unsub2 = dinle(collection(db, "machines"), (snap) =>
       setMachines(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub3 = onSnapshot(collection(db, "records"), (snap) =>
-      setRecords(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub4 = onSnapshot(collection(db, "hammadde"), (snap) =>
+    const unsub4 = dinle(collection(db, "hammadde"), (snap) =>
       setHammaddeler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub5 = onSnapshot(collection(db, "depo_stok"), (snap) =>
+    const unsub5 = dinle(collection(db, "depo_stok"), (snap) =>
       setDepoStok(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub6 = onSnapshot(collection(db, "depo_hareketler"), (snap) =>
-      setDepoHareketler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub7 = onSnapshot(collection(db, "metal_malzemeler"), (snap) =>
-      setMetalMalzemeler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub8 = onSnapshot(collection(db, "metal_talepler"), (snap) =>
+    const unsub8 = dinle(collection(db, "metal_talepler"), (snap) =>
       setMetalTalepler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub9 = onSnapshot(collection(db, "fason_firmalar"), (snap) =>
+    const unsub9 = dinle(collection(db, "fason_firmalar"), (snap) =>
       setFasonFirmalar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub10 = onSnapshot(collection(db, "fason_isler"), (snap) =>
+    const unsub10 = dinle(collection(db, "fason_isler"), (snap) =>
       setFasonIsler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub11 = onSnapshot(collection(db, "fason_hareketler"), (snap) =>
-      setFasonHareketler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    );
-    const unsub12 = onSnapshot(collection(db, "fason_hatirlaticilar"), (snap) =>
+    const unsub12 = dinle(collection(db, "fason_hatirlaticilar"), (snap) =>
       setFasonHatirlaticilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
     const unsub13 = onSnapshot(collection(db, "kullanicilar"), (snap) => {
       setKullanicilar(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setKullanicilarYuklendi(true);
+    }, (err) => {
+      // Kullanıcı listesi okunamazsa bile ekran "YÜKLENİYOR"da asılı kalmasın;
+      // yetkisiz kullanıcı kilitli ekranı görsün.
+      console.error("Yetkiler okunamadı:", err);
+      setKullanicilarYuklendi(true);
     });
-    const unsub14 = onSnapshot(collection(db, "satinalma_talepler"), (snap) =>
+    const unsub14 = dinle(collection(db, "satinalma_talepler"), (snap) =>
       setSatinalmaTalepler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub15 = onSnapshot(collection(db, "satinalma_siparisler"), (snap) => {
+    const unsub15 = dinle(collection(db, "satinalma_siparisler"), (snap) => {
       setSatinalmaSiparisler(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setSiparislerYuklendi(true);
     });
-    const unsub16 = onSnapshot(collection(db, "satinalma_projeler"), (snap) =>
+    const unsub16 = dinle(collection(db, "satinalma_projeler"), (snap) =>
       setSatinalmaProjeler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub17 = onSnapshot(collection(db, "satinalma_depolar"), (snap) =>
+    const unsub17 = dinle(collection(db, "satinalma_depolar"), (snap) =>
       setSatinalmaDepolar(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    const unsub18 = onSnapshot(doc(db, "ayarlar", "form"), (snap) =>
+    const unsub18 = dinle(doc(db, "ayarlar", "form"), (snap) =>
       setFormAyarlari(snap.exists() ? snap.data() : {})
     );
-    const unsub19 = onSnapshot(collection(db, "satinalma_teklifler"), (snap) =>
+    const unsub19 = dinle(collection(db, "satinalma_teklifler"), (snap) =>
       setSatinalmaTeklifler(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7(); unsub8(); unsub9(); unsub10(); unsub11(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16(); unsub17(); unsub18(); unsub19(); };
+    return () => { unsub1(); unsub2(); unsub4(); unsub5(); unsub8(); unsub9(); unsub10(); unsub12(); unsub13(); unsub14(); unsub15(); unsub16(); unsub17(); unsub18(); unsub19(); };
+  }, []);
+
+  // Ağır geçmiş koleksiyonları (üretim kayıtları, stok/fason hareketleri, malzeme
+  // tanımları) programın açılışında değil, ilgili ekran ilk kez açıldığında
+  // dinlenir. Bir kez açıldıktan sonra kapanmaz; ekranlar arası geçiş bedavadır.
+  // 20 kişilik kullanımda Firestore okuma sayısını belirgin şekilde düşürür.
+  const [gecVeri, setGecVeri] = useState(() => new Set());
+  const gecDinleyiciler = useRef({});
+  useEffect(() => {
+    const gerekli = GEC_YUKLENEN[tab] || [];
+    if (!gerekli.length) return;
+    setGecVeri((eski) => {
+      if (gerekli.every((k) => eski.has(k))) return eski;
+      const yeni = new Set(eski);
+      gerekli.forEach((k) => yeni.add(k));
+      return yeni;
+    });
+  }, [tab]);
+  useEffect(() => {
+    const kur = {
+      records: setRecords,
+      depo_hareketler: setDepoHareketler,
+      metal_malzemeler: setMetalMalzemeler,
+      fason_hareketler: setFasonHareketler,
+    };
+    gecVeri.forEach((ad) => {
+      if (gecDinleyiciler.current[ad] || !kur[ad]) return;
+      gecDinleyiciler.current[ad] = dinle(collection(db, ad), (snap) =>
+        kur[ad](snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      );
+    });
+  }, [gecVeri]);
+  useEffect(() => () => {
+    Object.values(gecDinleyiciler.current).forEach((kapat) => kapat && kapat());
+    gecDinleyiciler.current = {};
   }, []);
 
   // ---- Yetki hesabı ----
@@ -1593,6 +1706,45 @@ function Panel({ onCikis, kullanici }) {
     !kullanicilarYuklendi || aktifYetki === "duzenle",
     "Bu bölümde sadece görüntüleme yetkiniz var. Kayıt, düzenleme ve silme yapamazsınız."
   );
+
+  // Eski kayıtlar rastgele kimlikle açılmıştı; güvenlik kurallarının çalışabilmesi
+  // için kimlik e-posta olmalı. Yönetici programı her açtığında eksik kalan varsa
+  // sessizce taşınır. Bir kez çalışır, sonra yapacak iş kalmaz.
+  const tasindiRef = useRef(false);
+  useEffect(() => {
+    if (!kullanicilarYuklendi || !yonetici || tasindiRef.current) return;
+    const tasinacak = (kullanicilar || []).filter((k) => {
+      const eposta = String(k.emailKucuk || k.email || "").trim().toLowerCase();
+      if (!eposta) return false;
+      if (k.id !== kullaniciKimligi(eposta)) return true;
+      // Kimliği doğru ama kuralların okuduğu düz liste eksik/eski kalmışsa da tazele
+      const olmasiGereken = duzenleEkranListesi(k, eposta);
+      const mevcut = Array.isArray(k.duzenleEkranlari) ? k.duzenleEkranlari : null;
+      return !mevcut || mevcut.length !== olmasiGereken.length
+        || olmasiGereken.some((x) => mevcut.indexOf(x) === -1);
+    });
+    if (!tasinacak.length) return;
+    tasindiRef.current = true;
+    (async () => {
+      for (const k of tasinacak) {
+        try {
+          const eposta = String(k.emailKucuk || k.email || "").trim().toLowerCase();
+          const { id, ...veri } = k;
+          const yeniId = kullaniciKimligi(eposta);
+          // Yazma koruması ekran bazlı çalıştığı için burada korumasız sürüm kullanılır;
+          // yetkiyi zaten Firestore güvenlik kuralları denetliyor.
+          await _setDoc(doc(db, "kullanicilar", yeniId), {
+            ...veri, emailKucuk: eposta,
+            duzenleEkranlari: duzenleEkranListesi(veri, eposta),
+          }, { merge: true });
+          if (id !== yeniId) await _deleteDoc(doc(db, "kullanicilar", id));
+        } catch (err) {
+          console.error("Kullanıcı kaydı taşınamadı:", k.id, err);
+          tasindiRef.current = false;
+        }
+      }
+    })();
+  }, [kullanicilar, kullanicilarYuklendi, yonetici]);
 
   const secimYap = (id) => {
     if (kullanicilarYuklendi && yetki(id) === "yok") return;
@@ -2015,10 +2167,10 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
     if (benimKaydim) {
       await updateDoc(doc(db, "kullanicilar", benimKaydim.id), { ad: yeniAd });
     } else {
-      await addDoc(collection(db, "kullanicilar"), {
+      await setDoc(doc(db, "kullanicilar", kullaniciKimligi(kullanici.email)), {
         ad: yeniAd, email: kullanici.email, emailKucuk,
         tur: "sifreli", eklenmeTarihi: Date.now(),
-      });
+      }, { merge: true });
     }
     setIsimDuzenle(false);
     setIsimMsg("İsim güncellendi ✓");
@@ -2038,7 +2190,7 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
   const bugunkuHatirlatici = fasonHatirlaticilar.filter((r) => !r.tamamlandi && r.tarih === bugun);
 
   const uyarilar = [];
-  if (dusukDepoStok.length > 0) uyarilar.push({ metin: `${dusukDepoStok.length} depo stok kalemi tükenmiş / eksi durumda`, git: "depo-kart" });
+  if (dusukDepoStok.length > 0) uyarilar.push({ metin: `${dusukDepoStok.length} depo stok kalemi tükenmiş / eksi durumda`, git: "stok-kart" });
   if (gecikenHatirlatici.length > 0) uyarilar.push({ metin: `${gecikenHatirlatici.length} fason hatırlatıcı gecikti`, git: "fason-hatirlaticilar" });
   if (bugunkuHatirlatici.length > 0) uyarilar.push({ metin: `${bugunkuHatirlatici.length} hatırlatıcının tarihi bugün`, git: "fason-hatirlaticilar" });
 
@@ -6988,6 +7140,8 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [uyari, setUyari] = useState(null);
+  // Fişin açıldığı andaki sürüm damgası — kaydederken çakışma kontrolü için
+  const [acilisDamgasi, setAcilisDamgasi] = useState(null);
   const [lookup, setLookup] = useState(null); // {baslik, secenekler, sec}
   const [stokSecici, setStokSecici] = useState(null); // seçilen satırın key'i
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
@@ -7031,6 +7185,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   };
   const fisiTemizle = () => {
     setDuzenlenenId(null);
+    setAcilisDamgasi(null);
     setBaslik({ ...bosBaslik(), evrakNo: yeniNo() });
     setSatirlar([bosTalepSatiri()]);
     setMsg("");
@@ -7039,6 +7194,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   const fisiYukle = (t) => {
     if (!t) return;
     setDuzenlenenId(t.id);
+    setAcilisDamgasi(kayitDamgasi(t));
     setBaslik({
       evrakNo: t.evrakNo || "", tarih: t.tarih || todayISO(), belgeNo: t.belgeNo || "", belgeTarihi: t.belgeTarihi || "",
       proje: t.proje || "", depo: t.depo || "", talepEdenPersonel: t.talepEdenPersonel || t.talepEden || "",
@@ -7092,7 +7248,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   }, [kullanicilar, satinalmaTalepler, girisYapanAd]);
   const stokListesi = depoStok.map((s) => ({ deger: s.stokKodu, aciklama: s.stokAdi }));
 
-  const kaydet = async () => {
+  const kaydet = async (uzerineYaz = false) => {
     if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
     const gecerli = satirlar.filter((r) => String(r.ismi || "").trim() || String(r.kodu || "").trim());
     if (gecerli.length === 0) { setMsg("En az bir satıra Kodu veya İsmi girin."); setTimeout(() => setMsg(""), 3000); return; }
@@ -7109,10 +7265,12 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
       const yeniId = evrakIdTemizle(baslik.evrakNo);
       const eski = duzenlenenId ? satinalmaTalepler.find((t) => t.id === duzenlenenId) : null;
       if (duzenlenenId && duzenlenenId === yeniId) {
-        await updateDoc(doc(db, "satinalma_talepler", duzenlenenId), {
-          ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—",
+        const damga = Date.now();
+        await guvenliGuncelle("satinalma_talepler", duzenlenenId, {
+          ...veri, guncellemeTarihi: damga, guncelleyen: kullanici?.email || "—",
           guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
-        });
+        }, uzerineYaz ? null : acilisDamgasi);
+        setAcilisDamgasi(damga);
         setMsg(`${baslik.evrakNo} güncellendi.`);
       } else if (duzenlenenId) {
         // Evrak No değişti: yeni numarayla oluştur, eskisini sil
@@ -7138,6 +7296,10 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
           baslik: "Aynı Numaradan Zaten Var",
           mesaj: `"${baslik.evrakNo}" numaralı bir satınalma talebi zaten kayıtlı. Muhtemelen aynı anda başka bir kullanıcı bu numarayı kaydetti. Numarayı güncelleyip tekrar kaydedin.`,
         });
+      } else if (err?.message === "KAYIT_DEGISTI") {
+        setUyari(cakismaUyarisi(baslik.evrakNo, err, () => kaydet(true)));
+      } else if (err?.message === "KAYIT_SILINMIS") {
+        setUyari({ baslik: "Fiş Bulunamadı", mesaj: `"${baslik.evrakNo}" fişi sen açtıktan sonra başka bir kullanıcı tarafından silinmiş. Yeni kayıt olarak saklamak için Evrak No'yu güncelleyip tekrar dene.` });
       } else {
         setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
         setTimeout(() => setMsg(""), 5000);
@@ -7304,9 +7466,15 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         acik={!!uyari} kapat={() => setUyari(null)}
         baslik={uyari?.baslik} mesaj={uyari?.mesaj}
         ikincilButon={
-          <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
-            <RefreshCw size={14} /> Numarayı Güncelle
-          </button>
+          uyari?.uzerineYaz ? (
+            <button style={fisAltBtn} onClick={() => { const devam = uyari.uzerineYaz; setUyari(null); devam(); }}>
+              <Save size={14} /> Yine de Üzerine Yaz
+            </button>
+          ) : (
+            <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
+              <RefreshCw size={14} /> Numarayı Güncelle
+            </button>
+          )
         }
       />
       <SecimPenceresi
@@ -7331,7 +7499,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
             <button style={fisAltBtn} onClick={acikFisiSil}><Trash2 size={14} /> Sil</button>
             <button style={fisAltBtn} onClick={yazdir}><Printer size={14} /> Yazdır</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><Plus size={14} /> Yeni</button>
-            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+            <button style={fisAnaBtn} onClick={() => kaydet()} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
           </>
         }
       >
@@ -8122,6 +8290,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   const [satirlar, setSatirlar] = useState([bosTeklifSatiri()]);
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [acilisDamgasi, setAcilisDamgasi] = useState(null); // fiş açıldığındaki sürüm
   const [uyari, setUyari] = useState(null);
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
   const [iceMsg, setIceMsg] = useState("");
@@ -8155,6 +8324,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   };
   const fisiTemizle = () => {
     setDuzenlenenId(null);
+    setAcilisDamgasi(null);
     setBaslik({ ...bosBaslik(), evrakNo: yeniNo() });
     setSatirlar([bosTeklifSatiri()]);
     setMsg("");
@@ -8163,6 +8333,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   const fisiYukle = (t) => {
     if (!t) return;
     setDuzenlenenId(t.id);
+    setAcilisDamgasi(kayitDamgasi(t));
     setBaslik({
       evrakNo: t.evrakNo || "", tarih: t.tarih || todayISO(),
       talepId: t.talepId || "", talepEvrakNo: t.talepEvrakNo || "",
@@ -8214,7 +8385,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
   const kurDegeri = baslik.paraBirimi === "TRY" ? 1 : sayiCevir(baslik.kur) || 1;
   const tcmb = useTcmbKur();
 
-  const kaydet = async () => {
+  const kaydet = async (uzerineYaz = false) => {
     if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
     if (!baslik.tedarikci.trim()) { setMsg("Tedarikçi (cari) seçmelisiniz."); setTimeout(() => setMsg(""), 3000); return; }
     const gecerli = satirlar.filter((r) => String(r.stokAdi || "").trim());
@@ -8237,10 +8408,12 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
       const yeniId = evrakIdTemizle(baslik.evrakNo);
       const eski = duzenlenenId ? satinalmaTeklifler.find((t) => t.id === duzenlenenId) : null;
       if (duzenlenenId && duzenlenenId === yeniId) {
-        await updateDoc(doc(db, "satinalma_teklifler", duzenlenenId), {
-          ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—",
+        const damga = Date.now();
+        await guvenliGuncelle("satinalma_teklifler", duzenlenenId, {
+          ...veri, guncellemeTarihi: damga, guncelleyen: kullanici?.email || "—",
           guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
-        });
+        }, uzerineYaz ? null : acilisDamgasi);
+        setAcilisDamgasi(damga);
         setMsg(`${baslik.evrakNo} güncellendi.`);
       } else if (duzenlenenId) {
         await benzersizEvrakKaydet("satinalma_teklifler", baslik.evrakNo, {
@@ -8265,6 +8438,10 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
           baslik: "Aynı Numaradan Zaten Var",
           mesaj: `"${baslik.evrakNo}" numaralı bir teklif zaten kayıtlı. Muhtemelen aynı anda başka bir kullanıcı bu numarayı kaydetti. Numarayı güncelleyip tekrar kaydedin.`,
         });
+      } else if (err?.message === "KAYIT_DEGISTI") {
+        setUyari(cakismaUyarisi(baslik.evrakNo, err, () => kaydet(true)));
+      } else if (err?.message === "KAYIT_SILINMIS") {
+        setUyari({ baslik: "Fiş Bulunamadı", mesaj: `"${baslik.evrakNo}" teklifi sen açtıktan sonra başka bir kullanıcı tarafından silinmiş. Yeni kayıt olarak saklamak için Evrak No'yu güncelleyip tekrar dene.` });
       } else if (!err?.yetkiHatasi) {
         setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
         setTimeout(() => setMsg(""), 5000);
@@ -8434,7 +8611,11 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
     <div style={{ display: "grid", gap: 20 }}>
       <UyariPenceresi
         acik={!!uyari} kapat={() => setUyari(null)} baslik={uyari?.baslik} mesaj={uyari?.mesaj}
-        ikincilButon={<button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}><RefreshCw size={14} /> Numarayı Güncelle</button>}
+        ikincilButon={
+          uyari?.uzerineYaz
+            ? <button style={fisAltBtn} onClick={() => { const devam = uyari.uzerineYaz; setUyari(null); devam(); }}><Save size={14} /> Yine de Üzerine Yaz</button>
+            : <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}><RefreshCw size={14} /> Numarayı Güncelle</button>
+        }
       />
 
       <EvrakPenceresi
@@ -8447,7 +8628,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
             <button style={fisAltBtn} onClick={() => { const k = satinalmaTeklifler.find((x) => x.id === duzenlenenId); if (k) sil(k); }} disabled={!duzenlenenId}><Trash2 size={14} /> Sil</button>
             <button style={fisAltBtn} onClick={() => teklifYazdir(null)}><Printer size={14} /> Yazdır</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
-            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+            <button style={fisAnaBtn} onClick={() => kaydet()} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
           </>
         }
       >
@@ -9130,6 +9311,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   };
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [acilisDamgasi, setAcilisDamgasi] = useState(null); // fiş açıldığındaki sürüm
   const [uyari, setUyari] = useState(null);
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
   const [iceMsg, setIceMsg] = useState("");
@@ -9160,6 +9342,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   };
   const fisiTemizle = () => {
     setDuzenlenenId(null);
+    setAcilisDamgasi(null);
     setBaslik({ evrakNo: yeniNo(), belgeNo: "", tarih: todayISO(), tedarikci: "", tedarikciKod: "", projeKodu: "", paraBirimi: "TRY", kur: "1", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "", teklifId: "", teklifEvrakNo: "" });
     setSatirlar([bosSiparisSatiri()]);
     setMsg("");
@@ -9168,6 +9351,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   const fisiYukle = (s) => {
     if (!s) return;
     setDuzenlenenId(s.id);
+    setAcilisDamgasi(kayitDamgasi(s));
     setBaslik({
       evrakNo: s.evrakNo || "", belgeNo: s.belgeNo || "", tarih: s.tarih || todayISO(),
       tedarikci: s.tedarikci || "", tedarikciKod: s.tedarikciKod || cariKodBul(fasonFirmalar, s.tedarikci), projeKodu: s.projeKodu || "",
@@ -9243,7 +9427,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   const fisKuru = evrakKuru(baslik);
   const tcmb = useTcmbKur();
 
-  const kaydet = async () => {
+  const kaydet = async (uzerineYaz = false) => {
     if (!baslik.evrakNo.trim()) { setMsg("Evrak No zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
     if (!baslik.tedarikci.trim()) { setMsg("Tedarikçi zorunlu."); setTimeout(() => setMsg(""), 3000); return; }
     const gecerli = satirlar.filter((r) => r.stokAdi.trim());
@@ -9271,10 +9455,12 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       const yeniId = evrakIdTemizle(baslik.evrakNo);
       const eski = duzenlenenId ? satinalmaSiparisler.find((s) => s.id === duzenlenenId) : null;
       if (duzenlenenId && duzenlenenId === yeniId) {
-        await updateDoc(doc(db, "satinalma_siparisler", duzenlenenId), {
-          ...veri, guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—",
+        const damga = Date.now();
+        await guvenliGuncelle("satinalma_siparisler", duzenlenenId, {
+          ...veri, guncellemeTarihi: damga, guncelleyen: kullanici?.email || "—",
           guncellemeSayisi: (eski?.guncellemeSayisi || 0) + 1,
-        });
+        }, uzerineYaz ? null : acilisDamgasi);
+        setAcilisDamgasi(damga);
         setMsg(`${baslik.evrakNo} güncellendi.`);
       } else if (duzenlenenId) {
         await benzersizEvrakKaydet("satinalma_siparisler", baslik.evrakNo, {
@@ -9332,6 +9518,10 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
           baslik: "Aynı Numaradan Zaten Var",
           mesaj: `"${baslik.evrakNo}" numaralı bir satınalma siparişi zaten kayıtlı. Muhtemelen aynı anda başka bir kullanıcı bu numarayı kaydetti. Numarayı güncelleyip tekrar kaydedin.`,
         });
+      } else if (err?.message === "KAYIT_DEGISTI") {
+        setUyari(cakismaUyarisi(baslik.evrakNo, err, () => kaydet(true)));
+      } else if (err?.message === "KAYIT_SILINMIS") {
+        setUyari({ baslik: "Fiş Bulunamadı", mesaj: `"${baslik.evrakNo}" siparişi sen açtıktan sonra başka bir kullanıcı tarafından silinmiş. Yeni kayıt olarak saklamak için Evrak No'yu güncelleyip tekrar dene.` });
       } else {
         setMsg("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"));
         setTimeout(() => setMsg(""), 5000);
@@ -9557,9 +9747,15 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         acik={!!uyari} kapat={() => setUyari(null)}
         baslik={uyari?.baslik} mesaj={uyari?.mesaj}
         ikincilButon={
-          <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
-            <RefreshCw size={14} /> Numarayı Güncelle
-          </button>
+          uyari?.uzerineYaz ? (
+            <button style={fisAltBtn} onClick={() => { const devam = uyari.uzerineYaz; setUyari(null); devam(); }}>
+              <Save size={14} /> Yine de Üzerine Yaz
+            </button>
+          ) : (
+            <button style={fisAltBtn} onClick={() => { numarayiGuncelle(); setUyari(null); }}>
+              <RefreshCw size={14} /> Numarayı Güncelle
+            </button>
+          )
         }
       />
 
@@ -9580,7 +9776,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
             <button style={fisAltBtn} onClick={() => siparisYazdir(null)}><Printer size={14} /> Yazdır</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
             <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
-            <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
+            <button style={fisAnaBtn} onClick={() => kaydet()} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
           </>
         }
       >
@@ -10377,10 +10573,10 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
     setMsg("");
     try {
       await digerKullaniciOlustur(form.email.trim(), form.sifre);
-      await addDoc(collection(db, "kullanicilar"), {
+      await setDoc(doc(db, "kullanicilar", kullaniciKimligi(form.email)), {
         ad: form.ad.trim(), email: form.email.trim(), emailKucuk: form.email.trim().toLowerCase(),
-        tur: "sifreli", eklenmeTarihi: Date.now(),
-      });
+        tur: "sifreli", eklenmeTarihi: Date.now(), yetkiler: {}, duzenleEkranlari: [],
+      }, { merge: true });
       setForm({ ad: "", email: "", sifre: "" });
       setMsgTip("bilgi"); setMsg(`${form.email} için hesap oluşturuldu. Bu bilgileri kişiye ilet.`);
     } catch (err) {
@@ -10410,10 +10606,10 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
       return;
     }
     try {
-      await addDoc(collection(db, "kullanicilar"), {
+      await setDoc(doc(db, "kullanicilar", kullaniciKimligi(googleForm.email)), {
         ad: googleForm.ad.trim(), email: googleForm.email.trim(), emailKucuk,
-        tur: "google", eklenmeTarihi: Date.now(),
-      });
+        tur: "google", eklenmeTarihi: Date.now(), yetkiler: {}, duzenleEkranlari: [],
+      }, { merge: true });
       setGoogleForm({ ad: "", email: "" });
       setMsgTip("bilgi"); setMsg(`${googleForm.email} artık Google ile giriş yapabilir.`);
     } catch (err) {
@@ -10471,9 +10667,12 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
         const v = yetkiTaslak[id];
         if (v === "goruntule" || v === "duzenle") temiz[id] = v;
       });
+      const yeniYonetici = benSahipMiyim ? !!yetkiYonetici : !!yetkiKisi.yonetici;
       await updateDoc(doc(db, "kullanicilar", yetkiKisi.id), {
         yetkiler: temiz,
-        yonetici: benSahipMiyim ? !!yetkiYonetici : !!yetkiKisi.yonetici,
+        yonetici: yeniYonetici,
+        // Güvenlik kurallarının okuduğu düz liste
+        duzenleEkranlari: duzenleEkranListesi({ yetkiler: temiz, yonetici: yeniYonetici }, yetkiKisi.emailKucuk || yetkiKisi.email),
         yetkiGuncelleme: Date.now(),
         yetkiVeren: mevcutKullanici?.email || "—",
       });
