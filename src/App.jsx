@@ -76,6 +76,7 @@ const MENU = [
       { id: "satinalma-ayar", label: "Form Ayarları" },
     ],
   },
+  { id: "fason-listesi", label: "Fason Listesi", icon: ClipboardList },
   { id: "stok-kart", label: "Stok Kartları", icon: Boxes },
   {
     id: "cari", label: "Cariler", icon: Building2,
@@ -140,6 +141,7 @@ const GEC_YUKLENEN = {
   "fason-hareketler": ["fason_hareketler"],
   "fason-raporu": ["fason_hareketler"],
   "cari-rapor": ["fason_hareketler"],
+  "fason-listesi": ["fason_listesi"],
 };
 
 // Bu ekranlar herkese açıktır (Ana Sayfa olmadan programa girilemez, Yardım zararsızdır)
@@ -1264,6 +1266,142 @@ function excelIndir(veri, dosyaAdi, sayfaAdi) {
   XLSX.writeFile(wb, dosyaAdi);
 }
 
+// ---------- Renkli Excel çıktısı ----------
+// Kullandığımız xlsx kütüphanesinin ücretsiz sürümü hücreye renk YAZAMIYOR.
+// Bu yüzden renk gereken yerlerde (fason listesi gibi) .xlsx dosyasını kendimiz
+// üretiyoruz: xlsx aslında içinde birkaç XML dosyası olan bir zip arşividir.
+// Aşağısı sıkıştırmasız (stored) zip yazan küçük bir yardımcıdır.
+const CRC_TABLOSU = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bayt) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bayt.length; i++) c = CRC_TABLOSU[(c ^ bayt[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function zipYaz(dosyalar) {
+  const kodla = (m) => new TextEncoder().encode(m);
+  const parcalar = [];
+  const merkez = [];
+  let konum = 0;
+  const yaz32 = (dizi, i, v) => { dizi[i] = v & 255; dizi[i + 1] = (v >>> 8) & 255; dizi[i + 2] = (v >>> 16) & 255; dizi[i + 3] = (v >>> 24) & 255; };
+  const yaz16 = (dizi, i, v) => { dizi[i] = v & 255; dizi[i + 1] = (v >>> 8) & 255; };
+  dosyalar.forEach(({ ad, icerik }) => {
+    const adBayt = kodla(ad);
+    const veri = typeof icerik === "string" ? kodla(icerik) : icerik;
+    const crc = crc32(veri);
+    const yerel = new Uint8Array(30 + adBayt.length);
+    yaz32(yerel, 0, 0x04034b50); yaz16(yerel, 4, 20); yaz16(yerel, 6, 0); yaz16(yerel, 8, 0);
+    yaz16(yerel, 10, 0); yaz16(yerel, 12, 0x2821); // sabit tarih/saat
+    yaz32(yerel, 14, crc); yaz32(yerel, 18, veri.length); yaz32(yerel, 22, veri.length);
+    yaz16(yerel, 26, adBayt.length); yaz16(yerel, 28, 0);
+    yerel.set(adBayt, 30);
+    parcalar.push(yerel, veri);
+    const kayit = new Uint8Array(46 + adBayt.length);
+    yaz32(kayit, 0, 0x02014b50); yaz16(kayit, 4, 20); yaz16(kayit, 6, 20); yaz16(kayit, 8, 0);
+    yaz16(kayit, 10, 0); yaz16(kayit, 12, 0); yaz16(kayit, 14, 0x2821);
+    yaz32(kayit, 16, crc); yaz32(kayit, 20, veri.length); yaz32(kayit, 24, veri.length);
+    yaz16(kayit, 28, adBayt.length); yaz16(kayit, 30, 0); yaz16(kayit, 32, 0);
+    yaz16(kayit, 34, 0); yaz16(kayit, 36, 0); yaz32(kayit, 38, 0); yaz32(kayit, 42, konum);
+    kayit.set(adBayt, 46);
+    merkez.push(kayit);
+    konum += yerel.length + veri.length;
+  });
+  const merkezBoy = merkez.reduce((t, k) => t + k.length, 0);
+  const son = new Uint8Array(22);
+  yaz32(son, 0, 0x06054b50); yaz16(son, 4, 0); yaz16(son, 6, 0);
+  yaz16(son, 8, dosyalar.length); yaz16(son, 10, dosyalar.length);
+  yaz32(son, 12, merkezBoy); yaz32(son, 16, konum); yaz16(son, 20, 0);
+  const hepsi = [...parcalar, ...merkez, son];
+  const toplam = hepsi.reduce((t, p) => t + p.length, 0);
+  const cikti = new Uint8Array(toplam);
+  let o = 0;
+  hepsi.forEach((p) => { cikti.set(p, o); o += p.length; });
+  return cikti;
+}
+const xmlKac = (v) => String(v == null ? "" : v)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&apos;")
+  .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
+const sutunAdi = (n) => {
+  let ad = "";
+  let k = n;
+  while (k > 0) { const kalan = (k - 1) % 26; ad = String.fromCharCode(65 + kalan) + ad; k = Math.floor((k - 1) / 26); }
+  return ad;
+};
+// satirRenkleri: her satır için "FFRRGGBB" ya da boş (başlık satırı hariç)
+function renkliExcelIndir({ basliklar, satirlar, satirRenkleri = [], dosyaAdi, sayfaAdi = "Liste", sutunGenislikleri }) {
+  const renkler = [...new Set(satirRenkleri.filter(Boolean))];
+  // 0: normal, 1: başlık, 2+: renkli satırlar
+  const doldur = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFDDDDDD"/><bgColor indexed="64"/></patternFill></fill>'];
+  renkler.forEach((r) => doldur.push(`<fill><patternFill patternType="solid"><fgColor rgb="${r}"/><bgColor indexed="64"/></patternFill></fill>`));
+  const bicimler = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'];
+  renkler.forEach((_, i) => bicimler.push(`<xf numFmtId="0" fontId="0" fillId="${3 + i}" borderId="1" xfId="0" applyFill="1" applyBorder="1"/>`));
+  const renkBicimi = (r) => (r && renkler.indexOf(r) > -1 ? 2 + renkler.indexOf(r) : 0);
+
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="${doldur.length}">${doldur.join("")}</fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB0B0B0"/></left><right style="thin"><color rgb="FFB0B0B0"/></right><top style="thin"><color rgb="FFB0B0B0"/></top><bottom style="thin"><color rgb="FFB0B0B0"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="${bicimler.length}">${bicimler.join("")}</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+
+  const hucre = (sutun, satirNo, deger, bicim) => {
+    const ref = `${sutunAdi(sutun)}${satirNo}`;
+    const b = bicim ? ` s="${bicim}"` : "";
+    if (deger === null || deger === undefined || deger === "") return `<c r="${ref}"${b}/>`;
+    if (typeof deger === "number" && Number.isFinite(deger)) return `<c r="${ref}"${b}><v>${deger}</v></c>`;
+    return `<c r="${ref}"${b} t="inlineStr"><is><t xml:space="preserve">${xmlKac(deger)}</t></is></c>`;
+  };
+  const satirXml = [];
+  satirXml.push(`<row r="1">${basliklar.map((b, i) => hucre(i + 1, 1, b, 1)).join("")}</row>`);
+  satirlar.forEach((sat, i) => {
+    const bicim = renkBicimi(satirRenkleri[i]);
+    satirXml.push(`<row r="${i + 2}">${sat.map((d, j) => hucre(j + 1, i + 2, d, bicim)).join("")}</row>`);
+  });
+  const genislikler = (sutunGenislikleri || basliklar.map(() => 18))
+    .map((g, i) => `<col min="${i + 1}" max="${i + 1}" width="${g}" customWidth="1"/>`).join("");
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetViews><sheetView workbookViewId="0" tabSelected="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${genislikler}</cols>
+<sheetData>${satirXml.join("")}</sheetData>
+<autoFilter ref="A1:${sutunAdi(basliklar.length)}${satirlar.length + 1}"/>
+</worksheet>`;
+
+  const dosyalar = [
+    { ad: "[Content_Types].xml", icerik: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
+    { ad: "_rels/.rels", icerik: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { ad: "xl/workbook.xml", icerik: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xmlKac(String(sayfaAdi).slice(0, 30))}" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    { ad: "xl/_rels/workbook.xml.rels", icerik: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { ad: "xl/styles.xml", icerik: styles },
+    { ad: "xl/worksheets/sheet1.xml", icerik: sheet },
+  ];
+  const bayt = zipYaz(dosyalar);
+  const blob = new Blob([bayt], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = dosyaAdi;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  return bayt;
+}
+
 function sablonIndir(basliklar, ornekSatirlar, dosyaAdi, sayfaAdi) {
   const ws = XLSX.utils.aoa_to_sheet([basliklar, ...ornekSatirlar]);
   ws["!cols"] = basliklar.map(() => ({ wch: 22 }));
@@ -1580,6 +1718,7 @@ function Panel({ onCikis, kullanici }) {
   const [fasonIsler, setFasonIsler] = useState([]);
   const [fasonHareketler, setFasonHareketler] = useState([]);
   const [fasonHatirlaticilar, setFasonHatirlaticilar] = useState([]);
+  const [fasonListesi, setFasonListesi] = useState([]);
   const [kullanicilar, setKullanicilar] = useState([]);
   const [kullanicilarYuklendi, setKullanicilarYuklendi] = useState(false);
   const [satinalmaTalepler, setSatinalmaTalepler] = useState([]);
@@ -1679,6 +1818,7 @@ function Panel({ onCikis, kullanici }) {
       depo_hareketler: setDepoHareketler,
       metal_malzemeler: setMetalMalzemeler,
       fason_hareketler: setFasonHareketler,
+      fason_listesi: setFasonListesi,
     };
     gecVeri.forEach((ad) => {
       if (gecDinleyiciler.current[ad] || !kur[ad]) return;
@@ -1821,8 +1961,10 @@ function Panel({ onCikis, kullanici }) {
         input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
         .input:focus { border-color: #2dd4bf; }
         table { border-collapse: collapse; width: 100%; }
-        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #8b929a; padding: 10px 12px; border-bottom: 1px solid #2a4b52; font-weight: 600; white-space: nowrap; }
-        td { padding: 10px 12px; border-bottom: 1px solid #24424a; font-size: 13.5px; }
+        /* Başlıklar gerekirse alt satıra iner (kelime ortasından bölünmez) —
+           böylece sütunu çok sayıda olan tablolar da ekrana sığar. */
+        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #8b929a; padding: 8px 8px; border-bottom: 1px solid #2a4b52; font-weight: 600; white-space: normal; }
+        td { padding: 8px 8px; border-bottom: 1px solid #24424a; font-size: 13px; overflow-wrap: break-word; }
         tr:hover td { background: #274852; }
         .btn-ghost { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #3d6169; color: #c7cbd1; border-radius: 7px; padding: 8px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .btn-ghost:hover { border-color: #2dd4bf; color: #2dd4bf; }
@@ -2017,8 +2159,9 @@ function Panel({ onCikis, kullanici }) {
           })}
         </aside>
 
-        <main className="ana-icerik" style={{ flex: 1, padding: 24, overflowY: "auto", minWidth: 0 }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* İçerik ekranın tamamını kaplar — geniş tablolar yatay kaydırma olmadan sığsın */}
+        <main className="ana-icerik" style={{ flex: 1, padding: "18px 16px", overflowY: "auto", minWidth: 0 }}>
+          <div style={{ width: "100%", maxWidth: "100%", margin: 0 }}>
             {!kullanicilarYuklendi && (
               <div style={{ color: "#2dd4bf", fontFamily: "monospace", fontSize: 13, letterSpacing: 1, padding: 40, textAlign: "center" }}>YETKİLER YÜKLENİYOR…</div>
             )}
@@ -2109,6 +2252,7 @@ function Panel({ onCikis, kullanici }) {
               fasonFirmalar={fasonFirmalar} formAyarlari={formAyarlari}
             />}
             {tab === "satinalma-ayar" && <FormAyarlari formAyarlari={formAyarlari} />}
+            {tab === "fason-listesi" && <FasonListesi fasonListesi={fasonListesi} kullanici={kullanici} />}
             {tab === "stok-kart" && <DepoStokKart depoStok={depoStok} kullanici={kullanici} />}
             {tab === "cari-kart" && <CariKartlari fasonFirmalar={fasonFirmalar} kullanici={kullanici} />}
             {tab === "cari-rapor" && <CariRaporu
@@ -4079,8 +4223,8 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
                 <th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th>
                 <th>Sipariş No</th><th>Proje Kodu</th><th>Cari</th><th>Stok Kodu</th><th>Stok Adı</th>
                 <th>Açıklama 1</th><th>Açıklama 2</th>
-                <th style={{ textAlign: "right" }}>Sipariş</th><th style={{ width: 110, textAlign: "right" }}>Gelen</th><th style={{ textAlign: "right" }}>Kalan</th>
-                <th>Birim</th><th>Teslim</th><th>Durum</th><th style={{ width: 150 }}></th>
+                <th style={{ textAlign: "right" }}>Sipariş</th><th style={{ width: 86, textAlign: "right" }}>Gelen</th><th style={{ textAlign: "right" }}>Kalan</th>
+                <th>Birim</th><th>Teslim</th><th>Durum</th><th style={{ width: 96 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -4109,7 +4253,7 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
                     <td style={{ textAlign: "right", fontFamily: "monospace" }}>{sayiTR(siparisAl(h))}</td>
                     <td style={{ textAlign: "right" }}>
                       <input
-                        style={{ width: 92, textAlign: "right", fontFamily: "monospace", background: "#16232a", border: "1px solid #2a4b52", color: gelenAl(h) > 0 ? "#2dd4bf" : "#c7cbd1", borderRadius: 4, padding: "4px 6px", fontSize: 12 }}
+                        style={{ width: 68, textAlign: "right", fontFamily: "monospace", background: "#16232a", border: "1px solid #2a4b52", color: gelenAl(h) > 0 ? "#2dd4bf" : "#c7cbd1", borderRadius: 4, padding: "4px 5px", fontSize: 12 }}
                         value={miktarTaslak[h.id] !== undefined ? miktarTaslak[h.id] : String(gelenAl(h))}
                         onChange={(e) => setMiktarTaslak((m) => ({ ...m, [h.id]: e.target.value }))}
                         onBlur={() => miktarUygula(h)}
@@ -6288,6 +6432,424 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
   );
 }
 
+// ---------- Günlük Fason Listesi ----------
+// Her gün gelen fason Excel'i buraya yüklenir; program mevcut listeyi günceller,
+// senin işaretlediğin durumlar (Gönderildi / Üretimde) korunur.
+const FASON_LISTE_DURUM = {
+  gonderilmedi: { label: "Gönderilmedi", renk: "#e8a33d", zemin: "#2b2415", kenar: "#4a3d1e", excel: "FFFFD966" },
+  gonderildi: { label: "Gönderildi", renk: "#2dd4bf", zemin: "#113330", kenar: "#1f4d47", excel: "FF00B050" },
+  uretimde: { label: "Üretimde", renk: "#e07a6b", zemin: "#3a1f1f", kenar: "#6b3a33", excel: "FFFF0000" },
+};
+const FASON_LISTE_DURUMLARI = ["gonderilmedi", "gonderildi", "uretimde"];
+const fasonListeDurumu = (k) => (FASON_LISTE_DURUM[k && k.durum] ? k.durum : "gonderilmedi");
+
+// Excel'deki bir hücreyi gg.aa.yyyy / Date / seri numara fark etmeksizin ISO tarihe çevirir
+function excelTarih(v) {
+  if (v instanceof Date && !isNaN(v)) {
+    const y = v.getFullYear(), a = String(v.getMonth() + 1).padStart(2, "0"), g = String(v.getDate()).padStart(2, "0");
+    return `${y}-${a}-${g}`;
+  }
+  const t = String(v == null ? "" : v).trim();
+  if (!t) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+  const m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.exec(t);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
+  const n = Number(t);
+  if (Number.isFinite(n) && n > 20000 && n < 60000) {
+    return new Date(Date.UTC(1899, 11, 30) + n * 86400000).toISOString().slice(0, 10);
+  }
+  return t;
+}
+const excelSaat = (v) => {
+  if (v instanceof Date && !isNaN(v)) return `${String(v.getHours()).padStart(2, "0")}:${String(v.getMinutes()).padStart(2, "0")}`;
+  return String(v == null ? "" : v).trim();
+};
+// Boşluk/sekme/satır sonu farklarını yok sayan sadeleştirme
+const sadeMetin = (v) => String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+const sadeAnahtar = (v) => sadeMetin(v).toLocaleLowerCase("tr");
+
+// Aynı işi ikinci kez yüklediğinde üst üste yazılsın diye satır anahtarı.
+// Aynı parça aynı işleme birden fazla parti hâlinde gidebiliyor (ör. 6 adet
+// 18 Ağustos, 18 adet 2 Eylül) — bu yüzden başlangıç tarihi de anahtara girer,
+// yoksa iki ayrı parti tek satıra düşer.
+function fasonListeAnahtar(r) {
+  return [sadeAnahtar(r.siparisNo), sadeAnahtar(r.urun), sadeAnahtar(r.islem), sadeAnahtar(r.baslangicTarihi)].join("|");
+}
+// Firestore doküman kimliği: okunabilir olsun ama benzersizliği de garanti olsun
+function fasonListeKimlik(anahtar) {
+  let h = 5381;
+  for (let i = 0; i < anahtar.length; i++) h = ((h * 33) ^ anahtar.charCodeAt(i)) >>> 0;
+  const sade = anahtar.replace(/[^a-z0-9ğüşiöç_|-]+/gi, "-").replace(/-+/g, "-").slice(0, 120);
+  return `${sade}-${h.toString(36)}`;
+}
+
+const FASON_LISTE_SUTUNLARI = [
+  { alan: "musteri", baslik: "Müşteri Adı", esler: ["müşteri", "musteri"], gen: 20 },
+  { alan: "siparisNo", baslik: "Sipariş No", esler: ["sip no", "sipariş no", "siparis no", "şensan"], gen: 14 },
+  { alan: "urun", baslik: "Ürün", esler: ["ürün", "urun"], gen: 38 },
+  { alan: "ebat", baslik: "Ebat", esler: ["ebat"], gen: 12 },
+  { alan: "islem", baslik: "İşlem", esler: ["işlem", "islem"], gen: 20 },
+  { alan: "firma", baslik: "Gönderilecek Firma", esler: ["gönderilecek", "gonderilecek", "firma"], gen: 30 },
+  { alan: "adet", baslik: "Adet", esler: ["adet"], gen: 8, sayi: true },
+  { alan: "baslangicTarihi", baslik: "Başlangıç Tarihi", esler: ["başlangıç tarihi", "baslangic tarihi"], gen: 15, tarih: true },
+  { alan: "baslangicSaati", baslik: "Başlangıç Saati", esler: ["başlangıç saati", "baslangic saati"], gen: 12, saat: true },
+  { alan: "bitisTarihi", baslik: "Bitiş Tarihi", esler: ["bitiş tarihi", "bitis tarihi"], gen: 15, tarih: true },
+  { alan: "bitisSaati", baslik: "Bitiş Saati", esler: ["bitiş saati", "bitis saati"], gen: 12, saat: true },
+  { alan: "bitenAdet", baslik: "Biten Adet", esler: ["biten"], gen: 10, sayi: true },
+  { alan: "fireAdet", baslik: "Fire Adet", esler: ["fire"], gen: 10, sayi: true },
+  { alan: "sonrakiOperasyon", baslik: "Sonraki Operasyon", esler: ["sonraki operasyon"], gen: 20 },
+];
+
+// Gelen dosyadaki satırları okur. Başlık satırı nerede olursa olsun bulunur;
+// üstteki logo/başlık satırları ve alttaki boş satırlar atlanır.
+function fasonListeSatirlariniAyikla(rows) {
+  const norm = (v) => sadeAnahtar(v);
+  let basSatir = -1;
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const r = (rows[i] || []).map(norm);
+    if (r.some((h) => h.includes("müşteri") || h.includes("musteri")) && r.some((h) => h.includes("ürün") || h.includes("urun"))) { basSatir = i; break; }
+  }
+  if (basSatir === -1) return { satirlar: [], atlanan: 0, basliksiz: true };
+  // Bazı sütunların gerçek adı üstteki birleşik hücrededir (ör. "SONRAKİ OPERASYON"
+  // P1:P2'de yazar, başlık satırında sadece "İŞLEM" görünür). Üstteki iki satır da
+  // başlığa eklenir ki sütun doğru tanınsın.
+  const basliklar = (rows[basSatir] || []).map((h, i) => {
+    const ust = [basSatir - 2, basSatir - 1].filter((x) => x >= 0).map((x) => (rows[x] || [])[i]);
+    return norm([...ust, h].filter(Boolean).join(" "));
+  });
+  const idx = {};
+  FASON_LISTE_SUTUNLARI.forEach((s) => {
+    idx[s.alan] = basliklar.findIndex((h) => h && s.esler.some((e) => h.includes(norm(e))));
+  });
+  const satirlar = [];
+  const sayac = {};
+  let atlanan = 0;
+  for (let i = basSatir + 1; i < rows.length; i++) {
+    const r = rows[i] || [];
+    if (!r.some((h) => String(h == null ? "" : h).trim())) continue;
+    const kayit = {};
+    FASON_LISTE_SUTUNLARI.forEach((s) => {
+      const ham = idx[s.alan] > -1 ? r[idx[s.alan]] : "";
+      if (s.tarih) kayit[s.alan] = excelTarih(ham);
+      else if (s.saat) kayit[s.alan] = excelSaat(ham);
+      else if (s.sayi) kayit[s.alan] = ham === "" || ham == null ? "" : sayiCevir(ham);
+      else kayit[s.alan] = sadeMetin(ham);
+    });
+    // Ürün ve işlem boşsa satır anlamsızdır (ara başlık / toplam satırı olabilir)
+    if (!kayit.urun && !kayit.islem) { atlanan++; continue; }
+    const temel = fasonListeAnahtar(kayit);
+    // Dosyada birebir aynı satır iki kez geçiyorsa ikisi de korunur
+    const kacinci = (sayac[temel] = (sayac[temel] || 0) + 1);
+    kayit.anahtar = kacinci > 1 ? `${temel}#${kacinci}` : temel;
+    satirlar.push(kayit);
+  }
+  return { satirlar, atlanan, basliksiz: false };
+}
+
+// Mevcut listeyi gelen dosyaya göre günceller.
+//  - Eşleşen satır: bilgileri tazelenir, DURUM İŞARETİ KORUNUR
+//  - Yeni satır: eklenir, durumu "Gönderilmedi" olur
+//  - Dosyada olmayan eski satır: silinmez, "listeden düştü" diye işaretlenir
+async function fasonListesiniGuncelle(mevcutlar, gelenler, eposta, dosyaAdi) {
+  const zaman = Date.now();
+  const haritaMevcut = new Map();
+  (mevcutlar || []).forEach((k) => { if (k.anahtar) haritaMevcut.set(k.anahtar, k); });
+  const gelenAnahtarlar = new Set();
+  const islemler = [];
+  let eklenen = 0, guncellenen = 0, dusen = 0, geriDonen = 0;
+
+  gelenler.forEach((g) => {
+    if (gelenAnahtarlar.has(g.anahtar)) return; // aynı dosyada tekrar eden satır
+    gelenAnahtarlar.add(g.anahtar);
+    const eski = haritaMevcut.get(g.anahtar);
+    const veri = { ...g, listeDisi: false, dosyaAdi: dosyaAdi || "", sonYukleme: zaman, guncelleyen: eposta || "—" };
+    if (eski) {
+      if (eski.listeDisi) geriDonen++;
+      guncellenen++;
+      islemler.push({ tip: "guncelle", id: eski.id, veri });
+    } else {
+      eklenen++;
+      islemler.push({ tip: "ekle", id: fasonListeKimlik(g.anahtar), veri: { ...veri, durum: "gonderilmedi", olusturma: zaman } });
+    }
+  });
+  (mevcutlar || []).forEach((k) => {
+    if (!k.anahtar || gelenAnahtarlar.has(k.anahtar) || k.listeDisi) return;
+    dusen++;
+    islemler.push({ tip: "guncelle", id: k.id, veri: { listeDisi: true, sonYukleme: zaman } });
+  });
+
+  for (let i = 0; i < islemler.length; i += 400) {
+    const batch = writeBatch(db);
+    islemler.slice(i, i + 400).forEach((o) => {
+      const ref = doc(db, "fason_listesi", o.id);
+      if (o.tip === "ekle") batch.set(ref, o.veri);
+      else batch.update(ref, o.veri);
+    });
+    await batch.commit();
+  }
+  return { eklenen, guncellenen, dusen, geriDonen, toplam: gelenler.length };
+}
+
+function FasonListesi({ fasonListesi, kullanici }) {
+  const [f, setF] = useState({ arama: "", musteri: "", firma: "", islem: "", durum: "", dusenGizle: true });
+  const [msg, setMsg] = useState("");
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [secililer, setSecililer] = useState(new Set());
+  const dosyaRef = useRef(null);
+  const setF2 = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const bilgi = (m, sure = 6000) => { setMsg(m); setTimeout(() => setMsg(""), sure); };
+
+  const liste = useMemo(() => {
+    const q = f.arama.trim().toLocaleLowerCase("tr");
+    return (fasonListesi || []).filter((k) => {
+      if (f.dusenGizle && k.listeDisi) return false;
+      if (f.musteri && sadeMetin(k.musteri) !== f.musteri) return false;
+      if (f.firma && sadeMetin(k.firma) !== f.firma) return false;
+      if (f.islem && sadeMetin(k.islem) !== f.islem) return false;
+      if (f.durum && fasonListeDurumu(k) !== f.durum) return false;
+      if (q && ![k.musteri, k.siparisNo, k.urun, k.ebat, k.islem, k.firma, k.sonrakiOperasyon]
+        .some((x) => String(x || "").toLocaleLowerCase("tr").includes(q))) return false;
+      return true;
+    }).sort((a, b) => String(a.bitisTarihi || "9999").localeCompare(String(b.bitisTarihi || "9999")) ||
+      String(a.musteri || "").localeCompare(String(b.musteri || ""), "tr"));
+  }, [fasonListesi, f]);
+
+  const benzersiz = (alan) => [...new Set((fasonListesi || []).map((k) => sadeMetin(k[alan])).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  const sayac = (d) => (fasonListesi || []).filter((k) => !k.listeDisi && fasonListeDurumu(k) === d).length;
+  const aktifSayi = (fasonListesi || []).filter((k) => !k.listeDisi).length;
+  const dusenSayi = (fasonListesi || []).filter((k) => k.listeDisi).length;
+
+  const durumSec = async (kayit, yeniDurum) => {
+    try {
+      await updateDoc(doc(db, "fason_listesi", kayit.id), {
+        durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—",
+      });
+    } catch (err) { if (!err?.yetkiHatasi) bilgi("Durum kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
+  };
+  const topluDurum = async (yeniDurum) => {
+    const secilenler = liste.filter((k) => secililer.has(k.id));
+    if (!secilenler.length) return;
+    setYukleniyor(true);
+    try {
+      for (let i = 0; i < secilenler.length; i += 400) {
+        const batch = writeBatch(db);
+        secilenler.slice(i, i + 400).forEach((k) => batch.update(doc(db, "fason_listesi", k.id), {
+          durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—",
+        }));
+        await batch.commit();
+      }
+      bilgi(`${secilenler.length} satır "${FASON_LISTE_DURUM[yeniDurum].label}" yapıldı.`);
+      setSecililer(new Set());
+    } catch (err) { if (!err?.yetkiHatasi) bilgi("Kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
+    setYukleniyor(false);
+  };
+  const sil = async (kayit) => {
+    if (!window.confirm(`"${kayit.urun}" satırı listeden silinecek. Emin misiniz?`)) return;
+    try { await deleteDoc(doc(db, "fason_listesi", kayit.id)); }
+    catch (err) { if (!err?.yetkiHatasi) bilgi("Silinemedi: " + (err?.message || "bilinmeyen hata")); }
+  };
+  const secilenleriSil = async () => {
+    const idler = liste.filter((k) => secililer.has(k.id)).map((k) => k.id);
+    if (!idler.length || !window.confirm(`${idler.length} satır silinecek. Emin misiniz?`)) return;
+    setYukleniyor(true);
+    try {
+      for (let i = 0; i < idler.length; i += 400) {
+        const batch = writeBatch(db);
+        idler.slice(i, i + 400).forEach((id) => batch.delete(doc(db, "fason_listesi", id)));
+        await batch.commit();
+      }
+      bilgi(`${idler.length} satır silindi.`);
+      setSecililer(new Set());
+    } catch (err) { if (!err?.yetkiHatasi) bilgi("Silinemedi: " + (err?.message || "bilinmeyen hata")); }
+    setYukleniyor(false);
+  };
+
+  const iceAktar = async (e) => {
+    const dosya = e.target.files?.[0];
+    e.target.value = "";
+    if (!dosya) return;
+    setYukleniyor(true); setMsg("");
+    try {
+      const rows = await dosyaOku(dosya);
+      const { satirlar, atlanan, basliksiz } = fasonListeSatirlariniAyikla(rows);
+      if (basliksiz) { bilgi("Dosyada başlık satırı bulunamadı. \"Müşteri Adı\" ve \"Ürün\" sütunları olan bir liste olmalı."); }
+      else if (!satirlar.length) { bilgi("Dosyada işlenecek satır bulunamadı."); }
+      else {
+        const sonuc = await fasonListesiniGuncelle(fasonListesi || [], satirlar, kullanici?.email, dosya.name);
+        bilgi(
+          `${sonuc.toplam} satır okundu · ${sonuc.eklenen} yeni · ${sonuc.guncellenen} güncellendi` +
+          `${sonuc.geriDonen ? ` · ${sonuc.geriDonen} satır listeye geri döndü` : ""}` +
+          `${sonuc.dusen ? ` · ${sonuc.dusen} satır listeden düştü` : ""}` +
+          `${atlanan ? ` · ${atlanan} boş/başlıksız satır atlandı` : ""}. İşaretlediğin durumlar korundu.`,
+          11000
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      bilgi("Dosya okunamadı: " + (err?.message || "bilinmeyen hata"));
+    }
+    setYukleniyor(false);
+  };
+
+  // Renkli çıktı: Üretimde kırmızı, Gönderildi yeşil, Gönderilmedi sarı
+  const disaAktar = () => {
+    const kapsam = secililer.size ? liste.filter((k) => secililer.has(k.id)) : liste;
+    const basliklar = [...FASON_LISTE_SUTUNLARI.map((c) => c.baslik), "Durum", "Liste Dışı"];
+    const satirlar = kapsam.map((k) => [
+      ...FASON_LISTE_SUTUNLARI.map((c) => (c.sayi ? (k[c.alan] === "" || k[c.alan] == null ? "" : Number(k[c.alan])) : String(k[c.alan] || ""))),
+      FASON_LISTE_DURUM[fasonListeDurumu(k)].label,
+      k.listeDisi ? "Listeden düştü" : "",
+    ]);
+    renkliExcelIndir({
+      basliklar, satirlar,
+      satirRenkleri: kapsam.map((k) => FASON_LISTE_DURUM[fasonListeDurumu(k)].excel),
+      sutunGenislikleri: [...FASON_LISTE_SUTUNLARI.map((c) => c.gen), 14, 12],
+      dosyaAdi: `fason-listesi-${todayISO()}.xlsx`, sayfaAdi: "Fason Listesi",
+    });
+  };
+  const sablonAl = () => sablonIndir(
+    FASON_LISTE_SUTUNLARI.map((c) => c.baslik),
+    [["ERKUR", "2026-148", "KOLON MİLİ SOMUNU", "", "Fosfat Kaplama", "Pehlivan Kaplama", "2", todayISO(), "", todayISO(), "", "", "", "FKK"]],
+    "fason-listesi-sablonu.xlsx", "Şablon"
+  );
+
+  const hepsiSecili = liste.length > 0 && liste.every((k) => secililer.has(k.id));
+  const tumunuSecToggle = () => setSecililer(hepsiSecili ? new Set() : new Set(liste.map((k) => k.id)));
+  const birSecToggle = (id) => setSecililer((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+
+  const KutuStat = ({ etiket, deger, renk }) => (
+    <div className="card" style={{ padding: "16px 20px" }}>
+      <div style={{ fontSize: 11, color: "#8b929a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{etiket}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", color: renk || "#e7e5e0" }}>{deger}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ display: "grid", gap: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
+        <KutuStat etiket="Listedeki İş" deger={aktifSayi} />
+        <KutuStat etiket="Gönderilmedi" deger={sayac("gonderilmedi")} renk={FASON_LISTE_DURUM.gonderilmedi.renk} />
+        <KutuStat etiket="Gönderildi" deger={sayac("gonderildi")} renk={FASON_LISTE_DURUM.gonderildi.renk} />
+        <KutuStat etiket="Üretimde" deger={sayac("uretimde")} renk={FASON_LISTE_DURUM.uretimde.renk} />
+        <KutuStat etiket="Listeden Düşen" deger={dusenSayi} renk="#6b7178" />
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Günlük Fason Listesi</div>
+        <div style={{ fontSize: 12.5, color: "#8b929a", lineHeight: 1.6, marginBottom: 14 }}>
+          Her gün gelen fason Excel'ini <b>"Listeyi Excel'den Güncelle"</b> ile yükle. Aynı iş satırları üzerine yazılır,
+          yeni satırlar eklenir, dosyada olmayanlar <b>"listeden düştü"</b> diye işaretlenir.
+          <b style={{ color: "#2dd4bf" }}> Senin işaretlediğin Gönderildi / Üretimde durumları silinmez.</b>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
+          <button style={fisAnaBtn} disabled={yukleniyor} onClick={() => dosyaRef.current && dosyaRef.current.click()}>
+            <Upload size={14} /> {yukleniyor ? "İşleniyor…" : "Listeyi Excel'den Güncelle"}
+          </button>
+          <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Renkli Excele Aktar</button>
+          <button className="btn-ghost" onClick={sablonAl}><FileDown size={14} /> Şablon İndir</button>
+        </div>
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 6, padding: "9px 12px" }}>{msg}</div>}
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#6b7178" }} />
+          <input className="input" style={{ paddingLeft: 30 }} placeholder="Müşteri, sipariş no, ürün, işlem, firma ara…" value={f.arama} onChange={setF2("arama")} />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Müşteri</div>
+            <select className="input" value={f.musteri} onChange={setF2("musteri")}><option value="">Tümü</option>{benzersiz("musteri").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Firma</div>
+            <select className="input" value={f.firma} onChange={setF2("firma")}><option value="">Tümü</option>{benzersiz("firma").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>İşlem</div>
+            <select className="input" value={f.islem} onChange={setF2("islem")}><option value="">Tümü</option>{benzersiz("islem").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
+          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Durum</div>
+            <select className="input" value={f.durum} onChange={setF2("durum")}><option value="">Tümü</option>{FASON_LISTE_DURUMLARI.map((k) => <option key={k} value={k}>{FASON_LISTE_DURUM[k].label}</option>)}</select></div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#c7cbd1", alignSelf: "end", paddingBottom: 9 }}>
+            <input type="checkbox" checked={f.dusenGizle} onChange={(e) => setF((s) => ({ ...s, dusenGizle: e.target.checked }))} />
+            Listeden düşenleri gizle
+          </label>
+        </div>
+      </div>
+
+      {secililer.size > 0 && (
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#2dd4bf" }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{secililer.size} satır seçili</span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {FASON_LISTE_DURUMLARI.map((k) => (
+              <button key={k} onClick={() => topluDurum(k)} disabled={yukleniyor}
+                style={{ background: FASON_LISTE_DURUM[k].zemin, border: `1px solid ${FASON_LISTE_DURUM[k].kenar}`, color: FASON_LISTE_DURUM[k].renk, borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+                {FASON_LISTE_DURUM[k].label} yap
+              </button>
+            ))}
+            <button onClick={secilenleriSil} disabled={yukleniyor} style={{ background: "none", border: "1px solid #6b3a33", color: "#e07a6b", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Seçilenleri Sil</button>
+            <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
+          </div>
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Fason Listesi ({liste.length})</div>
+        <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 32 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th>
+                <th>Müşteri</th><th>Sipariş No</th><th>Ürün</th><th>Ebat</th><th>İşlem</th><th>Gönderilecek Firma</th>
+                <th style={{ textAlign: "right" }}>Adet</th><th>Başlangıç</th><th>Bitiş</th>
+                <th style={{ textAlign: "right" }}>Biten</th><th style={{ textAlign: "right" }}>Fire</th>
+                <th>Sonraki Operasyon</th><th style={{ width: 250 }}>Durum</th><th style={{ width: 34 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {liste.length === 0 && <tr><td colSpan={15} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+                Liste boş. "Listeyi Excel'den Güncelle" ile günlük fason dosyanı yükle.
+              </td></tr>}
+              {liste.map((k) => {
+                const d = fasonListeDurumu(k);
+                return (
+                  <tr key={k.id} style={{ background: k.listeDisi ? "rgba(107,113,120,0.10)" : FASON_LISTE_DURUM[d].zemin, opacity: k.listeDisi ? 0.65 : 1 }}>
+                    <td><input type="checkbox" checked={secililer.has(k.id)} onChange={() => birSecToggle(k.id)} /></td>
+                    <td style={{ fontSize: 12.5 }}>{k.musteri || "—"}{k.listeDisi && <div style={{ fontSize: 10.5, color: "#6b7178" }}>listeden düştü</div>}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#e8a33d" }}>{k.siparisNo || "—"}</td>
+                    <td style={{ fontSize: 12.5, minWidth: 180 }}>{k.urun || "—"}</td>
+                    <td style={{ fontSize: 12.5 }}>{k.ebat || "—"}</td>
+                    <td style={{ fontSize: 12.5 }}>{k.islem || "—"}</td>
+                    <td style={{ fontSize: 12.5 }}>{k.firma || "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace" }}>{k.adet === "" || k.adet == null ? "—" : sayiTR(k.adet)}</td>
+                    <td style={{ fontSize: 12, color: "#8b929a" }}>{k.baslangicTarihi || "—"}</td>
+                    <td style={{ fontSize: 12, color: "#8b929a" }}>{k.bitisTarihi || "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12 }}>{k.bitenAdet === "" || k.bitenAdet == null ? "—" : sayiTR(k.bitenAdet)}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12 }}>{k.fireAdet === "" || k.fireAdet == null ? "—" : sayiTR(k.fireAdet)}</td>
+                    <td style={{ fontSize: 12.5 }}>{k.sonrakiOperasyon || "—"}</td>
+                    <td>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {FASON_LISTE_DURUMLARI.map((x) => (
+                          <button key={x} onClick={() => durumSec(k, x)} title={`${FASON_LISTE_DURUM[x].label} olarak işaretle`}
+                            style={{
+                              background: d === x ? FASON_LISTE_DURUM[x].renk : "transparent",
+                              color: d === x ? "#142a30" : FASON_LISTE_DURUM[x].renk,
+                              border: `1px solid ${d === x ? FASON_LISTE_DURUM[x].renk : FASON_LISTE_DURUM[x].kenar}`,
+                              borderRadius: 5, padding: "4px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                            }}>
+                            {FASON_LISTE_DURUM[x].label}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td><button onClick={() => sil(k)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Fason Hatırlatıcılar ----------
 function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
   const [fisAcik, setFisAcik] = useState(false);
@@ -7141,6 +7703,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   const [kaydediliyor, setKaydediliyor] = useState(false);
   const [uyari, setUyari] = useState(null);
   // Fişin açıldığı andaki sürüm damgası — kaydederken çakışma kontrolü için
+  const [detay, setDetay] = useState(null); // salt okunur detay penceresi
   const [acilisDamgasi, setAcilisDamgasi] = useState(null);
   const [lookup, setLookup] = useState(null); // {baslik, secenekler, sec}
   const [stokSecici, setStokSecici] = useState(null); // seçilen satırın key'i
@@ -7462,6 +8025,8 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
+      <FisDetayPenceresi detay={detay} kapat={() => setDetay(null)} satinalmaSiparisler={satinalmaSiparisler} />
+
       <UyariPenceresi
         acik={!!uyari} kapat={() => setUyari(null)}
         baslik={uyari?.baslik} mesaj={uyari?.mesaj}
@@ -7696,9 +8261,9 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Talepler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
-            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Talep Eden</th><th>Proje Kodu</th><th>Depo</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Talep Eden</th><th>Proje Kodu</th><th>Depo</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={12} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
               {filtrelenmis.map((t) => {
                 const bagliSiparis = bagliSiparisBul(t, satinalmaSiparisler);
                 const etkinDurum = talepEtkinDurum(t, satinalmaSiparisler);
@@ -7708,14 +8273,13 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                 return (
                   <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
                     <td><input type="checkbox" checked={secililer.has(t.id)} onChange={() => birSecToggle(t.id)} /></td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <button onClick={() => fisiYukle(t)} title="Fişi aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", cursor: "pointer", textDecoration: "underline" }}>{t.evrakNo}</button>
-                      {duzenlendi && <span style={duzenlenmisRozet} title={`${t.guncellemeSayisi} kez düzenlendi · ${t.guncelleyen || ""}`}>düzenlendi</span>}
-                    </td>
+                    <EvrakNoHucresi evrakNo={t.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={t.guncellemeSayisi} guncelleyen={t.guncelleyen} ac={() => setDetay({ tip: "talep", kayit: t })} />
                     <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
                     <td style={{ fontSize: 12.5 }}>{t.talepEdenPersonel || t.talepEden || "—"}</td>
                     <td style={{ fontSize: 12.5 }}>{t.proje || "—"}</td>
                     <td style={{ fontSize: 12.5 }}>{t.depo || "—"}</td>
+                    <AciklamaHucresi kayit={t} alan="aciklama" />
+                    <AciklamaHucresi kayit={t} alan="aciklama2" />
                     <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
                     <td>
                       {donustu ? (
@@ -7738,6 +8302,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                     </td>
                     <td style={{ fontFamily: "monospace", fontSize: 12 }}>{bagliSiparis ? bagliSiparis.evrakNo : "—"}</td>
                     <td style={{ whiteSpace: "nowrap" }}>
+                      <button onClick={() => setDetay({ tip: "talep", kayit: t })} title="Fişin detayını görüntüle" style={duzenleButonu}><Search size={12} /> Görüntüle</button>
                       <button onClick={() => fisiYukle(t)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
                       <button
                         onClick={() => teklifOlustur && teklifOlustur(t)}
@@ -9311,6 +9876,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   };
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
+  const [detay, setDetay] = useState(null); // salt okunur detay penceresi
   const [acilisDamgasi, setAcilisDamgasi] = useState(null); // fiş açıldığındaki sürüm
   const [uyari, setUyari] = useState(null);
   const [iceAktariliyor, setIceAktariliyor] = useState(false);
@@ -9743,6 +10309,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
+      <FisDetayPenceresi detay={detay} kapat={() => setDetay(null)} satinalmaSiparisler={satinalmaSiparisler} />
+
       <UyariPenceresi
         acik={!!uyari} kapat={() => setUyari(null)}
         baslik={uyari?.baslik} mesaj={uyari?.mesaj}
@@ -9976,20 +10544,19 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Siparişler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
-            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+            <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={11} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
               {filtrelenmis.map((s) => {
                 const duzenlendi = (s.guncellemeSayisi || 0) > 0;
                 return (
                 <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
                   <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
-                    {s.evrakNo}
-                    {duzenlendi && <span style={duzenlenmisRozet} title={`${s.guncellemeSayisi} kez düzenlendi · ${s.guncelleyen || ""}`}>düzenlendi</span>}
-                  </td>
+                  <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                   <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
                   <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                  <AciklamaHucresi kayit={s} alan="aciklama" />
+                  <AciklamaHucresi kayit={s} alan="aciklama2" />
                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
                   <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
                   <td style={{ fontFamily: "monospace", color: "#2dd4bf", whiteSpace: "nowrap" }}>
@@ -10004,6 +10571,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                     </select>
                   </td>
                   <td style={{ whiteSpace: "nowrap" }}>
+                    <button onClick={() => setDetay({ tip: "siparis", kayit: s })} title="Fişin detayını görüntüle" style={duzenleButonu}><Search size={12} /> Görüntüle</button>
                     <button onClick={() => fisiYukle(s)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
                     <button onClick={() => siparisYazdir(s)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Printer size={14} /></button>
                     <button onClick={() => sil(s)} title="Sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
@@ -10016,6 +10584,127 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         </div>
       </div>
     </div>
+  );
+}
+
+// Fişin kalemlerindeki açıklamaların liste sütununda gösterilecek kısa özeti.
+// Aynı açıklama birden çok satırda geçiyorsa bir kez yazılır.
+function fisAciklamalari(kayit, alan) {
+  const liste = [];
+  (kayit && kayit.satirlar ? kayit.satirlar : []).forEach((r) => {
+    const v = String((r && r[alan]) || "").trim();
+    if (v && liste.indexOf(v) === -1) liste.push(v);
+  });
+  return liste;
+}
+function aciklamaOzeti(kayit, alan, enFazla = 2) {
+  const l = fisAciklamalari(kayit, alan);
+  if (!l.length) return "—";
+  return l.slice(0, enFazla).join(" · ") + (l.length > enFazla ? ` +${l.length - enFazla}` : "");
+}
+// Liste hücresi: kısa özet görünür, üstüne gelince tamamı görünür
+function AciklamaHucresi({ kayit, alan }) {
+  const hepsi = fisAciklamalari(kayit, alan);
+  const metin = aciklamaOzeti(kayit, alan);
+  return (
+    <td style={{ fontSize: 12.5, color: hepsi.length ? "#c7cbd1" : "#4a5560", maxWidth: 190 }} title={hepsi.join(" · ")}>
+      {metin}
+    </td>
+  );
+}
+
+// Liste satırındaki evrak numarası — tıklanınca fişin detayı açılır
+function EvrakNoHucresi({ evrakNo, duzenlendi, guncellemeSayisi, guncelleyen, ac }) {
+  return (
+    <td style={{ fontFamily: "monospace", fontWeight: 700, whiteSpace: "nowrap" }}>
+      <span
+        role="button" tabIndex={0} title="Fişin detayını aç"
+        onClick={ac}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ac(); } }}
+        style={{ color: duzenlendi ? "#e8a33d" : "#2dd4bf", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}
+      >
+        {evrakNo}
+      </span>
+      {duzenlendi && <span style={duzenlenmisRozet} title={`${guncellemeSayisi || 0} kez düzenlendi · ${guncelleyen || ""}`}>düzenlendi</span>}
+    </td>
+  );
+}
+
+// ---------- Fiş görüntüleme (salt okunur detay penceresi) ----------
+// Hem Satınalma Raporu hem de talep/sipariş listeleri aynı pencereyi kullanır:
+// listede evrak numarasına basınca fişin tüm detayı burada açılır.
+function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
+  return (
+      <EvrakPenceresi
+        acik={!!detay} kapat={kapat}
+        baslik={detay ? `${detay.tip === "talep" ? "Talep" : "Sipariş"} Fişi — ${detay.kayit.evrakNo}` : ""}
+        ikon={detay?.tip === "talep" ? FileText : ShoppingCart} genislik={1000}
+        butonlar={<button style={fisAnaBtn} onClick={kapat}><X size={14} /> Kapat</button>}
+      >
+        {detay && (
+          <>
+            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "0 24px" }}>
+              {(detay.tip === "talep"
+                ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
+                   ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
+                   ["Durum", TALEP_DURUM[talepEtkinDurum(detay.kayit, satinalmaSiparisler)]?.label], ["Sipariş No", talepSiparisNo(detay.kayit, satinalmaSiparisler)]]
+                : [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
+                   ["Tedarikçi", detay.kayit.tedarikci], ["Teslim Tarihi", detay.kayit.teslimTarihi], ["Ödeme Şekli", detay.kayit.odemeSekli],
+                   ["Talep No", detay.kayit.talepEvrakNo], ["Durum", SIPARIS_DURUM[detay.kayit.durum]?.label],
+                   ["Genel Toplam", tutarYaz(detay.kayit.genelToplam || 0, detay.kayit.paraBirimi)],
+                   ...(String(detay.kayit.paraBirimi || "TRY") !== "TRY" ? [["TL Karşılığı", tutarTL(siparisTL(detay.kayit))]] : [])]
+              ).map(([et, dg]) => (
+                <div key={et} style={fisSatir}>
+                  <span style={{ ...fisEtiket, width: 118 }}>{et}</span>
+                  <span style={{ fontSize: 12.5, color: "#e7e5e0" }}>{dg || "—"}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr>
+                    <th style={{ ...fisGridTh, width: 32, textAlign: "center" }}>#</th>
+                    {detay.tip === "talep"
+                      ? <><th style={fisGridTh}>Cinsi</th><th style={fisGridTh}>Kodu</th><th style={fisGridTh}>İsmi</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={fisGridTh}>Proje</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={{ ...fisGridTh, borderRight: "none" }}>Birim</th></>
+                      : <><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Malzeme</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={fisGridTh}>Birim</th><th style={{ ...fisGridTh, textAlign: "right" }}>Birim Fiyat</th><th style={{ ...fisGridTh, textAlign: "right", borderRight: "none" }}>Tutar</th></>}
+                  </tr></thead>
+                  <tbody>
+                    {(detay.kayit.satirlar || []).map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ ...fisGridTd, textAlign: "center", padding: "6px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{i + 1}</td>
+                        {detay.tip === "talep" ? (
+                          <>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.cinsi}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.kodu || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.projeKodu || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, borderRight: "none" }}>{r.birim}</td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.stokKodu || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.stokAdi}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.birim}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{paraTR(r.birimFiyat)}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf", borderRight: "none" }}>{paraTR(r.satirTutar || 0)}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </EvrakPenceresi>
   );
 }
 
@@ -10161,77 +10850,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      {/* Fiş görüntüleme penceresi */}
-      <EvrakPenceresi
-        acik={!!detay} kapat={() => setDetay(null)}
-        baslik={detay ? `${detay.tip === "talep" ? "Talep" : "Sipariş"} Fişi — ${detay.kayit.evrakNo}` : ""}
-        ikon={detay?.tip === "talep" ? FileText : ShoppingCart} genislik={1000}
-        butonlar={<button style={fisAnaBtn} onClick={() => setDetay(null)}><X size={14} /> Kapat</button>}
-      >
-        {detay && (
-          <>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "0 24px" }}>
-              {(detay.tip === "talep"
-                ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
-                   ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
-                   ["Durum", TALEP_DURUM[talepEtkinDurum(detay.kayit, satinalmaSiparisler)]?.label], ["Sipariş No", talepSiparisNo(detay.kayit, satinalmaSiparisler)]]
-                : [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
-                   ["Tedarikçi", detay.kayit.tedarikci], ["Teslim Tarihi", detay.kayit.teslimTarihi], ["Ödeme Şekli", detay.kayit.odemeSekli],
-                   ["Talep No", detay.kayit.talepEvrakNo], ["Durum", SIPARIS_DURUM[detay.kayit.durum]?.label],
-                   ["Genel Toplam", tutarYaz(detay.kayit.genelToplam || 0, detay.kayit.paraBirimi)],
-                   ...(String(detay.kayit.paraBirimi || "TRY") !== "TRY" ? [["TL Karşılığı", tutarTL(siparisTL(detay.kayit))]] : [])]
-              ).map(([et, dg]) => (
-                <div key={et} style={fisSatir}>
-                  <span style={{ ...fisEtiket, width: 118 }}>{et}</span>
-                  <span style={{ fontSize: 12.5, color: "#e7e5e0" }}>{dg || "—"}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead><tr>
-                    <th style={{ ...fisGridTh, width: 32, textAlign: "center" }}>#</th>
-                    {detay.tip === "talep"
-                      ? <><th style={fisGridTh}>Cinsi</th><th style={fisGridTh}>Kodu</th><th style={fisGridTh}>İsmi</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={fisGridTh}>Proje</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={{ ...fisGridTh, borderRight: "none" }}>Birim</th></>
-                      : <><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Malzeme</th><th style={fisGridTh}>Açıklama 1</th><th style={fisGridTh}>Açıklama 2</th><th style={{ ...fisGridTh, textAlign: "right" }}>Miktar</th><th style={fisGridTh}>Birim</th><th style={{ ...fisGridTh, textAlign: "right" }}>Birim Fiyat</th><th style={{ ...fisGridTh, textAlign: "right", borderRight: "none" }}>Tutar</th></>}
-                  </tr></thead>
-                  <tbody>
-                    {(detay.kayit.satirlar || []).map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ ...fisGridTd, textAlign: "center", padding: "6px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{i + 1}</td>
-                        {detay.tip === "talep" ? (
-                          <>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.cinsi}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.kodu || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.projeKodu || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, borderRight: "none" }}>{r.birim}</td>
-                          </>
-                        ) : (
-                          <>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontFamily: "monospace" }}>{r.stokKodu || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.stokAdi}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.aciklama2 || "—"}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.birim}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{paraTR(r.birimFiyat)}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf", borderRight: "none" }}>{paraTR(r.satirTutar || 0)}</td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
-      </EvrakPenceresi>
+      <FisDetayPenceresi detay={detay} kapat={() => setDetay(null)} satinalmaSiparisler={satinalmaSiparisler} />
 
       <div style={{ display: "flex", gap: 8 }}>
         {[["talep", "Talep Raporu", talepler.length], ["siparis", "Sipariş Raporu", siparisler.length]].map(([k, ad, sayi]) => (
@@ -10353,20 +10972,20 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
           <table>
             {altTab === "talep" ? (
               <>
-                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Proje</th><th>Depo</th><th>Talep Eden</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
+                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Proje</th><th>Depo</th><th>Talep Eden</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
                 <tbody>
-                  {talepler.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+                  {talepler.length === 0 && <tr><td colSpan={11} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
                   {talepler.map((t) => {
                     const duzenlendi = (t.guncellemeSayisi || 0) > 0;
                     return (
                       <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
-                          {t.evrakNo}{duzenlendi && <span style={duzenlenmisRozet}>düzenlendi</span>}
-                        </td>
+                        <EvrakNoHucresi evrakNo={t.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={t.guncellemeSayisi} guncelleyen={t.guncelleyen} ac={() => setDetay({ tip: "talep", kayit: t })} />
                         <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
                         <td style={{ fontSize: 12.5 }}>{t.proje || "—"}</td>
                         <td style={{ fontSize: 12.5 }}>{t.depo || "—"}</td>
                         <td style={{ fontSize: 12.5 }}>{t.talepEdenPersonel || "—"}</td>
+                        <AciklamaHucresi kayit={t} alan="aciklama" />
+                        <AciklamaHucresi kayit={t} alan="aciklama2" />
                         <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
                         <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#8b929a", borderColor: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#2a4b52" }}>{TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "—"}</span></td>
                         <td style={{ fontFamily: "monospace", fontSize: 12 }}>{talepSiparisNo(t, satinalmaSiparisler) || "—"}</td>
@@ -10378,18 +10997,18 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
               </>
             ) : (
               <>
-                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+                <thead><tr><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
                 <tbody>
-                  {siparisler.length === 0 && <tr><td colSpan={8} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+                  {siparisler.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
                   {siparisler.map((s) => {
                     const duzenlendi = (s.guncellemeSayisi || 0) > 0;
                     return (
                       <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", whiteSpace: "nowrap" }}>
-                          {s.evrakNo}{duzenlendi && <span style={duzenlenmisRozet}>düzenlendi</span>}
-                        </td>
+                        <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                         <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
                         <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                        <AciklamaHucresi kayit={s} alan="aciklama" />
+                        <AciklamaHucresi kayit={s} alan="aciklama2" />
                         <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
                         <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
                         <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf", whiteSpace: "nowrap" }}>

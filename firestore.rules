@@ -156,6 +156,11 @@ service cloud.firestore {
       allow read: if okuyabilirim();
       allow write: if yazabilir(['fason-hareketler', 'fason-isler']);
     }
+    // Günlük fason listesi — Excel'den güncellenir, durumlar elle işaretlenir.
+    match /fason_listesi/{id} {
+      allow read: if okuyabilirim();
+      allow write: if yazabilir(['fason-listesi', 'fason-ozet', 'fason-raporu']);
+    }
     match /fason_hatirlaticilar/{id} {
       allow read: if okuyabilirim();
       allow write: if yazabilir(['fason-hatirlaticilar', 'fason-ozet']);
