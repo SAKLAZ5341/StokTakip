@@ -208,6 +208,15 @@ service cloud.firestore {
       allow write: if yoneticiyim();
     }
 
+    // ---------------- Modüller (ayrı geliştirilen bölümler) ----------------
+    // Modül koleksiyonları kendi önekleriyle başlar (örn. planlama_isler).
+    // Bu blok SADECE o öneke izin verir; modül yanlışlıkla bile
+    // satinalma_* / depo_* / hammadde koleksiyonlarına yazamaz.
+    match /{koleksiyon}/{belge} {
+      allow read: if koleksiyon.matches('planlama_.*') && okuyabilirim();
+      allow write: if koleksiyon.matches('planlama_.*') && yazabilir(['planlama']);
+    }
+
     // ---------------- Geri kalan her şey ----------------
     // Yeni bir koleksiyon eklenirse kurala bağlanana kadar kapalı kalır.
     match /{belge=**} {

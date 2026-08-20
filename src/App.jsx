@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer, LogOut, History } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer, LogOut, History, CalendarDays } from "lucide-react";
 import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
 import {
   collection, onSnapshot, doc, query, where, getDocs, getDoc, increment,
@@ -11,6 +11,8 @@ import {
   GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword,
 } from "firebase/auth";
 import * as XLSX from "xlsx";
+// Ayrı klasörde geliştirilen modüller — sözleşme: src/moduller/BENIOKU.md
+import PlanlamaModulu from "./moduller/planlama/Planlama.jsx";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -84,6 +86,7 @@ const MENU = [
       { id: "fason-liste-rapor", label: "Fason Rapor" },
     ],
   },
+  { id: "planlama", label: "Planlama", icon: CalendarDays },
   { id: "stok-kart", label: "Stok Kartları", icon: Boxes },
   {
     id: "cari", label: "Cariler", icon: Building2,
@@ -915,6 +918,7 @@ const AS9100_FORMLARI = [
   { kod: "fasonIs", ad: "Fason İş Emri", ornek: "FSN-FR-001" },
   { kod: "fasonRaporu", ad: "Fason Takip Raporu", ornek: "FSN-FR-002" },
   { kod: "izlenebilirlik", ad: "Satınalma İzlenebilirlik Raporu", ornek: "SAT-FR-010" },
+  { kod: "planlama_isemri", ad: "İş Emri (Planlama)", ornek: "URT-FR-001" },
   { kod: "cariRaporu", ad: "Cari Hareket Raporu", ornek: "MUH-FR-001" },
 ];
 // Form türüne ait doküman bilgisi (yoksa boş döner — form yine basılır)
@@ -1123,6 +1127,119 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
 </body></html>`);
   w.document.close();
   w.focus();
+}
+
+// Modüllerin kullandığı pencere. "butonlar" iki biçimde verilebilir:
+//   - hazır JSX  : butonlar={<><button .../></>}
+//   - tanım listesi: butonlar={[{ etiket, onTikla, birincil, kapali }]}
+// İkinci biçim modül yazarının ana programın buton stillerini bilmesini
+// gerektirmez; program kendi görünümüyle basar.
+function ModulPenceresi({ butonlar, ...kalan }) {
+  const tanimListesi = Array.isArray(butonlar) && butonlar.length > 0
+    && butonlar.every((x) => x && typeof x === "object" && !React.isValidElement(x));
+  const dugmeler = tanimListesi
+    ? butonlar.map((x, i) => (
+        <button
+          key={i} style={x.birincil ? fisAnaBtn : fisAltBtn}
+          onClick={x.onTikla} disabled={!!x.kapali} title={x.ipucu || ""}
+        >
+          {x.etiket}
+        </button>
+      ))
+    : butonlar;
+  return <EvrakPenceresi {...kalan} butonlar={dugmeler} />;
+}
+
+// ---------- Modül Kabuğu ----------
+// Ayrı klasörde (src/moduller/...) geliştirilen modüllerin programa bağlandığı
+// TEK nokta. Modül, ana programın hiçbir dosyasını import etmez; ihtiyacı olan
+// her şey buradan prop olarak gider. Böylece:
+//   - modül mevcut ekranların koduna dokunamaz,
+//   - modül kendi koleksiyonu dışına yazamaz (aşağıdaki önek kontrolü),
+//   - modül tek başına geliştirilip tek dosya olarak teslim edilebilir.
+const MODUL_KOLEKSIYON_ONEKI = {
+  planlama: "planlama_",
+};
+
+// Modülün eriştiği koleksiyon adı kendi önekiyle başlamıyorsa hata fırlatır.
+// Yanlışlıkla "satinalma_siparisler" yazsa bile veritabanına gitmez.
+function modulKoleksiyonu(modulId, ad) {
+  const onek = MODUL_KOLEKSIYON_ONEKI[modulId];
+  const isim = String(ad || "");
+  if (!onek || !isim.startsWith(onek)) {
+    throw new Error(`"${modulId}" modülü yalnızca "${onek || "?"}" ile başlayan koleksiyonlara erişebilir (denenen: "${isim}").`);
+  }
+  return isim;
+}
+
+// Modüle verilecek prop paketi. Sözleşme src/moduller/BENIOKU.md içinde yazılı.
+function modulKabugu(modulId, { kullanici, yetki, veri }) {
+  const K = (ad) => modulKoleksiyonu(modulId, ad);
+  const damga = () => ({ guncellemeTarihi: Date.now(), guncelleyen: kullanici?.email || "—" });
+
+  const api = {
+    // Canlı dinleme — Firestore anlık güncellemesi. Geriye "durdur" fonksiyonu döner.
+    dinle(ad, geriCagir) {
+      const kol = K(ad);
+      return onSnapshot(
+        collection(db, kol),
+        (snap) => geriCagir(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => { console.error(`${kol} okunamadı:`, err); geriCagir([]); }
+      );
+    },
+    async ekle(ad, degerler) {
+      const r = await addDoc(collection(db, K(ad)), {
+        ...degerler, olusturma: Date.now(), olusturanEposta: kullanici?.email || "—",
+      });
+      return r?.id || "";
+    },
+    // Evrak numarasını belge kimliği yapar — aynı numara iki kez kaydedilemez.
+    async ekleNumarali(ad, evrakNo, degerler) {
+      return benzersizEvrakKaydet(K(ad), evrakNo, {
+        ...degerler, evrakNo, olusturma: Date.now(), olusturanEposta: kullanici?.email || "—",
+      });
+    },
+    async guncelle(ad, id, degerler) {
+      await updateDoc(doc(db, K(ad), id), { ...degerler, ...damga() });
+    },
+    async sil(ad, id) {
+      await deleteDoc(doc(db, K(ad), id));
+    },
+    // islemler: [{ tur:"ekle"|"guncelle"|"sil", koleksiyon, id?, veri? }]
+    async topluYaz(islemler) {
+      const liste = (islemler || []).filter(Boolean);
+      for (let i = 0; i < liste.length; i += 400) {
+        const batch = writeBatch(db);
+        liste.slice(i, i + 400).forEach((x) => {
+          const kol = K(x.koleksiyon);
+          if (x.tur === "sil") batch.delete(doc(db, kol, x.id));
+          else if (x.tur === "guncelle") batch.update(doc(db, kol, x.id), { ...x.veri, ...damga() });
+          else batch.set(doc(collection(db, kol)), { ...x.veri, olusturma: Date.now(), olusturanEposta: kullanici?.email || "—" });
+        });
+        await batch.commit();
+      }
+      return liste.length;
+    },
+    sonrakiNo: (kayitlar, onek) => sonrakiEvrakNo(kayitlar || [], onek),
+  };
+
+  const ui = {
+    stil: {
+      satir: fisSatir, etiket: fisEtiket, giris: fisInput,
+      tabloBaslik: fisGridTh, tabloHucre: fisGridTd, hucreGiris: fisHucreInput,
+      dugme: fisAltBtn, anaDugme: fisAnaBtn,
+      belgeKutu: belgeBaslikKutu, belgeEtiket: belgeBaslikEtiket,
+      renk: { zemin: "#142a30", kart: "#1b333c", kenar: "#2a4b52", vurgu: "#2dd4bf", uyari: "#e8a33d", hata: "#e07a6b", iyi: "#4ade80", soluk: "#6b7178", yazi: "#e7e5e0" },
+    },
+    Pencere: ModulPenceresi,
+    SecimPenceresi, SecimAlani, Stat, UyariPenceresi,
+    excelIndir, renkliExcelIndir, sablonIndir,
+    yazdir: (secenekler) => satinalmaFormYazdir({ ayarlar: veri?.formAyarlari || {}, yazdiran: kullanici?.email, ...secenekler }),
+    tarih: { bugun: todayISO, tr: trTarih },
+    sayi: { cevir: sayiCevir, tr: sayiTR, tl: tutarTL },
+  };
+
+  return { modulId, kullanici, yetki, api, ui, veri: veri || {} };
 }
 
 // ---------- Mobil / masaüstü ayrımı ----------
@@ -2063,6 +2180,7 @@ function Panel({ onCikis, kullanici }) {
     if (tab === "cari-rapor") return "Cari Raporu";
     if (tab === "satinalma-teklif") return "Teklifler";
     if (tab === "satinalma-toplu-teklif") return "Toplu Teklif";
+    if (tab === "planlama") return "Planlama";
     if (tab === "satinalma-karsilastir") return "Teklif Karşılaştırma";
     if (tab === "yardim") return "Yardım";
     return "";
@@ -2328,6 +2446,17 @@ function Panel({ onCikis, kullanici }) {
             {tab === "fason-raporu" && <FasonTakipRaporu fasonFirmalar={fasonFirmalar} fasonIsler={fasonIsler} fasonHareketler={fasonHareketler} formAyarlari={formAyarlari} />}
             {tab === "stok-sil" && <StokSilme records={records} />}
             {tab === "depo-sil" && <DepoSilme depoStok={depoStok} />}
+            {tab === "planlama" && <PlanlamaModulu
+              {...modulKabugu("planlama", {
+                kullanici, yetki: aktifYetki,
+                veri: {
+                  makineler: machines, takimlar: teams, stokKartlari: depoStok,
+                  cariler: fasonFirmalar, hammaddeler, kullanicilar,
+                  talepler: satinalmaTalepler, siparisler: satinalmaSiparisler,
+                  projeler: satinalmaProjeler, formAyarlari,
+                },
+              })}
+            />}
             {tab === "satinalma-talep" && <SatinalmaTalep
               satinalmaTalepler={satinalmaTalepler}
               satinalmaSiparisler={satinalmaSiparisler} siparislerYuklendi={siparislerYuklendi}
