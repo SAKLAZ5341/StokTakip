@@ -68,6 +68,7 @@ const MENU = [
     children: [
       { id: "satinalma-talep", label: "Satınalma Talebi" },
       { id: "satinalma-teklif", label: "Teklifler" },
+      { id: "satinalma-toplu-teklif", label: "Toplu Teklif" },
       { id: "satinalma-karsilastir", label: "Teklif Karşılaştırma" },
       { id: "satinalma-siparis", label: "Satınalma Siparişi" },
       { id: "satinalma-proje", label: "Proje Kartları" },
@@ -178,6 +179,8 @@ const YETKI_ESDEGER = {
   // Fason Listesi tek ekrandan iki ekrana bölündü; eski yetki ikisinde de geçerli
   "fason-liste": "fason-listesi",
   "fason-liste-rapor": "fason-listesi",
+  // Toplu Teklif ekranı Teklifler ekranının toplu hâli — eski yetki burada da geçerli
+  "satinalma-toplu-teklif": "satinalma-teklif",
 };
 function ekranYetkisi(kayit, eposta, ekranId) {
   if (yoneticiMi(kayit, eposta)) return "duzenle";
@@ -867,12 +870,63 @@ const SIPARIS_SARTLARI_VARSAYILAN = `1. Tedarikçi, sevkiyat ile birlikte kendis
 33. Tedarikçi, sahte parça (Counterfeit Parts) kullanımını önlemek için gerekli kontrolleri uygulamak zorundadır. Sahte parça kullanıldığı tespit edildiği durumunda Şensan Makina alt yüklenici sözleşmesini direkt fesheder ve ilgili yasal süreçleri başlatır.
 34. Tedarikçi, ürün güvenliği (Product Safety) gerekliliklerine uymakla yükümlüdür.
 35. Tedarikçi, çalışanlarının ürün uygunluğuna katkısı, ürün güvenliği ve etik davranış konularında farkındalığını sağlamakla yükümlüdür.`;
+// AS9100 madde 8.4 (dışarıdan tedarik edilen proses, ürün ve hizmetlerin kontrolü)
+// karşılığı tedarikçi şartları. Teklif İsteme (RFQ) formunun sonuna basılır.
+const TEKLIF_SARTLARI_BASLIK = "TEDARİKÇİ ŞARTLARI (AS9100 Md. 8.4)";
+const TEKLIF_SARTLARI_VARSAYILAN = `1. Bu form bir teklif isteğidir; sipariş yerine geçmez ve satın alma taahhüdü doğurmaz.
+2. Teklifinizde birim fiyat, para birimi, KDV durumu, teslim süresi, teslim yeri ve teklifin geçerlilik süresi açıkça belirtilmelidir.
+3. Fiyatlar aksi belirtilmedikçe teklif geçerlilik süresi boyunca sabittir.
+4. Teklif verilen ürün/hizmet, formda belirtilen teknik resim, şartname ve revizyon numarasına birebir uygun olmalıdır. Uyumsuzluk varsa teklif ile birlikte yazılı olarak bildirilmelidir.
+5. Tedarikçi, sipariş açılması hâlinde ürün ve süreçlerin gerekliliklerini, kullanılacak yöntem, proses ve ekipmanı ve personel yeterliliğini karşılamayı taahhüt eder.
+6. Özel prosesler (ısıl işlem, kaplama, NDT, kaynak vb.) yalnızca müşteri veya ilgili otorite tarafından onaylı kaynaklarda yaptırılır; onay belgeleri talep hâlinde sunulur.
+7. Tedarikçi, sipariş şartlarını kendi alt tedarikçilerine eksiksiz aktarmakla yükümlüdür.
+8. İlk parça onayı (FAI / AS9102) gereken kalemlerde ilk sevkiyat FAI raporu ile birlikte yapılır.
+9. Sevkiyatlarda uygunluk belgesi (CoC), malzeme sertifikası ve gerektiğinde test/muayene raporları ürünle birlikte gönderilir.
+10. Ürünler lot/parti veya seri bazında izlenebilir olmalıdır; izlenebilirliği sağlanamayan ürünler reddedilebilir.
+11. Tedarikçi ve alt tedarikçileri sahte/yetkisiz parça (counterfeit parts) kullanımını önleyecek kontrolleri uygular.
+12. Şensan Makina, müşterisi ve ilgili yasal otoriteler; tedarikçinin ve alt tedarikçilerinin tesislerine, proses ve kayıtlarına erişim hakkına sahiptir.
+13. Onaylanmış ürün, proses, tesis veya alt tedarikçi değişiklikleri uygulanmadan önce yazılı olarak bildirilir ve onay alınır.
+14. Tespit edilen uygunsuzluklar gecikmeden bildirilir; kök neden analizi ve düzeltici faaliyet talep edilebilir.
+15. Ürüne ait kalite kayıtları, aksi belirtilmedikçe en az 10 yıl saklanır ve talep hâlinde sunulur.
+16. Tedarikçi, çalışanlarının ürün uygunluğuna katkısı, ürün güvenliği ve etik davranış konularında farkındalığını sağlar.
+17. Teklifte belirtilen bilgiler ticari sır kapsamındadır; taraflar karşılıklı gizliliğe uyar.`;
+const teklifSartlariMetni = (ayarlar) => {
+  const ozel = String(ayarlar?.teklifSartlari ?? "").trim();
+  return ozel || TEKLIF_SARTLARI_VARSAYILAN;
+};
+
 const siparisSartlariMetni = (ayarlar) => {
   const ozel = String(ayarlar?.siparisSartlari ?? "").trim();
   return ozel || SIPARIS_SARTLARI_VARSAYILAN;
 };
 
-function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirlar, toplamSatirlari, notBasligi, notMetni, imzalar, sartlarBasligi, sartlarMetni }) {
+// ---------- AS9100 kontrollü doküman bilgileri ----------
+// AS9100/ISO 9001 "dokümante edilmiş bilgi" maddeleri basılı formda şunları ister:
+// belgeyi tanımlayan doküman numarası, revizyon, yayın tarihi, sayfa x/y ve
+// hazırlayan/onaylayan. Bunlar Form Ayarları ekranından form türü bazında girilir.
+const AS9100_FORMLARI = [
+  { kod: "talep", ad: "Satınalma Talep Fişi", ornek: "SAT-FR-001" },
+  { kod: "teklifIsteme", ad: "Teklif İsteme Formu (RFQ)", ornek: "SAT-FR-002" },
+  { kod: "teklif", ad: "Teklif Fişi", ornek: "SAT-FR-003" },
+  { kod: "karsilastirma", ad: "Teklif Karşılaştırma Formu", ornek: "SAT-FR-004" },
+  { kod: "siparis", ad: "Satınalma Sipariş Fişi", ornek: "SAT-FR-005" },
+  { kod: "talepRaporu", ad: "Satınalma Talep Raporu", ornek: "SAT-FR-006" },
+  { kod: "siparisRaporu", ad: "Satınalma Sipariş Raporu", ornek: "SAT-FR-007" },
+  { kod: "fasonIs", ad: "Fason İş Emri", ornek: "FSN-FR-001" },
+  { kod: "fasonRaporu", ad: "Fason Takip Raporu", ornek: "FSN-FR-002" },
+  { kod: "cariRaporu", ad: "Cari Hareket Raporu", ornek: "MUH-FR-001" },
+];
+// Form türüne ait doküman bilgisi (yoksa boş döner — form yine basılır)
+function dokumanBilgisi(ayarlar, kod) {
+  const d = (ayarlar && ayarlar.dokumanlar && ayarlar.dokumanlar[kod]) || {};
+  return {
+    no: String(d.no || "").trim(),
+    revizyon: String(d.revizyon || "").trim(),
+    tarih: String(d.tarih || "").trim(),
+  };
+}
+
+function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirlar, toplamSatirlari, notBasligi, notMetni, imzalar, sartlarBasligi, sartlarMetni, dokumanKodu, yazdiran }) {
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const a = ayarlar || {};
   const w = window.open("", "_blank", "width=1000,height=760");
@@ -880,6 +934,17 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
 
   const antetSatirlari = [a.adres, [a.telefon, a.eposta].filter(Boolean).join(" · "), [a.vergiDairesi, a.vergiNo].filter(Boolean).join(" / "), a.web]
     .map((x) => String(x || "").trim()).filter(Boolean);
+
+  // AS9100 kontrollü doküman kimliği — antetin sağ üstünde kutu olarak basılır
+  const dok = dokumanBilgisi(a, dokumanKodu);
+  const dokSatirlari = [
+    ["Doküman No", dok.no],
+    ["Revizyon No", dok.revizyon],
+    ["Yayın Tarihi", trTarih(dok.tarih)],
+  ].filter((x) => x[1]);
+  const dokKutu = dokSatirlari.length
+    ? `<table class="dokKutu">${dokSatirlari.map((x) => `<tr><td class="e">${esc(x[0])}</td><td class="d">${esc(x[1])}</td></tr>`).join("")}<tr><td class="e">Sayfa</td><td class="d"><span class="sayfaYeri">—</span></td></tr></table>`
+    : "";
 
   // Satır sayısı azsa tablo boş satırlarla doldurulur (matbu form görünümü)
   const enAzSatir = 12;
@@ -958,6 +1023,18 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
   .altBilgi { margin-top: 8mm; padding-top: 4px; border-top: 1px solid #ccc;
               display: flex; justify-content: space-between; font-size: 7.5pt; color: #777; }
 
+  /* AS9100 kontrollü doküman kutusu (antetin sağ üstü) */
+  /* Not: genel "table { width:100% }" kuralı bu kutuyu da şişiriyordu; ölçü burada sabitlenir. */
+  .dokKutu { border-collapse: collapse; font-size: 7.6pt; flex: 0 0 56mm; width: 56mm !important;
+             table-layout: fixed; margin: 0 !important; }
+  .dokKutu td { border: 1px solid #666; padding: 1.5px 5px; line-height: 1.3; height: auto; font-size: 7.6pt; }
+  .dokKutu td.e { background: #f1f1f1; font-weight: 600; white-space: nowrap; width: 24mm; }
+  .dokKutu td.d { text-align: center; white-space: nowrap; }
+
+  /* Her sayfanın altına basılan kimlik şeridi (JS ile yerleştirilir) */
+  .sayfaSerit { position: absolute; left: 0; right: 0; height: 12px; font-size: 7pt; color: #666;
+                border-top: 1px solid #ccc; padding-top: 2px; display: flex; justify-content: space-between; }
+
   @media print { .yazdirButonu { display: none !important; } body { margin: 0; } }
   .yazdirButonu { position: fixed; top: 10px; right: 10px; z-index: 9; background: #0f766e; color: #fff;
                   border: none; border-radius: 5px; padding: 9px 15px; font-size: 13px; font-weight: 700; cursor: pointer;
@@ -972,6 +1049,7 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
       <div class="firma">${esc(a.firmaAdi || "FİRMA ADI")}</div>
       ${antetSatirlari.map((s) => `<div class="satir">${esc(s)}</div>`).join("")}
     </div>
+    ${dokKutu}
   </div>
 
   <div class="belgeAd">${esc(belgeAdi)}</div>
@@ -999,8 +1077,8 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
   </div>` : ""}
 
   <div class="altBilgi">
-    <span>${esc(belgeAdi)}</span>
-    <span>Yazdırma: ${esc(new Date().toLocaleString("tr-TR"))}</span>
+    <span>${esc(belgeAdi)}${dok.no ? ` · ${esc(dok.no)}` : ""}${dok.revizyon ? ` · Rev. ${esc(dok.revizyon)}` : ""}</span>
+    <span>${yazdiran ? `Yazdıran: ${esc(yazdiran)} · ` : ""}${esc(new Date().toLocaleString("tr-TR"))}</span>
   </div>
 
   ${String(sartlarMetni || "").trim() ? `<div class="sartlar">
@@ -1009,6 +1087,38 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
     <div class="altBilgi"><span>${esc(belgeAdi)} — ${esc(sartlarBasligi || "GENEL ŞARTLAR")}</span><span>${esc(ustBilgiler?.[0]?.[1] || "")}</span></div>
   </div>` : ""}
 </div>
+<script>
+(function () {
+  // Sayfa x/y: tarayıcı yazdırma motoru CSS sayfa sayacını desteklemediği için
+  // toplam sayfa sayısı burada ölçülüp her sayfanın altına kimlik şeridi konur.
+  try {
+    var mm = 96 / 25.4;
+    var sayfaYuk = 271 * mm;                     // A4 297mm - üst/alt kenar (12+14mm)
+    var kimlik = ${JSON.stringify((dok.no ? dok.no : "") + (dok.revizyon ? " · Rev. " + dok.revizyon : ""))};
+    // Şartlar bloğu her zaman yeni sayfada başlar; bu yüzden sayfa sayısı
+    // "şartlardan önce" ve "şartlar" olarak ayrı ayrı hesaplanır.
+    var sartlar = document.querySelector(".sartlar");
+    var govdeYuk = sartlar ? sartlar.offsetTop : document.body.scrollHeight;
+    var oncekiler = Math.max(1, Math.ceil((govdeYuk - 4) / sayfaYuk));
+    var sartSayfa = sartlar ? Math.max(1, Math.ceil((sartlar.offsetHeight - 4) / sayfaYuk)) : 0;
+    var toplam = oncekiler + sartSayfa;
+    var serit = function (kap, ust, no) {
+      var d = document.createElement("div");
+      d.className = "sayfaSerit";
+      d.style.top = ust + "px";
+      d.innerHTML = "<span>" + kimlik + "</span><span>Sayfa " + no + " / " + toplam + "</span>";
+      kap.appendChild(d);
+    };
+    for (var i = 0; i < oncekiler; i++) serit(document.body, (i + 1) * sayfaYuk - 16, i + 1);
+    if (sartlar) {
+      sartlar.style.position = "relative";
+      for (var j = 0; j < sartSayfa; j++) serit(sartlar, (j + 1) * sayfaYuk - 16, oncekiler + j + 1);
+    }
+    var yer = document.querySelector(".sayfaYeri");
+    if (yer) yer.textContent = "1 / " + toplam;
+  } catch (e) {}
+})();
+</script>
 </body></html>`);
   w.document.close();
   w.focus();
@@ -1951,6 +2061,7 @@ function Panel({ onCikis, kullanici }) {
     if (tab === "cari-kart") return "Cari Kartları";
     if (tab === "cari-rapor") return "Cari Raporu";
     if (tab === "satinalma-teklif") return "Teklifler";
+    if (tab === "satinalma-toplu-teklif") return "Toplu Teklif";
     if (tab === "satinalma-karsilastir") return "Teklif Karşılaştırma";
     if (tab === "yardim") return "Yardım";
     return "";
@@ -2234,6 +2345,11 @@ function Panel({ onCikis, kullanici }) {
                 setSiparisTaslak({ kaynak: "teklif", teklif, talep });
                 secimYap("satinalma-siparis");
               }}
+            />}
+            {tab === "satinalma-toplu-teklif" && <TopluTeklif
+              satinalmaTeklifler={satinalmaTeklifler} satinalmaTalepler={satinalmaTalepler}
+              fasonFirmalar={fasonFirmalar} depoStok={depoStok}
+              kullanici={kullanici} formAyarlari={formAyarlari}
             />}
             {tab === "satinalma-karsilastir" && <TeklifKarsilastirma
               satinalmaTeklifler={satinalmaTeklifler} satinalmaTalepler={satinalmaTalepler}
@@ -3099,7 +3215,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
   const detayYazdir = () => {
     if (!detay) return;
     satinalmaFormYazdir({
-      ayarlar: formAyarlari, belgeAdi: "Fason İş Dökümü",
+      ayarlar: formAyarlari, belgeAdi: "Fason İş Dökümü", dokumanKodu: "fasonRaporu",
       ustBilgiler: [
         ["Cari Kod", detay.firma.kod || "—"], ["Firma", detay.firma.ad], ["Baskı Tarihi", trTarih(todayISO())],
         ["Toplam İş", String(detay.satirlar.length)], ["Açık İş", String(detay.acik)], ["Net Bakiye", tutarTL(detay.bakiye)],
@@ -7555,7 +7671,7 @@ const benzersizDegerler = (kayitlar, alan) =>
 
 // ---------- Form Ayarları (antet: firma bilgileri + logo) ----------
 function FormAyarlari({ formAyarlari }) {
-  const bos = { firmaAdi: "", adres: "", telefon: "", eposta: "", vergiDairesi: "", vergiNo: "", web: "", logo: "", siparisSartlari: "" };
+  const bos = { firmaAdi: "", adres: "", telefon: "", eposta: "", vergiDairesi: "", vergiNo: "", web: "", logo: "", siparisSartlari: "", teklifSartlari: "", dokumanlar: {} };
   const [form, setForm] = useState(bos);
   const [msg, setMsg] = useState("");
   const [kaydediliyor, setKaydediliyor] = useState(false);
@@ -7563,7 +7679,13 @@ function FormAyarlari({ formAyarlari }) {
   const dosyaRef = useRef(null);
   const set = (k) => (e) => setForm((s) => ({ ...s, [k]: e.target.value }));
 
-  useEffect(() => { setForm({ ...bos, ...(formAyarlari || {}) }); /* eslint-disable-next-line */ }, [formAyarlari]);
+  useEffect(() => { setForm({ ...bos, ...(formAyarlari || {}), dokumanlar: { ...((formAyarlari || {}).dokumanlar || {}) } }); /* eslint-disable-next-line */ }, [formAyarlari]);
+
+  // AS9100 doküman bilgisi: form türü bazında doküman no / revizyon / yayın tarihi
+  const dokSet = (kod, alan) => (e) => setForm((s) => ({
+    ...s, dokumanlar: { ...(s.dokumanlar || {}), [kod]: { ...((s.dokumanlar || {})[kod] || {}), [alan]: e.target.value } },
+  }));
+  const dokDeger = (kod, alan) => ((form.dokumanlar || {})[kod] || {})[alan] || "";
 
   const kaydet = async () => {
     setKaydediliyor(true);
@@ -7594,9 +7716,11 @@ function FormAyarlari({ formAyarlari }) {
   };
 
   const sartlar = String(form.siparisSartlari ?? "").trim() || SIPARIS_SARTLARI_VARSAYILAN;
+  const teklifSartMaddeSayisi = (String(form.teklifSartlari ?? "").trim() || TEKLIF_SARTLARI_VARSAYILAN)
+    .split(/\r?\n/).map((x) => x.trim()).filter(Boolean).length;
   const sartMaddeSayisi = sartlar.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).length;
   const ornekSiparisYazdir = () => satinalmaFormYazdir({
-    ayarlar: form,
+    ayarlar: form, dokumanKodu: "siparis",
     belgeAdi: "Satınalma Sipariş Formu",
     ustBilgiler: [
       ["Sipariş No", "PO-00001"], ["Tarih", trTarih(todayISO())], ["Tedarikçi", "120.01.001 · Örnek Tedarikçi Ltd."],
@@ -7623,7 +7747,7 @@ function FormAyarlari({ formAyarlari }) {
   });
 
   const ornekYazdir = () => satinalmaFormYazdir({
-    ayarlar: form,
+    ayarlar: form, dokumanKodu: "talep",
     belgeAdi: "Satınalma Talep Fişi",
     ustBilgiler: [
       ["Evrak No", "TLP-00001"], ["Tarih", trTarih(todayISO())], ["Proje Kodu", "PRJ-001"],
@@ -7711,6 +7835,55 @@ function FormAyarlari({ formAyarlari }) {
               <Copy size={14} /> Standart Metni Getir
             </button>
             <button className="btn-ghost" onClick={() => setForm((s) => ({ ...s, siparisSartlari: "" }))}>
+              <RefreshCw size={14} /> Varsayılana Dön
+            </button>
+          </div>
+        </div>
+
+        {/* AS9100 — kontrollü doküman bilgileri */}
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+          <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>AS9100 Doküman Bilgileri</div>
+          <div style={{ fontSize: 11.5, color: "#6b7178", marginBottom: 10, lineHeight: 1.6 }}>
+            Kalite sisteminizdeki doküman numaralarını buraya yazın. Girdiğiniz bilgiler
+            <b> her formun sağ üst köşesindeki kutuda</b> ve <b>her sayfanın altındaki kimlik şeridinde</b> basılır;
+            sayfa numarası (Sayfa 1/2 gibi) program tarafından otomatik hesaplanır.
+            Boş bıraktığın form türünde kutu hiç basılmaz.
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table>
+              <thead><tr><th>Form</th><th style={{ width: 170 }}>Doküman No</th><th style={{ width: 110 }}>Revizyon No</th><th style={{ width: 170 }}>Yayın / Rev. Tarihi</th></tr></thead>
+              <tbody>
+                {AS9100_FORMLARI.map((f) => (
+                  <tr key={f.kod}>
+                    <td style={{ fontSize: 12.5 }}>{f.ad}</td>
+                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} value={dokDeger(f.kod, "no")} onChange={dokSet(f.kod, "no")} placeholder={f.ornek} /></td>
+                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5, textAlign: "center" }} value={dokDeger(f.kod, "revizyon")} onChange={dokSet(f.kod, "revizyon")} placeholder="00" /></td>
+                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} type="date" value={dokDeger(f.kod, "tarih")} onChange={dokSet(f.kod, "tarih")} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+          <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>Teklif İsteme (RFQ) Formu Şartları</div>
+          <div style={{ fontSize: 11.5, color: "#6b7178", marginBottom: 10, lineHeight: 1.6 }}>
+            Teklif isteme formunun sonuna basılan tedarikçi şartları. Boş bırakırsan AS9100 8.4 maddesine
+            karşılık gelen <b style={{ color: "#2dd4bf" }}>{teklifSartMaddeSayisi} maddelik</b> standart metin kullanılır.
+          </div>
+          <textarea
+            className="input"
+            style={{ minHeight: 170, resize: "vertical", fontSize: 12, lineHeight: 1.6, fontFamily: "inherit" }}
+            value={form.teklifSartlari ?? ""}
+            placeholder="Boş bırakılırsa AS9100 8.4 standart metni basılır."
+            onChange={set("teklifSartlari")}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <button className="btn-ghost" onClick={() => setForm((s) => ({ ...s, teklifSartlari: TEKLIF_SARTLARI_VARSAYILAN }))}>
+              <Copy size={14} /> Standart Metni Getir
+            </button>
+            <button className="btn-ghost" onClick={() => setForm((s) => ({ ...s, teklifSartlari: "" }))}>
               <RefreshCw size={14} /> Varsayılana Dön
             </button>
           </div>
@@ -8125,7 +8298,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
     const durum = kaynak ? (TALEP_DURUM[talepEtkinDurum(kaynak, satinalmaSiparisler)]?.label || "") : "Bekliyor";
 
     satinalmaFormYazdir({
-      ayarlar: formAyarlari,
+      ayarlar: formAyarlari, dokumanKodu: "talep", yazdiran: kullanici?.email,
       belgeAdi: "Satınalma Talep Fişi",
       ustBilgiler: [
         ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Proje Kodu", b.proje ? `${b.proje}${projeAdi ? " — " + projeAdi : ""}` : ""],
@@ -8994,7 +9167,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
   })), "cari-raporu.xlsx", "Cari Raporu");
 
   const yazdir = () => satinalmaFormYazdir({
-    ayarlar: formAyarlari, belgeAdi: "Cari Raporu",
+    ayarlar: formAyarlari, belgeAdi: "Cari Raporu", dokumanKodu: "cariRaporu", yazdiran: kullanici?.email,
     ustBilgiler: [
       ["Baskı Tarihi", trTarih(todayISO())], ["Cari Sayısı", String(filtrelenmis.length)], ["Tip", f.tip ? cariTipEtiket(f.tip) : "Tümü"],
     ],
@@ -9268,7 +9441,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
     const sem = paraSembol(pb);
     const kur = pb === "TRY" ? 1 : sayiCevir(b.kur) || 1;
     satinalmaFormYazdir({
-      ayarlar: formAyarlari, belgeAdi: "TEKLİF FORMU",
+      ayarlar: formAyarlari, belgeAdi: "TEKLİF FORMU", dokumanKodu: "teklif", yazdiran: kullanici?.email,
       ustBilgiler: [
         ["Teklif No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Kaynak Talep No", b.talepEvrakNo || "—"],
         ["Tedarikçi", [b.tedarikciKod, b.tedarikci].filter(Boolean).join(" · ")], ["Para Birimi", pb === "TRY" ? "TL" : `${pb} (kur: ${sayiTR(kur)})`], ["Geçerlilik", b.gecerlilikTarihi ? trTarih(b.gecerlilikTarihi) : "—"],
@@ -9276,19 +9449,16 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
         ["Ödeme Şekli", b.odemeSekli || "—"], ["Vade", b.vade ? `${b.vade} gün` : "—"],
       ],
       kolonlar: [
-        { baslik: "Sıra", gen: "12mm", hiza: "center" },
-        { baslik: "Stok Kodu", gen: "26mm" },
-        { baslik: "Malzeme / Hizmet", gen: "auto" },
-        { baslik: "Miktar", gen: "20mm", hiza: "right" },
-        { baslik: "Birim", gen: "16mm", hiza: "center" },
-        { baslik: "Birim Fiyat", gen: "24mm", hiza: "right" },
-        { baslik: "KDV %", gen: "15mm", hiza: "right" },
-        { baslik: "Tutar", gen: "26mm", hiza: "right" },
+        { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+        { baslik: "Stok Kodu", gen: "26mm", al: (r) => r.stokKodu || "" },
+        { baslik: "Malzeme / Hizmet", al: (r) => r.stokAdi || "" },
+        { baslik: "Miktar", gen: "20mm", hiza: "sag", al: (r) => r.miktar || "" },
+        { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim || "" },
+        { baslik: "Birim Fiyat", gen: "24mm", hiza: "sag", al: (r) => sayiTR(sayiCevir(r.birimFiyat)) },
+        { baslik: "KDV %", gen: "15mm", hiza: "sag", al: (r) => String(sayiCevir(r.kdv)) },
+        { baslik: "Tutar", gen: "26mm", hiza: "sag", al: (r) => sayiTR(teklifSatirToplam(r)) },
       ],
-      satirlar: rs.map((r, i) => [
-        String(i + 1), r.stokKodu || "", r.stokAdi || "", r.miktar || "", r.birim || "",
-        sayiTR(sayiCevir(r.birimFiyat)), String(sayiCevir(r.kdv)), sayiTR(teklifSatirToplam(r)),
-      ]),
+      satirlar: rs,
       toplamSatirlari: [
         ["Ara Toplam", `${sayiTR(tp.ara)} ${sem}`],
         ["KDV", `${sayiTR(tp.kdv)} ${sem}`],
@@ -9667,6 +9837,558 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---------- Toplu Teklif (RFQ) ----------
+// Tek ekrandan birden çok firmaya aynı kalemler sorulur, gelen fiyatlar aynı
+// tabloya girilir. Kaydedince her firma için AYRI bir teklif fişi oluşur —
+// böylece Teklif Karşılaştırma ve "siparişe çevir" akışı aynen çalışır.
+// Her firmanın kendi RFQ ve teklif formu ayrı ayrı yazdırılabilir (AS9100 Md. 8.4).
+const bosTopluKalem = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", kdv: "20", aciklama: "" });
+const bosTopluFirma = (c, no) => ({
+  key: Math.random().toString(36).slice(2),
+  kod: String(c?.kod || "").trim(), ad: String(c?.ad || "").trim(),
+  evrakNo: no, paraBirimi: "TRY", kur: "1",
+  teslimSuresi: "", odemeSekli: "", vade: "", gecerlilikTarihi: "", aciklama: "",
+  fiyatlar: {}, kayitliId: "",
+});
+const topluKalemDolu = (k) => !!String(k.stokAdi || "").trim();
+// Bir firmanın satırları: sadece fiyatı girilmiş kalemler teklife yazılır
+function topluFirmaSatirlari(firma, kalemler) {
+  return kalemler.filter(topluKalemDolu)
+    .filter((k) => sayiCevir(firma.fiyatlar[k.key]) > 0)
+    .map((k) => ({
+      stokKodu: String(k.stokKodu || "").trim(), stokAdi: String(k.stokAdi || "").trim(),
+      miktar: k.miktar || "", birim: k.birim || "Adet",
+      birimFiyat: firma.fiyatlar[k.key], kdv: k.kdv || "20",
+      aciklama: String(k.aciklama || "").trim(), aciklama2: "",
+    }));
+}
+
+function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, fasonFirmalar, depoStok, kullanici, formAyarlari }) {
+  const [talepId, setTalepId] = useState("");
+  const [tarih, setTarih] = useState(todayISO());
+  const [sonTeklifTarihi, setSonTeklifTarihi] = useState("");
+  const [terminTarihi, setTerminTarihi] = useState("");
+  const [aciklama, setAciklama] = useState("");
+  const [kalemler, setKalemler] = useState([bosTopluKalem()]);
+  const [firmalar, setFirmalar] = useState([]);
+  const [secici, setSecici] = useState(null); // {tur:"cari"} | {tur:"stok", key}
+  const [msg, setMsg] = useState("");
+  const [hataMi, setHataMi] = useState(false);
+  const [kaydediliyor, setKaydediliyor] = useState(false);
+  const tcmb = useTcmbKur();
+
+  const bildir = (metin, hata = false, sure = 4000) => {
+    setMsg(metin); setHataMi(hata);
+    if (sure) setTimeout(() => setMsg(""), sure);
+  };
+
+  const cariler = useMemo(
+    () => cariSirala((fasonFirmalar || []).filter((c) => c.aktif !== false)),
+    [fasonFirmalar]
+  );
+  const talepler = useMemo(
+    () => [...(satinalmaTalepler || [])].sort((a, b) => (b.olusturma || 0) - (a.olusturma || 0)),
+    [satinalmaTalepler]
+  );
+  const talep = useMemo(() => talepler.find((t) => t.id === talepId) || null, [talepler, talepId]);
+  const doluKalemler = useMemo(() => kalemler.filter(topluKalemDolu), [kalemler]);
+
+  // Yeni firma eklenirken verilecek teklif numarası — ekranda bekleyenler de sayılır
+  const siradakiNo = (ekstra = []) => sonrakiEvrakNo(
+    [...(satinalmaTeklifler || []), ...ekstra.map((e, i) => ({ evrakNo: e.evrakNo, olusturma: i }))],
+    "TKL-"
+  );
+
+  const talepSec = (id) => {
+    setTalepId(id);
+    const t = (satinalmaTalepler || []).find((x) => x.id === id);
+    if (!t) return;
+    const rs = (t.satirlar || []).filter((r) => String(r.ismi || r.stokAdi || "").trim());
+    setKalemler(rs.length ? rs.map((r) => ({
+      ...bosTopluKalem(),
+      stokKodu: r.kodu || r.stokKodu || "", stokAdi: r.ismi || r.stokAdi || "",
+      miktar: r.miktar || "", birim: r.birim || "Adet",
+      aciklama: [r.aciklama, r.aciklama2].filter(Boolean).join(" · "),
+    })) : [bosTopluKalem()]);
+    if (t.terminTarihi) setTerminTarihi(t.terminTarihi);
+    bildir(`${t.evrakNo} talebinin ${rs.length} kalemi geldi.`);
+  };
+
+  const kalemGuncelle = (key, alan, deger) => setKalemler((s) => s.map((k) => (k.key === key ? { ...k, [alan]: deger } : k)));
+  const kalemEkle = () => setKalemler((s) => [...s, bosTopluKalem()]);
+  const kalemSil = (key) => {
+    setKalemler((s) => (s.length > 1 ? s.filter((k) => k.key !== key) : s));
+    setFirmalar((s) => s.map((f) => { const y = { ...f.fiyatlar }; delete y[key]; return { ...f, fiyatlar: y }; }));
+  };
+  const stokSec = (key, stok) => setKalemler((s) => s.map((k) => (k.key === key
+    ? { ...k, stokKodu: stok.stokKodu || "", stokAdi: stok.stokAdi || k.stokAdi, birim: stok.birim || k.birim }
+    : k)));
+
+  const firmaEkle = (c) => setFirmalar((s) => {
+    const kod = String(c?.kod || "").trim(), ad = String(c?.ad || "").trim();
+    if (s.some((f) => (f.kod && f.kod === kod) || f.ad === ad)) return s;
+    return [...s, bosTopluFirma(c, siradakiNo(s))];
+  });
+  const firmaCikar = (key) => setFirmalar((s) => s.filter((f) => f.key !== key));
+  const firmaGuncelle = (key, degisim) => setFirmalar((s) => s.map((f) => (f.key === key ? { ...f, ...degisim } : f)));
+  const fiyatYaz = (firmaKey, kalemKey, deger) => setFirmalar((s) => s.map((f) => (f.key === firmaKey
+    ? { ...f, fiyatlar: { ...f.fiyatlar, [kalemKey]: deger } } : f)));
+  const kurAl = async (f) => {
+    if (f.paraBirimi === "TRY") return;
+    const kurlar = await tcmb.getir({ zorla: true });
+    const v = kurlar && kurlar[f.paraBirimi];
+    if (v) firmaGuncelle(f.key, { kur: String(v) });
+  };
+  const firmaKuru = (f) => (f.paraBirimi === "TRY" ? 1 : sayiCevir(f.kur) || 1);
+  const firmaToplami = (f) => teklifToplamlari(topluFirmaSatirlari(f, kalemler));
+  const firmaToplamTL = (f) => firmaToplami(f).genel * firmaKuru(f);
+
+  // Kalem bazında en ucuz firma (TL karşılığı)
+  const enUcuzlar = useMemo(() => {
+    const harita = {};
+    doluKalemler.forEach((k) => {
+      let enAz = null, sahip = "";
+      firmalar.forEach((f) => {
+        const tl = sayiCevir(f.fiyatlar[k.key]) * firmaKuru(f);
+        if (tl > 0 && (enAz == null || tl < enAz)) { enAz = tl; sahip = f.key; }
+      });
+      if (sahip) harita[k.key] = sahip;
+    });
+    return harita;
+  }, [doluKalemler, firmalar]);
+
+  // ---------- Yazdırma ----------
+  const rfqYazdir = (f) => {
+    if (!doluKalemler.length) { bildir("Önce en az bir kalem girin.", true); return; }
+    satinalmaFormYazdir({
+      ayarlar: formAyarlari, belgeAdi: "TEKLİF İSTEME FORMU", dokumanKodu: "teklifIsteme", yazdiran: kullanici?.email,
+      ustBilgiler: [
+        ["Teklif İsteme No", f.evrakNo], ["Tarih", trTarih(tarih)], ["Kaynak Talep No", talep?.evrakNo || "—"],
+        ["Tedarikçi", [f.kod, f.ad].filter(Boolean).join(" · ") || "—"],
+        ["Teklif Son Verme", sonTeklifTarihi ? trTarih(sonTeklifTarihi) : "—"],
+        ["İstenen Termin", terminTarihi ? trTarih(terminTarihi) : "—"],
+        ["Para Birimi", f.paraBirimi === "TRY" ? "TL" : f.paraBirimi],
+        ["Talep Eden", kullanici?.email || "—"],
+        ["Revizyon Teyidi", "Teknik resim / şartname revizyonu teyit edilecektir"],
+      ],
+      kolonlar: [
+        { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+        { baslik: "Stok Kodu", gen: "26mm", al: (r) => r.stokKodu || "" },
+        { baslik: "Malzeme / Hizmet", al: (r) => [r.stokAdi, r.aciklama].filter(Boolean).join(" — ") },
+        { baslik: "Miktar", gen: "20mm", hiza: "sag", al: (r) => r.miktar || "" },
+        { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim || "" },
+        { baslik: "Birim Fiyat", gen: "26mm", hiza: "sag", al: () => "" },
+        { baslik: "Teslim (gün)", gen: "22mm", hiza: "ort", al: () => "" },
+      ],
+      satirlar: doluKalemler,
+      notBasligi: "Açıklama / Özel Şartlar", notMetni: aciklama || "",
+      imzalar: ["Hazırlayan (Satınalma)", "Onaylayan", "Tedarikçi Kaşe / İmza"],
+      sartlarBasligi: TEKLIF_SARTLARI_BASLIK,
+      sartlarMetni: teklifSartlariMetni(formAyarlari),
+    });
+  };
+
+  const teklifYazdir = (f) => {
+    const rs = topluFirmaSatirlari(f, kalemler);
+    if (!rs.length) { bildir(`${f.ad} için henüz fiyat girilmemiş.`, true); return; }
+    const tp = teklifToplamlari(rs);
+    const pb = f.paraBirimi || "TRY";
+    const sem = paraSembol(pb);
+    const kur = firmaKuru(f);
+    satinalmaFormYazdir({
+      ayarlar: formAyarlari, belgeAdi: "TEKLİF FORMU", dokumanKodu: "teklif", yazdiran: kullanici?.email,
+      ustBilgiler: [
+        ["Teklif No", f.evrakNo], ["Tarih", trTarih(tarih)], ["Kaynak Talep No", talep?.evrakNo || "—"],
+        ["Tedarikçi", [f.kod, f.ad].filter(Boolean).join(" · ") || "—"],
+        ["Para Birimi", pb === "TRY" ? "TL" : `${pb} (kur: ${sayiTR(kur)})`],
+        ["Geçerlilik", f.gecerlilikTarihi ? trTarih(f.gecerlilikTarihi) : "—"],
+        ["Teslim Süresi", f.teslimSuresi ? `${f.teslimSuresi} gün` : "—"],
+        ["Ödeme Şekli", f.odemeSekli || "—"], ["Vade", f.vade ? `${f.vade} gün` : "—"],
+      ],
+      kolonlar: [
+        { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+        { baslik: "Stok Kodu", gen: "26mm", al: (r) => r.stokKodu || "" },
+        { baslik: "Malzeme / Hizmet", al: (r) => r.stokAdi || "" },
+        { baslik: "Miktar", gen: "20mm", hiza: "sag", al: (r) => r.miktar || "" },
+        { baslik: "Birim", gen: "16mm", hiza: "ort", al: (r) => r.birim || "" },
+        { baslik: "Birim Fiyat", gen: "24mm", hiza: "sag", al: (r) => sayiTR(sayiCevir(r.birimFiyat)) },
+        { baslik: "KDV %", gen: "15mm", hiza: "sag", al: (r) => String(sayiCevir(r.kdv)) },
+        { baslik: "Tutar", gen: "26mm", hiza: "sag", al: (r) => sayiTR(teklifSatirToplam(r)) },
+      ],
+      satirlar: rs,
+      toplamSatirlari: [
+        ["Ara Toplam", `${sayiTR(tp.ara)} ${sem}`],
+        ["KDV", `${sayiTR(tp.kdv)} ${sem}`],
+        ["Genel Toplam", `${sayiTR(tp.genel)} ${sem}`],
+        ...(pb === "TRY" ? [] : [["TL Karşılığı", tutarTL(tp.genel * kur)]]),
+      ],
+      notBasligi: "Açıklama", notMetni: f.aciklama || aciklama || "",
+      imzalar: ["Teklifi Veren", "Kontrol Eden", "Satınalma"],
+      sartlarBasligi: TEKLIF_SARTLARI_BASLIK,
+      sartlarMetni: teklifSartlariMetni(formAyarlari),
+    });
+  };
+
+  const hepsiniYazdir = () => {
+    if (!firmalar.length) { bildir("Önce firma seçin.", true); return; }
+    firmalar.forEach((f, i) => setTimeout(() => rfqYazdir(f), i * 400));
+  };
+
+  // ---------- Kaydet: her firma için ayrı teklif fişi ----------
+  const kaydet = async () => {
+    if (!doluKalemler.length) { bildir("En az bir kaleme malzeme adı girin.", true); return; }
+    if (!firmalar.length) { bildir("En az bir firma seçin.", true); return; }
+    const hedefler = firmalar.filter((f) => topluFirmaSatirlari(f, kalemler).length);
+    if (!hedefler.length) { bildir("Hiçbir firmaya fiyat girilmemiş — kaydedilecek teklif yok.", true); return; }
+    const dovizsiz = hedefler.find((f) => f.paraBirimi !== "TRY" && sayiCevir(f.kur) <= 0);
+    if (dovizsiz) { bildir(`${dovizsiz.ad} için döviz kuru girmelisiniz.`, true); return; }
+
+    setKaydediliyor(true);
+    const uretilenler = [];
+    let sayac = 0;
+    try {
+      for (const f of hedefler) {
+        const rs = topluFirmaSatirlari(f, kalemler);
+        const tp = teklifToplamlari(rs);
+        const kur = firmaKuru(f);
+        const veri = {
+          tarih, talepId: talep?.id || "", talepEvrakNo: talep?.evrakNo || "",
+          tedarikci: f.ad, tedarikciKod: f.kod,
+          paraBirimi: f.paraBirimi || "TRY", kur,
+          teslimSuresi: String(f.teslimSuresi || "").trim(), teslimTarihi: terminTarihi || "",
+          odemeSekli: String(f.odemeSekli || "").trim(), vade: String(f.vade || "").trim(),
+          gecerlilikTarihi: f.gecerlilikTarihi || "",
+          aciklama: String(f.aciklama || aciklama || "").trim(),
+          satirlar: rs.map((r) => ({ ...r, satirAra: teklifSatirAra(r), satirKdv: teklifSatirKdv(r), satirTutar: teklifSatirToplam(r) })),
+          araToplam: tp.ara, kdvToplam: tp.kdv, genelToplam: tp.genel, genelToplamTL: tp.genel * kur,
+          durum: "acik", topluTeklif: true,
+          olusturanEposta: kullanici?.email || "—", olusturma: Date.now(),
+        };
+        let no = f.evrakNo;
+        let id = "";
+        for (let deneme = 0; deneme < 6 && !id; deneme++) {
+          try {
+            id = await benzersizEvrakKaydet("satinalma_teklifler", no, { ...veri, evrakNo: no });
+          } catch (err) {
+            if (err?.message !== "EVRAK_NO_MEVCUT") throw err;
+            no = siradakiNo([...uretilenler, ...firmalar.map((x) => ({ evrakNo: x.evrakNo }))]);
+          }
+        }
+        if (!id) throw new Error("NUMARA_URETILEMEDI");
+        uretilenler.push({ evrakNo: no });
+        firmaGuncelle(f.key, { evrakNo: no, kayitliId: id });
+        sayac++;
+      }
+      bildir(`${sayac} firma için teklif fişi kaydedildi. Teklif Karşılaştırma ekranında yan yana görebilirsin.`, false, 8000);
+    } catch (err) {
+      if (!err?.yetkiHatasi) bildir("Kaydedilemedi: " + (err?.message || "bilinmeyen hata"), true, 7000);
+    }
+    setKaydediliyor(false);
+  };
+
+  const temizle = () => {
+    if (!window.confirm("Ekrandaki kalemler ve firmalar temizlenecek. Emin misiniz?")) return;
+    setTalepId(""); setKalemler([bosTopluKalem()]); setFirmalar([]);
+    setAciklama(""); setSonTeklifTarihi(""); setTerminTarihi(""); setMsg("");
+  };
+
+  const disaAktar = () => {
+    if (!doluKalemler.length || !firmalar.length) return;
+    const satirlar = doluKalemler.map((k, i) => {
+      const o = { "Sıra": i + 1, "Stok Kodu": k.stokKodu, "Malzeme": k.stokAdi, "Miktar": k.miktar, "Birim": k.birim, "KDV %": k.kdv };
+      firmalar.forEach((f) => { o[`${f.ad} (${f.paraBirimi})`] = sayiCevir(f.fiyatlar[k.key]) || ""; });
+      const kazanan = firmalar.find((f) => f.key === enUcuzlar[k.key]);
+      o["En Ucuz Firma"] = kazanan ? kazanan.ad : "";
+      return o;
+    });
+    const toplam = { "Sıra": "", "Stok Kodu": "", "Malzeme": "GENEL TOPLAM (TL)", "Miktar": "", "Birim": "", "KDV %": "" };
+    firmalar.forEach((f) => { toplam[`${f.ad} (${f.paraBirimi})`] = firmaToplamTL(f); });
+    excelIndir([...satirlar, toplam], `toplu-teklif-${talep?.evrakNo || todayISO()}.xlsx`, "Toplu Teklif");
+  };
+
+  const sutunGen = 168;
+  return (
+    <div style={{ display: "grid", gap: 20 }}>
+      <div style={belgeBaslikKutu}>
+        <div style={belgeBaslikEtiket}>Belge Başlığı</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Toplu Teklif</div>
+            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>
+              Firmaları seç, tek ekrandan hepsine teklif sor ve gelen fiyatları aynı tabloya gir.
+              Kaydedince her firma için ayrı teklif fişi oluşur; formları firma firma yazdırabilirsin.
+            </div>
+          </div>
+          <button className="btn-ghost" onClick={temizle}><X size={14} /> Temizle</button>
+          <button className="btn-ghost" onClick={disaAktar} disabled={!doluKalemler.length || !firmalar.length}><FileSpreadsheet size={14} /> Excele Aktar</button>
+          <button className="btn-ghost" onClick={hepsiniYazdir} disabled={!firmalar.length}><Printer size={14} /> Tüm Firmalara Yazdır</button>
+          <button
+            onClick={kaydet} disabled={kaydediliyor}
+            style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}
+          >
+            <Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Teklifleri Kaydet"}
+          </button>
+        </div>
+      </div>
+
+      {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: hataMi ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+
+      {/* Başlık bilgileri */}
+      <div className="card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+        <div>
+          <label className="field-label">Kaynak Talep (isteğe bağlı)</label>
+          <select className="input" value={talepId} onChange={(e) => talepSec(e.target.value)}>
+            <option value="">— Talep seçilmedi (kalemleri elle gir) —</option>
+            {talepler.map((t) => (
+              <option key={t.id} value={t.id}>{t.evrakNo} · {(t.satirlar || []).length} kalem{t.talepEden ? ` · ${t.talepEden}` : ""}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="field-label">Tarih</label>
+          <input className="input" type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label">Teklif Son Verme Tarihi</label>
+          <input className="input" type="date" value={sonTeklifTarihi} onChange={(e) => setSonTeklifTarihi(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label">İstenen Termin Tarihi</label>
+          <input className="input" type="date" value={terminTarihi} onChange={(e) => setTerminTarihi(e.target.value)} />
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label className="field-label">Açıklama / Özel Şartlar (teklif isteme formuna basılır)</label>
+          <input className="input" value={aciklama} onChange={(e) => setAciklama(e.target.value)} placeholder="Örn: Malzeme sertifikaları teklif ekinde gönderilecektir." />
+        </div>
+      </div>
+
+      {/* Firmalar */}
+      <div className="card" style={{ padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: firmalar.length ? 12 : 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Teklif İstenecek Firmalar <span style={{ color: "#6b7178", fontWeight: 400 }}>({firmalar.length})</span></span>
+          <button style={fisAltBtn} onClick={() => setSecici({ tur: "cari" })}><Plus size={13} /> Firma Ekle</button>
+        </div>
+        {firmalar.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: "#6b7178" }}>Henüz firma seçilmedi. "Firma Ekle" ile cari kartlarından seç.</div>
+        ) : (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {firmalar.map((f) => (
+              <span key={f.key} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#22404a", border: "1px solid #3d6169", borderRadius: 20, padding: "5px 6px 5px 12px", fontSize: 12.5 }}>
+                <b>{f.ad}</b>
+                <span style={{ color: "#6b7178", fontFamily: "monospace", fontSize: 11 }}>{f.evrakNo}</span>
+                {f.kayitliId && <span style={{ color: "#4ade80", fontSize: 11 }}>kayıtlı</span>}
+                <button onClick={() => firmaCikar(f.key)} title="Listeden çıkar" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", display: "flex", padding: 2 }}><X size={13} /></button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Kalemler */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Kalemler <span style={{ color: "#6b7178", fontWeight: 400 }}>({doluKalemler.length})</span></span>
+          <button style={fisAltBtn} onClick={kalemEkle}><Plus size={13} /> Satır Ekle</button>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ ...fisGridTh, width: 44 }}>#</th>
+                <th style={{ ...fisGridTh, width: 170 }}>Stok Kodu</th>
+                <th style={fisGridTh}>Malzeme / Hizmet</th>
+                <th style={{ ...fisGridTh, width: 100 }}>Miktar</th>
+                <th style={{ ...fisGridTh, width: 90 }}>Birim</th>
+                <th style={{ ...fisGridTh, width: 80 }}>KDV %</th>
+                <th style={fisGridTh}>Açıklama</th>
+                <th style={{ ...fisGridTh, width: 44 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {kalemler.map((k, i) => (
+                <tr key={k.key}>
+                  <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                  <td style={fisGridTd}>
+                    <SecimAlani hucre deger={k.stokKodu} ipucu="Stok seç" ac={() => setSecici({ tur: "stok", key: k.key })} temizle={() => kalemGuncelle(k.key, "stokKodu", "")} />
+                  </td>
+                  <td style={fisGridTd}><input style={fisHucreInput} value={k.stokAdi} onChange={(e) => kalemGuncelle(k.key, "stokAdi", e.target.value)} placeholder="Malzeme / hizmet adı" /></td>
+                  <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={k.miktar} onChange={(e) => kalemGuncelle(k.key, "miktar", e.target.value)} /></td>
+                  <td style={fisGridTd}><input style={fisHucreInput} value={k.birim} onChange={(e) => kalemGuncelle(k.key, "birim", e.target.value)} /></td>
+                  <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={k.kdv} onChange={(e) => kalemGuncelle(k.key, "kdv", e.target.value)} /></td>
+                  <td style={fisGridTd}><input style={fisHucreInput} value={k.aciklama} onChange={(e) => kalemGuncelle(k.key, "aciklama", e.target.value)} /></td>
+                  <td style={{ ...fisGridTd, textAlign: "center" }}>
+                    <button onClick={() => kalemSil(k.key)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={13} /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Fiyat matrisi */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Gelen Teklif Fiyatları</span>
+          <span style={{ fontSize: 11.5, color: "#6b7178" }}>Kalem bazında en ucuz fiyat yeşil işaretlenir (TL karşılığı).</span>
+        </div>
+        {!firmalar.length || !doluKalemler.length ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#6b7178", fontSize: 13.5 }}>
+            Fiyat girmek için önce en az bir firma ve bir kalem gir.
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...fisGridTh, width: 44 }}>#</th>
+                  <th style={{ ...fisGridTh, minWidth: 220 }}>Malzeme / Hizmet</th>
+                  <th style={{ ...fisGridTh, width: 110, textAlign: "right" }}>Miktar</th>
+                  {firmalar.map((f) => (
+                    <th key={f.key} style={{ ...fisGridTh, width: sutunGen, textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#c7cbd1" }}>{f.ad}</div>
+                      <div style={{ fontSize: 10, color: "#6b7178", fontWeight: 400, fontFamily: "monospace" }}>{f.evrakNo}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {doluKalemler.map((k, i) => (
+                  <tr key={k.key}>
+                    <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>
+                      <div>{k.stokAdi}</div>
+                      {k.stokKodu && <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{k.stokKodu}</div>}
+                    </td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{k.miktar} {k.birim}</td>
+                    {firmalar.map((f) => {
+                      const kazanan = enUcuzlar[k.key] === f.key;
+                      return (
+                        <td key={f.key} style={{ ...fisGridTd, background: kazanan ? "#123a2c" : undefined }}>
+                          <input
+                            style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace", color: kazanan ? "#4ade80" : "#e7e5e0", fontWeight: kazanan ? 700 : 400 }}
+                            value={f.fiyatlar[k.key] || ""} placeholder="—"
+                            onChange={(e) => fiyatYaz(f.key, k.key, e.target.value)}
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                <tr>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>Para Birimi / Kur</td>
+                  {firmalar.map((f) => (
+                    <td key={f.key} style={{ ...fisGridTd, padding: 4 }}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <select
+                          style={{ ...fisInput, padding: "3px 4px", fontSize: 11.5, flex: "0 0 62px" }} value={f.paraBirimi}
+                          onChange={(e) => {
+                            const yeni = e.target.value;
+                            const otomatik = yeni !== "TRY" && tcmb.kurlar && tcmb.kurlar[yeni];
+                            firmaGuncelle(f.key, { paraBirimi: yeni, kur: yeni === "TRY" ? "1" : (otomatik ? String(otomatik) : f.kur) });
+                          }}
+                        >
+                          {PARA_BIRIMLERI.map((pb) => <option key={pb.id} value={pb.id}>{pb.label}</option>)}
+                        </select>
+                        <input
+                          style={{ ...fisInput, padding: "3px 5px", fontSize: 11.5, textAlign: "right" }}
+                          value={f.paraBirimi === "TRY" ? "1" : f.kur} disabled={f.paraBirimi === "TRY"}
+                          onChange={(e) => firmaGuncelle(f.key, { kur: e.target.value })}
+                        />
+                        {f.paraBirimi !== "TRY" && (
+                          <button onClick={() => kurAl(f)} title="TCMB döviz satış kuru" style={{ ...fisAltBtn, padding: "3px 6px", fontSize: 11 }}><RefreshCw size={11} /></button>
+                        )}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+                {[
+                  ["Teslim Süresi (gün)", "teslimSuresi", "15"],
+                  ["Ödeme Şekli", "odemeSekli", "Peşin / vadeli"],
+                  ["Vade (gün)", "vade", "30"],
+                ].map(([etiket, alan, ipucu]) => (
+                  <tr key={alan}>
+                    <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>{etiket}</td>
+                    {firmalar.map((f) => (
+                      <td key={f.key} style={fisGridTd}>
+                        <input style={fisHucreInput} value={f[alan]} placeholder={ipucu} onChange={(e) => firmaGuncelle(f.key, { [alan]: e.target.value })} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                <tr>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>Teklif Geçerlilik Tarihi</td>
+                  {firmalar.map((f) => (
+                    <td key={f.key} style={fisGridTd}>
+                      <input type="date" style={fisHucreInput} value={f.gecerlilikTarihi} onChange={(e) => firmaGuncelle(f.key, { gecerlilikTarihi: e.target.value })} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "8px", fontWeight: 800, fontSize: 13 }}>GENEL TOPLAM (TL)</td>
+                  {firmalar.map((f) => {
+                    const tl = firmaToplamTL(f);
+                    const enAz = Math.min(...firmalar.map((x) => firmaToplamTL(x)).filter((x) => x > 0), Infinity);
+                    const kazanan = tl > 0 && tl === enAz;
+                    return (
+                      <td key={f.key} style={{ ...fisGridTd, padding: "8px", textAlign: "right", fontFamily: "monospace", fontWeight: 800, fontSize: 13.5, background: kazanan ? "#123a2c" : undefined, color: kazanan ? "#4ade80" : "#e7e5e0" }}>
+                        {tl > 0 ? `${tutarTL(tl)}${kazanan ? " ★" : ""}` : "—"}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td colSpan={3} style={fisGridTd}></td>
+                  {firmalar.map((f) => (
+                    <td key={f.key} style={{ ...fisGridTd, padding: 6 }}>
+                      <div style={{ display: "grid", gap: 5 }}>
+                        <button style={{ ...fisAltBtn, justifyContent: "center", padding: "5px 8px", fontSize: 11.5 }} onClick={() => rfqYazdir(f)}>
+                          <Printer size={12} /> Teklif İste
+                        </button>
+                        <button style={{ ...fisAltBtn, justifyContent: "center", padding: "5px 8px", fontSize: 11.5 }} onClick={() => teklifYazdir(f)}>
+                          <FileText size={12} /> Teklif Formu
+                        </button>
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <SecimPenceresi
+        acik={secici?.tur === "cari"} kapat={() => setSecici(null)}
+        baslik="Firma Seç (cari kartları)" ikon={Building2} genislik={760}
+        kayitlar={cariler.filter((c) => !firmalar.some((f) => (f.kod && f.kod === String(c.kod || "").trim()) || f.ad === String(c.ad || "").trim()))}
+        sutunlar={[
+          { baslik: "Cari Kodu", al: (c) => c.kod, genislik: 140, mono: true, renk: "#2dd4bf" },
+          { baslik: "Firma Adı", al: (c) => c.ad },
+          { baslik: "Tip", al: (c) => (c.tip === "musteri" ? "Müşteri" : c.tip === "tedarikci" ? "Tedarikçi" : c.tip || ""), genislik: 110 },
+          { baslik: "Telefon", al: (c) => c.telefon, genislik: 130 },
+        ]}
+        filtreler={[{ ad: "tip", etiket: "Tip", al: (c) => (c.tip === "musteri" ? "Müşteri" : c.tip === "tedarikci" ? "Tedarikçi" : c.tip || "") }]}
+        sec={(c) => firmaEkle(c)}
+        bosMesaj="Eklenebilecek başka cari kartı yok."
+      />
+      <SecimPenceresi
+        acik={secici?.tur === "stok"} kapat={() => setSecici(null)}
+        baslik="Stok Kartı Seç" ikon={Boxes} genislik={820}
+        kayitlar={depoStok || []}
+        sutunlar={[
+          { baslik: "Stok Kodu", al: (s) => s.stokKodu, genislik: 150, mono: true, renk: "#2dd4bf" },
+          { baslik: "Stok Adı", al: (s) => s.stokAdi },
+          { baslik: "Birim", al: (s) => s.birim, genislik: 80 },
+        ]}
+        sec={(s) => { if (secici?.key) stokSec(secici.key, s); }}
+        bosMesaj="Stok kartı bulunamadı."
+      />
     </div>
   );
 }
@@ -10400,7 +11122,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
     const kur = evrakKuru(b);
 
     satinalmaFormYazdir({
-      ayarlar: formAyarlari,
+      ayarlar: formAyarlari, dokumanKodu: "siparis", yazdiran: kullanici?.email,
       belgeAdi: "Satınalma Sipariş Fişi",
       ustBilgiler: [
         ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Tedarikçi", [b.tedarikciKod, b.tedarikci].filter(Boolean).join(" · ")],
@@ -11058,7 +11780,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
   const raporYazdir = () => {
     const talepMi = altTab === "talep";
     satinalmaFormYazdir({
-      ayarlar: formAyarlari,
+      ayarlar: formAyarlari, dokumanKodu: talepMi ? "talepRaporu" : "siparisRaporu",
       belgeAdi: talepMi ? "Satınalma Talep Raporu" : "Satınalma Sipariş Raporu",
       ustBilgiler: [
         ["Başlangıç", f.baslangic ? trTarih(f.baslangic) : "Tümü"],

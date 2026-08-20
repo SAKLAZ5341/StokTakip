@@ -175,7 +175,7 @@ service cloud.firestore {
     }
     match /satinalma_teklifler/{id} {
       allow read: if okuyabilirim();
-      allow write: if yazabilir(['satinalma-teklif', 'satinalma-karsilastir', 'satinalma-siparis']);
+      allow write: if yazabilir(['satinalma-teklif', 'satinalma-toplu-teklif', 'satinalma-karsilastir', 'satinalma-siparis']);
     }
     match /satinalma_siparisler/{id} {
       allow read: if okuyabilirim();
