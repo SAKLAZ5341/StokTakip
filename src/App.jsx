@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer, LogOut } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Users, Cog, BarChart3, Factory, X, Lock, Upload, Download, Search, Boxes, FileDown, ChevronDown, ChevronRight, Menu as MenuIcon, UserPlus, Mail, Chrome, Ruler, RefreshCw, Copy, Building2, Bell, ArrowLeft, Home, AlertTriangle, HelpCircle, Pencil, Check, Save, FileSpreadsheet, ShoppingCart, FileText, ArrowRightLeft, ChevronLeft, Printer, LogOut, History } from "lucide-react";
 import { db, auth, digerKullaniciOlustur, eskiMetalErpDb } from "./firebase";
 import {
   collection, onSnapshot, doc, query, where, getDocs, getDoc, increment,
@@ -635,7 +635,7 @@ function SecimPenceresi({
           <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
         </div>
 
-        <div style={{ padding: 11, borderBottom: "1px solid #2a4b52", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 9 }}>
+        <div style={{ padding: 11, borderBottom: "1px solid #2a4b52", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 9 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input autoFocus className="input" style={{ paddingLeft: 30 }} placeholder="Kod, ad veya herhangi bir alanda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -914,6 +914,7 @@ const AS9100_FORMLARI = [
   { kod: "siparisRaporu", ad: "Satınalma Sipariş Raporu", ornek: "SAT-FR-007" },
   { kod: "fasonIs", ad: "Fason İş Emri", ornek: "FSN-FR-001" },
   { kod: "fasonRaporu", ad: "Fason Takip Raporu", ornek: "FSN-FR-002" },
+  { kod: "izlenebilirlik", ad: "Satınalma İzlenebilirlik Raporu", ornek: "SAT-FR-010" },
   { kod: "cariRaporu", ad: "Cari Hareket Raporu", ornek: "MUH-FR-001" },
 ];
 // Form türüne ait doküman bilgisi (yoksa boş döner — form yine basılır)
@@ -2330,6 +2331,7 @@ function Panel({ onCikis, kullanici }) {
             {tab === "satinalma-talep" && <SatinalmaTalep
               satinalmaTalepler={satinalmaTalepler}
               satinalmaSiparisler={satinalmaSiparisler} siparislerYuklendi={siparislerYuklendi}
+              satinalmaTeklifler={satinalmaTeklifler} hammaddeler={hammaddeler}
               satinalmaProjeler={satinalmaProjeler} satinalmaDepolar={satinalmaDepolar}
               depoStok={depoStok} kullanicilar={kullanicilar} kullanici={kullanici} formAyarlari={formAyarlari}
               siparisOlustur={(talep) => { setSiparisTaslak(talep); secimYap("satinalma-siparis"); }}
@@ -2521,7 +2523,7 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
 
       <div>
         <div className="sect-label" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b929a", fontWeight: 600, marginBottom: 12 }}>Modüller</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 14 }}>
           {modulKartlari.map((k) => {
             const Icon = k.icon;
             const kilitli = typeof yetki === "function" && yetki(k.id) === "yok";
@@ -2549,7 +2551,7 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Takım" value={teams.length} />
         <Stat label="Toplam Makine" value={machines.length} />
         <Stat label="Açık Hammadde (Kg)" value={acikHammaddeKg.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} />
@@ -2853,7 +2855,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Talep no, malzeme, ölçü ara…" value={f.arama} onChange={setF2("arama")} />
@@ -2877,7 +2879,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Kayıt" value={filtrelenmis.length} />
         <Stat label="Toplam Ağırlık" value={`${toplamKg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg`} highlight />
         <Stat label="Toplam Tutar" value={paraTR(toplamTutar)} />
@@ -3026,7 +3028,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
           <button className="btn-ghost" onClick={() => donemSec("yil")}>Bu Yıl</button>
           <button className="btn-ghost" onClick={() => donemSec("tumu")}>Tüm Zamanlar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu / adı ara…" value={f.arama} onChange={setF2("arama")} />
@@ -3036,7 +3038,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Kalem" value={depoStok.length} />
         <Stat label="Stokta Biten / Eksi" value={dusukStok} highlight={dusukStok > 0} />
         <Stat label="Dönem Giriş" value={toplamGiris.toLocaleString("tr-TR")} highlight />
@@ -3244,7 +3246,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Proje kodu / adı ara…" value={f.arama} onChange={setF2("arama")} />
@@ -3274,14 +3276,14 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam İş" value={filtrelenmisIsler.length} />
         <Stat label="Toplam Giden" value={paraTR(toplamGiden)} />
         <Stat label="Toplam Gelen" value={paraTR(toplamGelen)} />
         <Stat label="Net Bakiye" value={paraTR(toplamGiden - toplamGelen)} highlight />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 14 }}>
         <div className="card" style={{ padding: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>İş Durum Dağılımı</div>
           {Object.entries(FASON_DURUM).map(([k, d]) => (
@@ -3364,7 +3366,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
       >
         {detay && (
           <>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))", gap: 12, marginBottom: 14 }}>
               {[
                 ["Toplam İş", String(detay.satirlar.length), "#e7e5e0"],
                 ["Açık İş", String(detay.acik), "#e8a33d"],
@@ -3476,7 +3478,7 @@ function UretimRaporu({ teams, machines, records }) {
           <ExcelSeridi alanlar={XLS_ALAN.records} dosyaAdi="uretim-kayitlari" koleksiyon="records" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="field-label">Serbest Arama</label>
             <div style={{ position: "relative" }}>
@@ -3508,7 +3510,7 @@ function UretimRaporu({ teams, machines, records }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Kayıt Sayısı" value={filtered.length} />
         <Stat label="Toplam Çıkış (Adet)" value={toplam.toLocaleString("tr-TR")} highlight />
         <Stat label="Aktif Mağaza" value={new Set(filtered.map((r) => r.magaza).filter(Boolean)).size} />
@@ -3623,7 +3625,7 @@ function StokRaporu({ hammaddeler }) {
           <ExcelSeridi alanlar={XLS_ALAN.hammadde} dosyaAdi="hammadde-stok" koleksiyon="hammadde" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Kalite, cari, ölçü (Ø35 gibi), parça, proje ara…" value={f.arama} onChange={setF2("arama")} />
@@ -3648,7 +3650,7 @@ function StokRaporu({ hammaddeler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Malzeme Türü Sayısı" value={kaliteGruplari.length} />
         <Stat label="Toplam Stok (Kg)" value={toplamAdet.toLocaleString("tr-TR")} highlight />
         <Stat label="Açık Kayıt Sayısı" value={acikKayitlar.length} />
@@ -3762,7 +3764,7 @@ function SiparisRaporu({ hammaddeler }) {
           <ExcelSeridi alanlar={XLS_ALAN.hammadde} dosyaAdi="hammadde-siparis" koleksiyon="hammadde" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari, proje ara…" value={f.arama} onChange={setF2("arama")} />
@@ -3784,7 +3786,7 @@ function SiparisRaporu({ hammaddeler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Açık Sipariş" value={acikSayisi} />
         <Stat label="Tamamlanan" value={tamamlananSayisi} highlight />
         <Stat label="Toplam Kayıt" value={filtrelenmis.length} />
@@ -4262,7 +4264,7 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Kalem" value={(hammaddeler || []).length} />
         <Stat label="Açık" value={acikSayi} highlight />
         <Stat label="Kısmi Gelen" value={kismiSayi} />
@@ -4294,7 +4296,7 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu, stok adı, cari, sipariş no, proje ara…" value={f.arama} onChange={setF2("arama")} />
@@ -4563,7 +4565,7 @@ function MetalOlcuFormu({ tur, setTur, dims, setDims, yogunluk, setYogunluk, mal
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(140px, 100%), 1fr))", gap: 14, marginBottom: 14 }}>
         {OLCU_ALANLARI[tur].map((f) => (
           <div key={f.id}>
             <label className="field-label">{f.label}</label>
@@ -4899,7 +4901,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Malzeme, ölçü, not ara…" value={f.arama} onChange={setF2("arama")} />
@@ -4923,7 +4925,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Kayıt Sayısı" value={filtrelenmis.length} />
         <Stat label="Toplam Ağırlık" value={`${toplamKg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg`} highlight />
       </div>
@@ -5118,7 +5120,7 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
           </div>
         </div>
         {tasimaMsg && <div style={{ marginBottom: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{tasimaMsg}</div>}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Talep no, malzeme veya ölçü ara…" value={f.arama} onChange={setF2("arama")} />
@@ -5140,7 +5142,7 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Görüntülenen Kayıt" value={filtrelenmis.length} />
         <Stat label="Toplam Ağırlık" value={`${toplamKg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg`} highlight />
         <Stat label="Toplam Tutar" value={`${toplamTutar.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} TL`} />
@@ -5245,7 +5247,7 @@ function StokSilme({ records }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Stok Kayıtlarını Filtrele</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Takım, mağaza, makine, tarih ara…" value={f.arama} onChange={setF2("arama")} />
@@ -5361,7 +5363,7 @@ function HammaddeSilme({ hammaddeler }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Hammadde Kayıtlarını Filtrele</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari, proje, kalite, parça ara…" value={f.arama} onChange={setF2("arama")} />
@@ -5550,7 +5552,7 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Firma" value={fasonFirmalar.length} />
         <Stat label="Aktif İş" value={aktifIsSayisi} highlight />
         <Stat label="Bu Ay Giden (Hammadde)" value={paraTR(gidenAy)} />
@@ -6045,7 +6047,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
         }
       >
         {/* --- Fiş başlığı: etiket solda, alan sağda (Mikro düzeni) --- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(290px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Evrak No</span>
@@ -6227,7 +6229,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Proje kodu, adı, resim ref ara…" value={f.arama} onChange={setF2("arama")} />
@@ -6469,7 +6471,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "0 26px" }}>
+          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
             <div>
               <div style={fisSatir}>
                 <span style={fisEtiket}>Stok Kodu</span>
@@ -6506,7 +6508,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Malzeme/ürün, cins, kalite, proje kodu ara…" value={f.arama} onChange={setF2("arama")} />
@@ -6943,7 +6945,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))", gap: 14 }}>
         <KutuStat etiket={rapor ? "Gönderilen İş" : "Listedeki İş"} deger={aktifSayi} />
         {rapor ? (
           <>
@@ -7005,7 +7007,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
           <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#6b7178" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Müşteri, sipariş no, ürün, işlem, firma ara…" value={f.arama} onChange={setF2("arama")} />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 12 }}>
           <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Müşteri</div>
             <select className="input" value={f.musteri} onChange={setF2("musteri")}><option value="">Tümü</option>{benzersiz("musteri").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
           <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Firma</div>
@@ -7782,7 +7784,7 @@ function FormAyarlari({ formAyarlari }) {
           Buraya girdiğin bilgiler Satınalma Talep, Teklif ve Sipariş formlarının üstünde antet olarak çıkar. Bir kere doldurman yeterli.
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}><span style={{ ...fisEtiket, width: 120 }}>Firma Adı</span><input style={fisInput} value={form.firmaAdi} onChange={set("firmaAdi")} placeholder="Örn: SAKLAZ Makina San. Tic. Ltd. Şti." /></div>
             <div style={fisSatir}><span style={{ ...fisEtiket, width: 120 }}>Adres</span><input style={fisInput} value={form.adres} onChange={set("adres")} placeholder="Açık adres" /></div>
@@ -8076,7 +8078,8 @@ function SatinalmaKartYonetimi({ baslikMetni, tekilAd, koleksiyon, kayitlar, iko
 }
 
 // ---------- Satınalma Talebi ----------
-function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYuklendi, satinalmaProjeler, satinalmaDepolar, depoStok, kullanicilar, kullanici, formAyarlari, siparisOlustur, teklifOlustur }) {
+function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTeklifler, siparislerYuklendi, satinalmaProjeler, satinalmaDepolar, depoStok, hammaddeler, kullanicilar, kullanici, formAyarlari, siparisOlustur, teklifOlustur }) {
+  const [izleme, setIzleme] = useState(null); // {talep} — teklif ve sipariş geçmişi
   // Giriş yapan kullanıcının görünen adı — Talep eden personel alanına otomatik gelir
   const girisYapanAd = useMemo(() => {
     const eposta = String(kullanici?.email || "").toLowerCase();
@@ -8441,6 +8444,12 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <FisDetayPenceresi detay={detay} kapat={() => setDetay(null)} satinalmaSiparisler={satinalmaSiparisler} />
+      <IzlenebilirlikPenceresi
+        acik={!!izleme} kapat={() => setIzleme(null)} talep={izleme?.talep} siparis={null}
+        satinalmaTalepler={satinalmaTalepler} satinalmaTeklifler={satinalmaTeklifler}
+        satinalmaSiparisler={satinalmaSiparisler} hammaddeler={hammaddeler}
+        formAyarlari={formAyarlari} kullanici={kullanici}
+      />
 
       <UyariPenceresi
         acik={!!uyari} kapat={() => setUyari(null)}
@@ -8647,7 +8656,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, proje, depo, malzeme, personel ara…" value={f.arama} onChange={setF2("arama")} />
@@ -8723,6 +8732,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, siparislerYukl
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button onClick={() => setDetay({ tip: "talep", kayit: t })} title="Fişin detayını görüntüle" style={duzenleButonu}><Search size={12} /> Görüntüle</button>
                       <button onClick={() => fisiYukle(t)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
+                      <button onClick={() => setIzleme({ talep: t })} title="Teklif ve sipariş geçmişi" style={duzenleButonu}><History size={12} /> Geçmiş</button>
                       <button
                         onClick={() => teklifOlustur && teklifOlustur(t)}
                         disabled={iptalli}
@@ -9001,7 +9011,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
           </>
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
           <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
             <div style={fisSatir}><span style={fisEtiket}>Cari Kod</span><input style={fisInput} placeholder="Örn: 120.01.001" value={form.kod} onChange={set("kod")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Cari İsmi</span><input style={fisInput} placeholder="Firma ünvanı" value={form.ad} onChange={set("ad")} /></div>
@@ -9030,7 +9040,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
         {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("zorunlu") || msg.includes("kullanılıyor") || msg.includes("zaten") || msg.includes("Kaydedilemedi") ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
       </EvrakPenceresi>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Cari" value={fasonFirmalar.length} />
         <Stat label="Aktif" value={fasonFirmalar.filter((c) => c.aktif !== false).length} />
         <Stat label="Tedarikçi" value={fasonFirmalar.filter((c) => (c.tip || "tedarikci") === "tedarikci").length} />
@@ -9219,7 +9229,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
         </select>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Listelenen Cari" value={filtrelenmis.length} />
         <Stat label="Hareket Gören Cari" value={hareketliSayisi} />
         <Stat label="Toplam Sipariş Tutarı" value={tutarTL(toplamSiparis)} highlight />
@@ -9613,7 +9623,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
           </>
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18, marginBottom: 14 }}>
           <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
             <div style={fisSatir}><span style={fisEtiket}>Teklif No</span>
               <input style={fisInput} value={baslik.evrakNo} onChange={(e) => setB("evrakNo")(e.target.value)} />
@@ -9839,6 +9849,342 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
         </div>
       </div>
     </div>
+  );
+}
+
+// ---------- Satınalma İzlenebilirliği (talep → teklifler → sipariş) ----------
+// AS9100 Md. 8.4: bir siparişin hangi talepten doğduğu, hangi firmalardan teklif
+// alındığı ve neden bu firmanın seçildiği geriye dönük görülebilmelidir.
+// Bu pencere zinciri tek ekranda gösterir ve yazdırılabilir.
+function izlemeZinciri({ siparis, talep, satinalmaTalepler, satinalmaTeklifler, satinalmaSiparisler }) {
+  const kaynakTalep = talep
+    || (siparis?.talepId ? (satinalmaTalepler || []).find((t) => t.id === siparis.talepId) : null)
+    || (siparis?.talepEvrakNo ? (satinalmaTalepler || []).find((t) => t.evrakNo === siparis.talepEvrakNo) : null)
+    || null;
+
+  // Talebe bağlı tüm teklifler; talep yoksa yalnızca siparişin kendi teklifi
+  let teklifler = [];
+  if (kaynakTalep) {
+    teklifler = (satinalmaTeklifler || []).filter((t) => t.talepId === kaynakTalep.id || (t.talepEvrakNo && t.talepEvrakNo === kaynakTalep.evrakNo));
+  } else if (siparis?.teklifId) {
+    teklifler = (satinalmaTeklifler || []).filter((t) => t.id === siparis.teklifId);
+  }
+  teklifler = [...teklifler].sort((a, b) => teklifTL(a) - teklifTL(b));
+
+  // Aynı talepten çıkan tüm siparişler (kalemler firmalara bölünmüş olabilir)
+  let siparisler = [];
+  if (kaynakTalep) {
+    siparisler = (satinalmaSiparisler || []).filter((s) => s.talepId === kaynakTalep.id || (s.talepEvrakNo && s.talepEvrakNo === kaynakTalep.evrakNo));
+  }
+  if (siparis && !siparisler.some((s) => s.id === siparis.id)) siparisler = [siparis, ...siparisler];
+  siparisler = [...siparisler].sort((a, b) => (a.olusturma || 0) - (b.olusturma || 0));
+
+  // Kalem bazlı fiyat karşılaştırması (TL karşılığı)
+  const harita = new Map();
+  (kaynakTalep?.satirlar || []).forEach((r) => {
+    const k = kalemAnahtar(r);
+    if (k && !harita.has(k)) harita.set(k, { anahtar: k, kod: r.kodu || r.stokKodu || "", ad: r.ismi || r.stokAdi || "", miktar: r.miktar || "", birim: r.birim || "" });
+  });
+  teklifler.forEach((t) => (t.satirlar || []).forEach((r) => {
+    const k = kalemAnahtar(r);
+    if (k && !harita.has(k)) harita.set(k, { anahtar: k, kod: r.stokKodu || "", ad: r.stokAdi || "", miktar: r.miktar || "", birim: r.birim || "" });
+  }));
+  const kalemler = [...harita.values()];
+  const matris = kalemler.map((k) => {
+    const hucreler = teklifler.map((t) => {
+      const r = (t.satirlar || []).find((x) => kalemAnahtar(x) === k.anahtar);
+      return r ? { teklif: t, birimTL: birimFiyatTL(r, t) } : null;
+    });
+    const gecerliler = hucreler.filter((h) => h && h.birimTL > 0);
+    const enAz = gecerliler.length ? Math.min(...gecerliler.map((h) => h.birimTL)) : null;
+    // Bu kalem hangi siparişe, hangi firmaya gitti?
+    const alinan = siparisler.find((s) => (s.satirlar || []).some((r) => kalemAnahtar(r) === k.anahtar));
+    return { kalem: k, hucreler, enAz, alinan };
+  });
+
+  return { talep: kaynakTalep, teklifler, siparisler, kalemler, matris };
+}
+
+function IzlenebilirlikPenceresi({
+  acik, kapat, siparis, talep,
+  satinalmaTalepler, satinalmaTeklifler, satinalmaSiparisler, hammaddeler, formAyarlari, kullanici,
+}) {
+  const z = useMemo(
+    () => (acik ? izlemeZinciri({ siparis, talep, satinalmaTalepler, satinalmaTeklifler, satinalmaSiparisler }) : null),
+    [acik, siparis, talep, satinalmaTalepler, satinalmaTeklifler, satinalmaSiparisler]
+  );
+  if (!acik || !z) return null;
+
+  const odak = siparis || null;
+  const hmd = (hammaddeler || []).filter((h) => z.siparisler.some((s) => h.siparisEvrakNo === s.evrakNo));
+
+  const yazdir = () => {
+    satinalmaFormYazdir({
+      ayarlar: formAyarlari, belgeAdi: "SATINALMA İZLENEBİLİRLİK RAPORU",
+      dokumanKodu: "izlenebilirlik", yazdiran: kullanici?.email,
+      ustBilgiler: [
+        ["Talep No", z.talep?.evrakNo || "—"], ["Talep Tarihi", z.talep?.tarih ? trTarih(z.talep.tarih) : "—"],
+        ["Proje", z.talep?.proje || odak?.projeKodu || "—"],
+        ["Alınan Teklif", `${z.teklifler.length} firma`],
+        ["Açılan Sipariş", `${z.siparisler.length} adet`],
+        ["Sipariş No", odak?.evrakNo || "—"],
+      ],
+      kolonlar: [
+        { baslik: "#", gen: "8mm", hiza: "ort", al: (r, i) => i + 1 },
+        { baslik: "Stok Kodu", gen: "28mm", al: (r) => r.kalem.kod },
+        { baslik: "Malzeme / Hizmet", al: (r) => r.kalem.ad },
+        { baslik: "Miktar", gen: "20mm", hiza: "sag", al: (r) => `${r.kalem.miktar} ${r.kalem.birim}` },
+        { baslik: "En Düşük (TL)", gen: "26mm", hiza: "sag", al: (r) => (r.enAz != null ? sayiTR(r.enAz) : "—") },
+        { baslik: "Alınan Firma", gen: "48mm", al: (r) => (r.alinan ? r.alinan.tedarikci : "—") },
+        { baslik: "Sipariş No", gen: "24mm", al: (r) => (r.alinan ? r.alinan.evrakNo : "—") },
+      ],
+      satirlar: z.matris,
+      notBasligi: "Teklif Veren Firmalar",
+      notMetni: z.teklifler.length
+        ? z.teklifler.map((t) => `${t.evrakNo} · ${t.tedarikci} · ${sayiTR(teklifTL(t))} ₺ · ${TEKLIF_DURUM[t.durum]?.label || "—"}${t.teslimSuresi ? ` · teslim ${t.teslimSuresi} gün` : ""}`).join("\n")
+        : "Kayıtlı teklif yok.",
+      imzalar: ["Hazırlayan", "Kontrol Eden", "Onaylayan"],
+    });
+  };
+
+  const kutu = { border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden", minWidth: 0 };
+  const kutuBas = { display: "flex", alignItems: "center", gap: 10, padding: "9px 13px", borderBottom: "1px solid #2a4b52", flexWrap: "wrap" };
+  const etiket = { fontSize: 11, color: "#6b7178", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700 };
+  const bosluk = { padding: 16, fontSize: 12.5, color: "#6b7178" };
+
+  return (
+    <EvrakPenceresi
+      acik={acik} kapat={kapat} baslik="Satınalma İzlenebilirliği — Talep · Teklifler · Sipariş"
+      ikon={ArrowRightLeft} genislik={1180}
+      butonlar={
+        <>
+          <button style={fisAltBtn} onClick={yazdir}><Printer size={14} /> Yazdır / PDF</button>
+          <button style={fisAnaBtn} onClick={kapat}><X size={14} /> Kapat</button>
+        </>
+      }
+    >
+      {/* Zincir şeridi */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        {[
+          { ad: "TALEP", deger: z.talep?.evrakNo || "—", alt: z.talep ? trTarih(z.talep.tarih) : "kayıt yok" },
+          { ad: "TEKLİFLER", deger: `${z.teklifler.length} firma`, alt: z.teklifler.length ? `en düşük ${tutarTL(Math.min(...z.teklifler.map(teklifTL)))}` : "teklif yok" },
+          { ad: "SİPARİŞ", deger: z.siparisler.length > 1 ? `${z.siparisler.length} sipariş` : (odak?.evrakNo || z.siparisler[0]?.evrakNo || "—"), alt: odak ? trTarih(odak.tarih) : "" },
+        ].map((a, i) => (
+          <React.Fragment key={a.ad}>
+            {i > 0 && <ChevronRight size={16} color="#3d6169" />}
+            <div style={{ ...kutu, padding: "8px 14px", minWidth: 150 }}>
+              <div style={etiket}>{a.ad}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: "#2dd4bf", marginTop: 2 }}>{a.deger}</div>
+              <div style={{ fontSize: 11, color: "#6b7178" }}>{a.alt}</div>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* 1) Talep */}
+      <div style={{ ...kutu, marginBottom: 14 }}>
+        <div style={kutuBas}>
+          <FileText size={14} color="#e8a33d" />
+          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>1. Satınalma Talebi</span>
+          {z.talep && <span style={{ fontSize: 11.5, color: "#6b7178" }}>
+            {[z.talep.talepEdenPersonel, z.talep.proje && `Proje: ${z.talep.proje}`, z.talep.depo && `Depo: ${z.talep.depo}`].filter(Boolean).join(" · ")}
+          </span>}
+        </div>
+        {!z.talep ? (
+          <div style={bosluk}>Bu sipariş bir talebe bağlı değil — doğrudan sipariş açılmış.</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...fisGridTh, width: 40 }}>#</th>
+                  <th style={{ ...fisGridTh, width: 170 }}>Stok Kodu</th>
+                  <th style={fisGridTh}>Malzeme / Hizmet</th>
+                  <th style={{ ...fisGridTh, width: 110, textAlign: "right" }}>Miktar</th>
+                  <th style={{ ...fisGridTh, width: 130 }}>Termin</th>
+                  <th style={fisGridTh}>Açıklama</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(z.talep.satirlar || []).map((r, i) => (
+                  <tr key={i}>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf" }}>{r.kodu || r.stokKodu || "—"}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi || r.stokAdi || "—"}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{r.miktar} {r.birim}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.teslimTarihi ? trTarih(r.teslimTarihi) : (z.talep.terminTarihi ? trTarih(z.talep.terminTarihi) : "—")}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12, color: "#8b929a" }}>{[r.aciklama, r.aciklama2].filter(Boolean).join(" · ") || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 2) Teklifler */}
+      <div style={{ ...kutu, marginBottom: 14 }}>
+        <div style={kutuBas}>
+          <ClipboardList size={14} color="#e8a33d" />
+          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>2. Alınan Teklifler <span style={{ color: "#6b7178", fontWeight: 400 }}>({z.teklifler.length})</span></span>
+          <span style={{ fontSize: 11.5, color: "#6b7178" }}>Tutarlar TL karşılığıdır, ucuzdan pahalıya sıralı.</span>
+        </div>
+        {!z.teklifler.length ? (
+          <div style={bosluk}>Bu talep için kayıtlı teklif yok.</div>
+        ) : (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...fisGridTh, width: 120 }}>Teklif No</th>
+                    <th style={fisGridTh}>Tedarikçi</th>
+                    <th style={{ ...fisGridTh, width: 110 }}>Tarih</th>
+                    <th style={{ ...fisGridTh, width: 130, textAlign: "right" }}>Toplam (TL)</th>
+                    <th style={{ ...fisGridTh, width: 100 }}>Teslim</th>
+                    <th style={{ ...fisGridTh, width: 150 }}>Ödeme / Vade</th>
+                    <th style={{ ...fisGridTh, width: 110 }}>Geçerlilik</th>
+                    <th style={{ ...fisGridTh, width: 100 }}>Durum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {z.teklifler.map((t, i) => {
+                    const kazanan = t.durum === "kazandi" || (odak && odak.teklifId === t.id);
+                    const d = TEKLIF_DURUM[t.durum] || TEKLIF_DURUM.acik;
+                    return (
+                      <tr key={t.id} style={{ background: kazanan ? "#123a2c" : undefined }}>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf" }}>{t.evrakNo}</td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontWeight: kazanan ? 700 : 400 }}>
+                          {[t.tedarikciKod, t.tedarikci].filter(Boolean).join(" · ")}
+                        </td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{t.tarih ? trTarih(t.tarih) : "—"}</td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: i === 0 ? "#4ade80" : "#e7e5e0" }}>
+                          {tutarTL(teklifTL(t))}{i === 0 ? " ★" : ""}
+                          {t.paraBirimi && t.paraBirimi !== "TRY" && <div style={{ fontSize: 10.5, color: "#6b7178" }}>{t.paraBirimi} @ {sayiTR(teklifKuru(t))}</div>}
+                        </td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{t.teslimSuresi ? `${t.teslimSuresi} gün` : (t.teslimTarihi ? trTarih(t.teslimTarihi) : "—")}</td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12 }}>{[t.odemeSekli, t.vade ? `${t.vade} gün` : ""].filter(Boolean).join(" · ") || "—"}</td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, color: gecerlilikGecti(t) ? "#e07a6b" : "#c7cbd1" }}>
+                          {t.gecerlilikTarihi ? trTarih(t.gecerlilikTarihi) : "—"}
+                        </td>
+                        <td style={{ ...fisGridTd, padding: "6px 8px" }}>
+                          <span className="pill" style={{ background: "#22404a", color: d.renk, borderColor: "#3d6169" }}>{d.label}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Kalem bazlı fiyat karşılaştırması */}
+            {z.matris.length > 0 && (
+              <div style={{ borderTop: "1px solid #2a4b52" }}>
+                <div style={{ ...kutuBas, borderBottom: "1px solid #2a4b52" }}>
+                  <span style={{ fontWeight: 700, fontSize: 12.5, flex: 1 }}>Kalem Bazlı Fiyat Karşılaştırması (TL)</span>
+                  <span style={{ fontSize: 11.5, color: "#6b7178" }}>Hangi kalemin hangi firmadan alındığı en sağda.</span>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...fisGridTh, width: 40 }}>#</th>
+                        <th style={{ ...fisGridTh, minWidth: 190 }}>Malzeme</th>
+                        <th style={{ ...fisGridTh, width: 100, textAlign: "right" }}>Miktar</th>
+                        {z.teklifler.map((t) => (
+                          <th key={t.id} style={{ ...fisGridTh, width: 130, textAlign: "right" }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700 }}>{t.tedarikci}</div>
+                            <div style={{ fontSize: 10, color: "#6b7178", fontWeight: 400, fontFamily: "monospace" }}>{t.evrakNo}</div>
+                          </th>
+                        ))}
+                        <th style={{ ...fisGridTh, width: 190 }}>Sipariş Verilen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {z.matris.map((m, i) => (
+                        <tr key={m.kalem.anahtar}>
+                          <td style={{ ...fisGridTd, padding: "6px 8px", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                          <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>
+                            <div>{m.kalem.ad}</div>
+                            {m.kalem.kod && <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{m.kalem.kod}</div>}
+                          </td>
+                          <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{m.kalem.miktar} {m.kalem.birim}</td>
+                          {m.hucreler.map((h, j) => {
+                            const enUcuz = !!(h && m.enAz != null && Math.abs(h.birimTL - m.enAz) < 0.0001 && h.birimTL > 0);
+                            const alindi = !!(h && m.alinan && m.alinan.tedarikci === h.teklif.tedarikci);
+                            return (
+                              <td key={z.teklifler[j].id} style={{
+                                ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5,
+                                background: alindi ? "#123a2c" : undefined,
+                                color: alindi ? "#4ade80" : (h && h.birimTL > 0 ? "#c7cbd1" : "#4a5560"),
+                                fontWeight: alindi ? 700 : 400,
+                              }}>
+                                {h && h.birimTL > 0 ? `${sayiTR(h.birimTL)}${alindi ? " ✔" : (enUcuz ? " ★" : "")}` : "—"}
+                              </td>
+                            );
+                          })}
+                          <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12 }}>
+                            {m.alinan
+                              ? <><span style={{ color: "#4ade80" }}>{m.alinan.tedarikci}</span><div style={{ fontFamily: "monospace", fontSize: 11, color: "#6b7178" }}>{m.alinan.evrakNo}</div></>
+                              : <span style={{ color: "#6b7178" }}>sipariş açılmadı</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 3) Siparişler */}
+      <div style={kutu}>
+        <div style={kutuBas}>
+          <ShoppingCart size={14} color="#e8a33d" />
+          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>3. Açılan Siparişler <span style={{ color: "#6b7178", fontWeight: 400 }}>({z.siparisler.length})</span></span>
+          {hmd.length > 0 && <span style={{ fontSize: 11.5, color: "#6b7178" }}>{hmd.length} kalem hammadde takibinde</span>}
+        </div>
+        {!z.siparisler.length ? (
+          <div style={bosluk}>Henüz sipariş açılmamış.</div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...fisGridTh, width: 120 }}>Sipariş No</th>
+                  <th style={fisGridTh}>Tedarikçi</th>
+                  <th style={{ ...fisGridTh, width: 110 }}>Tarih</th>
+                  <th style={{ ...fisGridTh, width: 80, textAlign: "right" }}>Kalem</th>
+                  <th style={{ ...fisGridTh, width: 140, textAlign: "right" }}>Tutar (TL)</th>
+                  <th style={{ ...fisGridTh, width: 120 }}>Termin</th>
+                  <th style={{ ...fisGridTh, width: 120 }}>Kaynak Teklif</th>
+                </tr>
+              </thead>
+              <tbody>
+                {z.siparisler.map((s) => {
+                  const bu = odak && s.id === odak.id;
+                  return (
+                    <tr key={s.id} style={{ background: bu ? "#22404a" : undefined }}>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf", fontWeight: bu ? 700 : 400 }}>
+                        {s.evrakNo}{bu ? " ◄" : ""}
+                      </td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{[s.tedarikciKod, s.tedarikci].filter(Boolean).join(" · ")}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{s.tarih ? trTarih(s.tarih) : "—"}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontSize: 12.5 }}>{(s.satirlar || []).length}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5 }}>{tutarTL(siparisTL(s))}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{s.teslimTarihi ? trTarih(s.teslimTarihi) : "—"}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#8b929a" }}>{s.teklifEvrakNo || "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </EvrakPenceresi>
   );
 }
 
@@ -10330,7 +10676,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
       {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: hataMi ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
 
       {/* Başlık bilgileri */}
-      <div className="card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+      <div className="card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
         <div>
           <label className="field-label">Kaynak Talep (isteğe bağlı)</label>
           <select className="input" value={talepId} onChange={(e) => talepSec(e.target.value)}>
@@ -10922,7 +11268,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
         </div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: 14 }}>
             <Stat label="Teklif Sayısı" value={teklifler.length} />
             <Stat label="Karşılaştırılan Kalem" value={kalemler.length} />
             <Stat label="En Düşük Toplam (TL)" value={enUcuzTeklif ? tutarTL(teklifTL(enUcuzTeklif)) : "—"} />
@@ -11084,6 +11430,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
 
 // ---------- Satınalma Siparişi ----------
 function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTeklifler, fasonFirmalar, depoStok, hammaddeler, satinalmaProjeler, kullanici, formAyarlari, taslak, taslakTemizle }) {
+  const [izleme, setIzleme] = useState(null); // {siparis} — talep/teklif geçmişi penceresi
   const [fisAcik, setFisAcik] = useState(false);
   const [duzenlenenId, setDuzenlenenId] = useState(null);
   const [baslik, setBaslik] = useState({ evrakNo: "", belgeNo: "", tarih: todayISO(), tedarikci: "", tedarikciKod: "", projeKodu: "", paraBirimi: "TRY", kur: "1", teslimTarihi: "", odemeSekli: "", aciklama: "", talepId: "", talepEvrakNo: "", teklifId: "", teklifEvrakNo: "" });
@@ -11539,6 +11886,12 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <FisDetayPenceresi detay={detay} kapat={() => setDetay(null)} satinalmaSiparisler={satinalmaSiparisler} />
+      <IzlenebilirlikPenceresi
+        acik={!!izleme} kapat={() => setIzleme(null)} siparis={izleme?.siparis} talep={null}
+        satinalmaTalepler={satinalmaTalepler} satinalmaTeklifler={satinalmaTeklifler}
+        satinalmaSiparisler={satinalmaSiparisler} hammaddeler={hammaddeler}
+        formAyarlari={formAyarlari} kullanici={kullanici}
+      />
 
       <UyariPenceresi
         acik={!!uyari} kapat={() => setUyari(null)}
@@ -11570,6 +11923,12 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
             <button style={fisAltBtn} onClick={onceki} disabled={sirali.length === 0} title="Önceki fiş"><ChevronLeft size={14} /> Önceki</button>
             <button style={fisAltBtn} onClick={sonraki} disabled={sirali.length === 0} title="Sonraki fiş">Sonraki <ChevronRight size={14} /></button>
             <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
+            <button
+              style={fisAltBtn} title="Bu siparişin talebini ve alınan tüm teklifleri gör"
+              onClick={() => setIzleme({ siparis: (duzenlenenId && satinalmaSiparisler.find((x) => x.id === duzenlenenId)) || { ...baslik, id: "", satirlar: satirlar.filter((r) => String(r.stokAdi || "").trim()) } })}
+            >
+              <History size={14} /> Geçmiş
+            </button>
             <button style={fisAltBtn} onClick={() => siparisYazdir(null)}><Printer size={14} /> Yazdır</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
             <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
@@ -11577,7 +11936,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
           </>
         }
       >
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Evrak No</span>
@@ -11740,7 +12099,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, tedarikçi, malzeme, talep no ara…" value={f.arama} onChange={setF2("arama")} />
@@ -11802,6 +12161,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                   <td style={{ whiteSpace: "nowrap" }}>
                     <button onClick={() => setDetay({ tip: "siparis", kayit: s })} title="Fişin detayını görüntüle" style={duzenleButonu}><Search size={12} /> Görüntüle</button>
                     <button onClick={() => fisiYukle(s)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
+                    <button onClick={() => setIzleme({ siparis: s })} title="Talep ve teklif geçmişi" style={duzenleButonu}><History size={12} /> Geçmiş</button>
                     <button onClick={() => siparisYazdir(s)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Printer size={14} /></button>
                     <button onClick={() => sil(s)} title="Sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
                   </td>
@@ -11872,7 +12232,7 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
       >
         {detay && (
           <>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "0 24px" }}>
+            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))", gap: "0 24px" }}>
               {(detay.tip === "talep"
                 ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
                    ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
@@ -12111,7 +12471,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
           <button className="btn-ghost" onClick={() => donemSec("yil")}>Bu Yıl</button>
           <button className="btn-ghost" onClick={() => donemSec("tumu")}>Tüm Zamanlar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, malzeme, personel ara…" value={f.arama} onChange={setF2("arama")} />
@@ -12154,7 +12514,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         {altTab === "talep" ? (
           <>
             <Stat label="Talep Fişi" value={talepler.length} highlight />
@@ -12947,7 +13307,7 @@ function DepoStokKart({ depoStok, kullanici }) {
 
           <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Grup Bilgileri</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "0 26px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", gap: "0 26px" }}>
               <div>
                 <div style={fisSatir}>
                   <span style={fisEtiket}>Ana Grup Kodu</span>
@@ -12985,7 +13345,7 @@ function DepoStokKart({ depoStok, kullanici }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Kalem" value={toplamKalem.toLocaleString("tr-TR")} />
         <Stat label="Stokta Biten / Eksi Kalem" value={dusukStok} highlight={dusukStok > 0} />
         <Stat label="Alt Grup Sayısı" value={altGrupAdlariListe.length} />
@@ -13310,7 +13670,7 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "0 26px" }}>
+          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
             <div>
               <div style={fisSatir}>
                 <span style={fisEtiket}>Alt Grup</span>
@@ -13684,7 +14044,7 @@ function DepoHareketleri({ depoHareketler }) {
           <button className="btn-ghost" onClick={() => donemSec("yil")}>Bu Yıl</button>
           <button className="btn-ghost" onClick={() => donemSec("tumu")}>Tüm Zamanlar</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
             <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu, adı, kullanıcı, açıklama ara…" value={f.arama} onChange={setF2("arama")} />
@@ -13709,7 +14069,7 @@ function DepoHareketleri({ depoHareketler }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
         <Stat label="Toplam Hareket" value={filtrelenmis.length} />
         <Stat label="Toplam Giriş" value={toplamGiris.toLocaleString("tr-TR")} highlight />
         <Stat label="Toplam Çıkış" value={toplamCikis.toLocaleString("tr-TR")} />
@@ -13879,7 +14239,7 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
             {arama ? "Sonuç bulunamadı." : `Henüz ${baslikCogul.toLowerCase()} eklenmedi.`}
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))" }}>
             {filtrelenmis.map((i, idx) => (
               <div key={i.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #24424a", borderRight: "1px solid #24424a" }}>
                 <span style={{ fontSize: 13.5, display: "flex", alignItems: "center", gap: 8 }}>
