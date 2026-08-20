@@ -21,6 +21,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
   const [operasyonKod, setOperasyonKod] = useState(OPERASYON_TIPLERI[0].kod);
   const [aciklama, setAciklama] = useState("");
   const [secilenMakineId, setSecilenMakineId] = useState("");
+  const [zorunlu, setZorunlu] = useState(true);
 
   const secilenOp = operasyonBul(operasyonKod);
   const oneri = useMemo(() => {
@@ -64,9 +65,11 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
         makineGerekli: secilenOp.makineGerekli,
         onerilenMakineIdler: oneri.uygunlar.map((m) => m.id),
         secilenMakineId: secilenOp.makineGerekli ? secilenMakineId : "",
+        zorunlu,
       },
     ]);
     setAciklama("");
+    setZorunlu(true);
   }
 
   function adimSil(idx) {
@@ -150,6 +153,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
               <th style={s.tabloBaslik}>Operasyon</th>
               <th style={s.tabloBaslik}>Birim</th>
               <th style={s.tabloBaslik}>Makine / İstasyon</th>
+              <th style={s.tabloBaslik}>Durum</th>
               {yazabilir && !rotaMevcut && <th style={s.tabloBaslik}></th>}
             </tr>
           </thead>
@@ -162,6 +166,13 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
                 <td style={s.tabloHucre}>
                   {a.makineGerekli ? makineAdi(a.secilenMakineId, veri.makineler) : <span style={{ color: s.renk?.soluk }}>—</span>}
                 </td>
+                <td style={s.tabloHucre}>
+                  {a.zorunlu === false ? (
+                    <span style={{ fontSize: 11, color: s.renk?.uyari || "#a16207" }}>Opsiyonel</span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: s.renk?.soluk }}>Zorunlu</span>
+                  )}
+                </td>
                 {yazabilir && !rotaMevcut && (
                   <td style={s.tabloHucre}>
                     <button className="btn-ghost" style={{ ...s.dugme, padding: "2px 6px" }} onClick={() => adimSil(idx)}>
@@ -173,7 +184,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
             ))}
             {gosterilenAdimlar.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ ...s.tabloHucre, textAlign: "center", color: s.renk?.soluk }}>Henüz adım yok.</td>
+                <td colSpan={6} style={{ ...s.tabloHucre, textAlign: "center", color: s.renk?.soluk }}>Henüz adım yok.</td>
               </tr>
             )}
           </tbody>
@@ -207,6 +218,11 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
 
           <label className="field-label" style={{ flex: 1, minWidth: 160 }}>Açıklama (opsiyonel)
             <input className="input" style={s.giris} value={aciklama} onChange={(e) => setAciklama(e.target.value)} />
+          </label>
+
+          <label className="field-label" style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 140 }}>
+            <input type="checkbox" checked={zorunlu} onChange={(e) => setZorunlu(e.target.checked)} />
+            Zorunlu adım
           </label>
 
           <button className="btn-ghost" style={s.anaDugme} onClick={adimEkle}>

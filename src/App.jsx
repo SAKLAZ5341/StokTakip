@@ -249,6 +249,59 @@ function dosyaOku(dosya) {
   });
 }
 
+// ---------- Excel sütun başlığı eşleştirme ----------
+// Eski yöntem "başlık, anahtarı içeriyor mu" diye bakıp ilk eşleşen sütunu
+// alıyordu. Bu yüzden "TEDARİKÇİ" alanı "TEDARİKÇİ KOD" sütununu, "BİRİM FİYAT"
+// alanı "BİRİM" sütununu, "TESLİM TARİHİ" alanı da "TARİH" sütununu kapıyordu —
+// içeri alınan siparişlerde isim yerine cari kod görünmesinin ve tutarların
+// sıfır çıkmasının sebebi buydu. Artık her (alan, sütun) çifti puanlanıyor,
+// en yüksek puanlı eşleşmeler önce dağıtılıyor ve bir sütun kural olarak
+// yalnızca tek bir alana veriliyor.
+const basligiNormalize = (s) =>
+  String(s == null ? "" : s).replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().replace(/\s+/g, " ").trim();
+
+function baslikPuani(baslik, anahtar) {
+  if (!baslik || !anahtar) return 0;
+  if (baslik === anahtar) return 1000;                                        // birebir
+  if (baslik.startsWith(anahtar + " ")) return 600 - (baslik.length - anahtar.length);
+  if (anahtar.startsWith(baslik + " ")) return 500 - (anahtar.length - baslik.length);
+  if (baslik.includes(anahtar)) return 300 - (baslik.length - anahtar.length);
+  if (anahtar.includes(baslik)) return 200 - (anahtar.length - baslik.length);
+  return 0;
+}
+
+// alanAnahtarlari: { alanAdi: ["başlık", "eş anlamlısı", ...] }  ->  { alanAdi: sütunIndeksi | -1 }
+function basliklariEslestir(basliklar, alanAnahtarlari) {
+  const bas = (basliklar || []).map(basligiNormalize);
+  const alanlar = Object.keys(alanAnahtarlari);
+  const sonuc = {};
+  alanlar.forEach((a) => { sonuc[a] = -1; });
+
+  const adaylar = [];
+  alanlar.forEach((alan) => {
+    (alanAnahtarlari[alan] || []).forEach((ham) => {
+      const anahtar = basligiNormalize(ham);
+      bas.forEach((h, i) => {
+        const p = baslikPuani(h, anahtar);
+        if (p > 0) adaylar.push({ alan, i, p });
+      });
+    });
+  });
+  adaylar.sort((a, b) => (b.p - a.p) || (a.i - b.i));
+
+  const kullanilan = new Set();
+  adaylar.forEach((x) => {
+    if (sonuc[x.alan] !== -1 || kullanilan.has(x.i)) return;
+    sonuc[x.alan] = x.i;
+    kullanilan.add(x.i);
+  });
+  // Hâlâ eşleşmeyen alanlar yalnızca BİREBİR aynı başlığı paylaşabilir.
+  adaylar.forEach((x) => {
+    if (sonuc[x.alan] === -1 && x.p === 1000) sonuc[x.alan] = x.i;
+  });
+  return sonuc;
+}
+
 // Türkçe sayı formatını ayrıştırır: "1.064,00" -> 1064, "29,00" -> 29, 42 -> 42
 function sayiAyristir(v) {
   if (typeof v === "number") return v;
@@ -1337,13 +1390,42 @@ const cariSirala = (liste) => [...(liste || [])].sort((a, b) => {
   if (!ka && kb) return 1;
   return String(a.ad || "").localeCompare(String(b.ad || ""), "tr");
 });
-// Ada göre cari kaydını bul (eski kayıtlarda sadece isim tutuluyordu)
+// Ada göre cari kaydını bul (eski kayıtlarda sadece isim tutuluyordu).
+// Excel'den gelen dosyalarda "Tedarikçi" sütununa çoğu zaman cari KODU
+// yazıldığı için koda göre de arar.
 const cariBul = (liste, ad) => {
   const q = String(ad || "").trim().toLowerCase();
   if (!q) return null;
-  return (liste || []).find((c) => String(c.ad || "").trim().toLowerCase() === q) || null;
+  const l = liste || [];
+  return l.find((c) => String(c.ad || "").trim().toLowerCase() === q)
+    || l.find((c) => String(c.kod || "").trim().toLowerCase() === q)
+    || null;
 };
 const cariKodBul = (liste, ad) => String(cariBul(liste, ad)?.kod || "").trim();
+// Excel'den gelen "tedarikçi" hücresi kod da olabilir isim de; cari kartına
+// bakıp her ikisini de doğru alana yerleştirir.
+// Cari kodu + ismini tek satır metin olarak birleştirir (yazdırma/PDF için);
+// kod ile isim aynıysa tek kez yazılır.
+const cariMetni = (kod, ad) => {
+  const k = String(kod || "").trim(), a = String(ad || "").trim();
+  return k && k !== a ? `${k} · ${a}` : (a || k || "");
+};
+// Cari kodunu ve ismini yan yana gösterir. İkisi de aynıysa (Excel'den yalnız
+// kodla gelmiş eski kayıtlar) aynı kod iki kez yazılmaz.
+const CariEtiketi = ({ kod, ad }) => {
+  const k = String(kod || "").trim(), a = String(ad || "").trim();
+  return (
+    <>
+      {k && k !== a && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{k}</span>}
+      {a || k || "—"}
+    </>
+  );
+};
+const cariCozumle = (liste, ad, kod) => {
+  const cari = cariBul(liste, kod) || cariBul(liste, ad);
+  if (cari) return { tedarikci: String(cari.ad || "").trim() || String(ad || "").trim(), tedarikciKod: String(cari.kod || "").trim() };
+  return { tedarikci: String(ad || "").trim(), tedarikciKod: String(kod || "").trim() };
+};
 
 // ---------- Stok kartı yardımcıları ----------
 // Stok kodu + adı tüm programda aynı biçimde görünür (cari mantığının aynısı)
@@ -2487,6 +2569,7 @@ function Panel({ onCikis, kullanici }) {
             {tab === "satinalma-karsilastir" && <TeklifKarsilastirma
               satinalmaTeklifler={satinalmaTeklifler} satinalmaTalepler={satinalmaTalepler}
               satinalmaSiparisler={satinalmaSiparisler} hammaddeler={hammaddeler}
+              fasonFirmalar={fasonFirmalar}
               kullanici={kullanici} formAyarlari={formAyarlari}
               siparisOlustur={(teklif, talep) => {
                 setSiparisTaslak({ kaynak: "teklif", teklif, talep });
@@ -4036,12 +4119,10 @@ async function hammaddeGelenAyarla(kayit, yeniGelen, depoStok, eposta) {
 async function excelDenGenelOku(dosya, alanlar) {
   const rows = await dosyaOku(dosya);
   if (!rows.length) return [];
-  const nrm = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().replace(/\s+/g, " ").trim();
-  const ilk = (rows[0] || []).map(nrm);
-  const sutunlar = alanlar.map((a) => {
-    const anahtarlar = [nrm(a.baslik), ...(a.esler || []).map(nrm)].filter(Boolean);
-    return ilk.findIndex((h) => h && anahtarlar.some((k) => h === k || h.includes(k) || k.includes(h)));
-  });
+  const anahtarHaritasi = {};
+  alanlar.forEach((a, j) => { anahtarHaritasi[`a${j}`] = [a.baslik, ...(a.esler || [])].filter(Boolean); });
+  const eslesme = basliklariEslestir(rows[0] || [], anahtarHaritasi);
+  const sutunlar = alanlar.map((a, j) => eslesme[`a${j}`]);
   const baslikliMi = sutunlar.filter((i) => i !== -1).length >= Math.min(2, alanlar.length);
   const al = (r, i) => (i != null && i !== -1 ? String(r[i] == null ? "" : r[i]).trim() : "");
   const coz = (r) => {
@@ -4212,49 +4293,84 @@ const XLS_ALAN = {
     { baslik: "AD", alan: "ad", ornek: "ENDERUS Hattı", zorunlu: true, esler: ["isim", "açıklama"] },
     { baslik: "AÇIKLAMA", alan: "aciklama", ornek: "" },
   ],
+  // Sipariş toplu aktarım şablonu — fiş ekranındaki alanlarla birebir aynı sırada.
+  // "TOPLAM TUTAR" isteğe bağlıdır: birim fiyat boş bırakılıp yalnız tutar
+  // yazılırsa birim fiyat geri hesaplanır.
   satinalma_siparisler: [
-    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "PO-0001", zorunlu: true },
+    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "PO-0001", zorunlu: true, esler: ["sipariş no", "siparis no"] },
     { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
-    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001" },
-    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari", "firma"] },
+    { baslik: "BELGE NO", alan: "belgeNo", ornek: "BLG-1" },
+    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001", esler: ["cari kod", "cari kodu"] },
+    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari ismi", "cari adı", "firma adı", "cari", "firma"] },
     { baslik: "PROJE KODU", alan: "projeKodu", ornek: "PRJ-001", esler: ["proje"] },
     { baslik: "PARA BİRİMİ", alan: "paraBirimi", ornek: "TRY", esler: ["döviz", "para"] },
     { baslik: "KUR", alan: "kur", ornek: "1", sayi: true },
-    { baslik: "TESLİM TARİHİ", alan: "teslimTarihi", ornek: "2026-09-01" },
+    { baslik: "TERMİN TARİHİ", alan: "teslimTarihi", ornek: "2026-09-01", esler: ["teslim tarihi"] },
+    { baslik: "ÖDEME ŞEKLİ", alan: "odemeSekli", ornek: "30 gün vadeli", esler: ["ödeme", "odeme sekli"] },
     { baslik: "STOK KODU", alan: "stokKodu", ornek: "HMD-001" },
-    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme", "stok adı"] },
+    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme", "stok adı", "stok adi", "ismi"] },
     { baslik: "MİKTAR", alan: "miktar", ornek: "250", sayi: true },
     { baslik: "BİRİM", alan: "birim", ornek: "Kg" },
     { baslik: "BİRİM FİYAT", alan: "birimFiyat", ornek: "42,50", sayi: true },
-    { baslik: "AÇIKLAMA", alan: "aciklama", ornek: "" },
+    { baslik: "TOPLAM TUTAR", alan: "satirTutar", ornek: "10625,00", sayi: true, esler: ["satır tutar", "satir tutar", "tutar"] },
+    { baslik: "AÇIKLAMA 1", alan: "aciklama", ornek: "Ø30X375" },
+    { baslik: "AÇIKLAMA 2", alan: "aciklama2", ornek: "Tolerans h9" },
   ],
   satinalma_teklifler: [
-    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "TKL-0001", zorunlu: true },
+    { baslik: "EVRAK NO", alan: "evrakNo", ornek: "TKL-0001", zorunlu: true, esler: ["teklif no"] },
     { baslik: "TARİH", alan: "tarih", ornek: "2026-08-14" },
-    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001" },
-    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari", "firma"] },
-    { baslik: "PARA BİRİMİ", alan: "paraBirimi", ornek: "TRY" },
+    { baslik: "TALEP NO", alan: "talepEvrakNo", ornek: "TLP-00001", esler: ["talep"] },
+    { baslik: "TEDARİKÇİ KOD", alan: "tedarikciKod", ornek: "320.01.001", esler: ["cari kod", "cari kodu"] },
+    { baslik: "TEDARİKÇİ", alan: "tedarikci", ornek: "ABC METAL LTD.", zorunlu: true, esler: ["cari ismi", "cari adı", "firma adı", "cari", "firma"] },
+    { baslik: "PARA BİRİMİ", alan: "paraBirimi", ornek: "TRY", esler: ["döviz", "para"] },
     { baslik: "KUR", alan: "kur", ornek: "1", sayi: true },
+    { baslik: "TESLİM SÜRESİ", alan: "teslimSuresi", ornek: "15 gün" },
+    { baslik: "ÖDEME ŞEKLİ", alan: "odemeSekli", ornek: "30 gün vadeli", esler: ["ödeme", "odeme sekli"] },
     { baslik: "STOK KODU", alan: "stokKodu", ornek: "HMD-001" },
-    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme"] },
+    { baslik: "MALZEME / STOK ADI", alan: "stokAdi", ornek: "Çelik Lama 40x8", esler: ["malzeme", "stok adı", "stok adi", "ismi"] },
     { baslik: "MİKTAR", alan: "miktar", ornek: "250", sayi: true },
     { baslik: "BİRİM", alan: "birim", ornek: "Kg" },
     { baslik: "BİRİM FİYAT", alan: "birimFiyat", ornek: "42,50", sayi: true },
+    { baslik: "TOPLAM TUTAR", alan: "satirTutar", ornek: "10625,00", sayi: true, esler: ["satır tutar", "satir tutar", "tutar"] },
     { baslik: "KDV %", alan: "kdv", ornek: "20", sayi: true },
+    { baslik: "AÇIKLAMA 1", alan: "aciklama", ornek: "" },
+    { baslik: "AÇIKLAMA 2", alan: "aciklama2", ornek: "" },
   ],
 };
 
-// Tek satırlık Excel kaydını evrak (başlık + 1 satır) yapısına çevirir
-const evrakaCevir = (k, ekstra) => {
-  const { stokKodu, stokAdi, miktar, birim, birimFiyat, kdv, aciklama, ...baslik } = k;
-  const satirTutar = (Number(miktar) || 0) * (Number(birimFiyat) || 0);
-  const kur = String(baslik.paraBirimi || "TRY") === "TRY" ? 1 : (Number(baslik.kur) || 1);
+// Tek satırlık Excel kaydını evrak (başlık + 1 satır) yapısına çevirir.
+// cariler verilirse "Tedarikçi" hücresine kod yazılmış olsa bile cari kartından
+// gerçek ismi bulup yerine koyar. Tutar hücresi doluysa birim fiyat boş olsa
+// bile satır tutarı korunur (ve birim fiyat geri hesaplanır).
+const evrakaCevir = (k, ekstra, cariler) => {
+  const { stokKodu, stokAdi, miktar, birim, birimFiyat, kdv, aciklama, aciklama2, satirTutar: girilenTutar, ...baslik } = k;
+  const mik = sayiCevir(miktar);
+  const hesapFiyat = sayiCevir(birimFiyat);
+  const hesap = mik * hesapFiyat;
+  const girilen = sayiCevir(girilenTutar);
+  const satirTutar = hesap || girilen;
+  const sonFiyat = hesapFiyat || (mik > 0 && girilen ? girilen / mik : 0);
+  const kur = String(baslik.paraBirimi || "TRY") === "TRY" ? 1 : (sayiCevir(baslik.kur) || 1);
+  const cari = cariCozumle(cariler, baslik.tedarikci, baslik.tedarikciKod);
+  // Teklif aktarımında KDV sütunu varsa ara/KDV/genel toplamlar da doldurulur;
+  // aksi halde teklif listelerinde toplamlar eksik görünüyordu.
+  const kdvli = kdv != null && String(kdv).trim() !== "";
+  const satirKdv = kdvli ? (satirTutar * sayiCevir(kdv)) / 100 : 0;
+  const genelToplam = satirTutar + satirKdv;
   return {
     ...baslik,
+    tedarikci: cari.tedarikci, tedarikciKod: cari.tedarikciKod,
     paraBirimi: baslik.paraBirimi || "TRY", kur,
-    genelToplamTL: satirTutar * kur,
-    satirlar: [{ stokKodu: stokKodu || "", stokAdi: stokAdi || "", miktar: miktar || 0, birim: birim || "Adet", birimFiyat: birimFiyat || 0, ...(kdv != null ? { kdv } : {}), aciklama: aciklama || "", satirTutar }],
-    genelToplam: satirTutar,
+    genelToplamTL: genelToplam * kur,
+    satirlar: [{
+      stokKodu: stokKodu || "", stokAdi: stokAdi || "", miktar: mik || 0,
+      birim: birim || "Adet", birimFiyat: sonFiyat || 0,
+      ...(kdvli ? { kdv, satirAra: satirTutar, satirKdv } : {}),
+      aciklama: aciklama || "", aciklama2: aciklama2 || "",
+      satirTutar: kdvli ? genelToplam : satirTutar,
+    }],
+    ...(kdvli ? { araToplam: satirTutar, kdvToplam: satirKdv } : {}),
+    genelToplam,
     durum: "acik",
     ...(ekstra || {}),
   };
@@ -7638,11 +7754,8 @@ async function projeKodlariniKaydet(kodlar, mevcutProjeler, kaynak) {
 async function satinalmaExcelOku(dosya, alanlar) {
   const rows = await dosyaOku(dosya);
   if (!rows.length) return { fisler: [], atlanan: 0 };
-  const normalize = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().trim();
-  const ilk = (rows[0] || []).map(normalize);
-  const bul = (...anahtarlar) => ilk.findIndex((h) => anahtarlar.some((a) => h.includes(normalize(a))));
-  const idx = {};
-  Object.entries(alanlar).forEach(([alan, anahtarlar]) => { idx[alan] = bul(...anahtarlar); });
+  const ilk = (rows[0] || []).map(basligiNormalize);
+  const idx = basliklariEslestir(rows[0] || [], alanlar);
   const baslangicSatiri = ilk.some((h) => h.includes("evrak") || h.includes("tarih") || h.includes("miktar")) ? 1 : 0;
   const al = (r, alan) => (idx[alan] != null && idx[alan] !== -1 ? String(r[idx[alan]] ?? "").trim() : "");
   const tarihCevir = (v) => {
@@ -7664,7 +7777,11 @@ async function satinalmaExcelOku(dosya, alanlar) {
     const r = rows[i] || [];
     if (!r.some((h) => String(h ?? "").trim())) continue;
     const evrakNo = al(r, "evrakNo");
-    const ad = al(r, "ismi");
+    // Malzeme adı alanının adı ekrana göre değişiyor (talepte "ismi",
+    // sipariş/teklifte "stokAdi"). Eskiden yalnız "ismi" aranıyordu; sipariş
+    // aktarımında bu alan hiç bulunamadığı için her satır "malzeme boş"
+    // sayılıp atlanıyordu.
+    const ad = ["ismi", "stokAdi", "malzeme", "ad"].map((a) => al(r, a)).find((v) => v) || "";
     if (!evrakNo || !ad) { atlanan++; continue; }
     if (!grup.has(evrakNo)) {
       grup.set(evrakNo, { evrakNo, baslik: {}, satirlar: [] });
@@ -7692,7 +7809,7 @@ const duzenlenmisSatir = { background: "#fff6e2" };
 const duzenlenmisRozet = { display: "inline-block", marginLeft: 7, padding: "1px 6px", borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: "#4a3a17", color: "#b06a00", border: "1px solid #e6cd93", textTransform: "uppercase", letterSpacing: 0.3, fontFamily: "inherit", verticalAlign: "middle" };
 const duzenleButonu = { display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid #b6c6da", color: "#31465f", borderRadius: 5, padding: "4px 9px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", marginRight: 6, verticalAlign: "middle" };
 
-const satirToplam = (r) => (Number(String(r.miktar || "").replace(",", ".")) || 0) * (Number(String(r.birimFiyat || "").replace(",", ".")) || 0);
+const satirToplam = (r) => sayiCevir(r.miktar) * sayiCevir(r.birimFiyat);
 
 // Talep satırı (Cinsi/Kodu/İsmi/…) -> sipariş satırı eşleşmesi
 const talepSatiriniSiparise = (r) => ({
@@ -7724,7 +7841,31 @@ const TEKLIF_DURUM = {
   kaybetti: { label: "Kaybetti", renk: "#5a6b80" },
   iptal: { label: "İptal", renk: "#c62828" },
 };
-const sayiCevir = (v) => Number(String(v == null ? "" : v).replace(/\s/g, "").replace(",", ".")) || 0;
+// Hem Türkçe ("1.234,56") hem İngilizce ("1,234.56") biçimi ve para simgeli
+// metinleri güvenle sayıya çevirir. Eskiden yalnız ilk virgülü noktaya
+// çeviriyordu; "1.826,00" gibi binlik ayıraçlı hücreler NaN -> 0 oluyor,
+// içeri alınan siparişlerin tutarı sıfır görünüyordu.
+const sayiCevir = (v) => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  let s = String(v == null ? "" : v).replace(/[\s ₺$€]/g, "").replace(/tl$/i, "").trim();
+  if (!s) return 0;
+  const eksi = /^\(.*\)$/.test(s) || s.startsWith("-");
+  s = s.replace(/[()]/g, "").replace(/^-/, "");
+  const sonVirgul = s.lastIndexOf(","), sonNokta = s.lastIndexOf(".");
+  if (sonVirgul > -1 && sonNokta > -1) {
+    // Sonda kalan ondalık ayıraçtır, diğeri binlik ayıraçtır.
+    s = sonVirgul > sonNokta ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (sonVirgul > -1) {
+    s = s.replace(",", ".");
+  } else if (sonNokta > -1) {
+    // Yalnız nokta var: "1.826" Türkçe binlik, "42.50" İngilizce ondalık.
+    const parcalar = s.split(".");
+    if (parcalar.length > 2 || (parcalar[1] || "").length === 3) s = s.replace(/\./g, "");
+  }
+  const sayi = Number(s);
+  if (!Number.isFinite(sayi)) return 0;
+  return eksi ? -sayi : sayi;
+};
 const bosTeklifSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", kdv: "20", aciklama: "", aciklama2: "" });
 const teklifSatirAra = (r) => sayiCevir(r.miktar) * sayiCevir(r.birimFiyat);
 const teklifSatirKdv = (r) => (teklifSatirAra(r) * sayiCevir(r.kdv)) / 100;
@@ -9019,22 +9160,20 @@ const bosCari = () => ({
 async function excelDenCariOku(dosya) {
   const rows = await dosyaOku(dosya);
   if (!rows.length) return { kayitlar: [], atlanan: 0 };
-  const normalize = (s) => String(s || "").replace(/İ/g, "I").replace(/ı/g, "i").toLowerCase().trim();
-  const ilk = (rows[0] || []).map(normalize);
-  const bul = (...anahtarlar) => ilk.findIndex((h) => anahtarlar.some((a) => h.includes(a)));
-  const sutun = {
-    kod: bul("cari kod", "kod"),
-    ad: bul("cari ad", "cari isim", "firma ad", "unvan", "ünvan", "isim", "firma"),
-    tip: bul("tip", "tür", "tur", "grup"),
-    yetkili: bul("yetkili", "ilgili"),
-    telefon: bul("telefon", "tel", "gsm"),
-    eposta: bul("e-posta", "eposta", "mail"),
-    vergiDairesi: bul("vergi dairesi"),
-    vergiNo: bul("vergi no", "vkn", "tckn"),
-    adres: bul("adres"),
-    iban: bul("iban"),
-    not: bul("not", "aciklama", "açıklama"),
-  };
+  const normalize = basligiNormalize;
+  const sutun = basliklariEslestir(rows[0] || [], {
+    kod: ["cari kod", "cari kodu", "kod"],
+    ad: ["cari ismi", "cari isim", "cari ad", "cari adı", "cari unvan", "firma ad", "firma adı", "unvan", "ünvan", "isim", "firma"],
+    tip: ["tip", "tür", "tur", "grup"],
+    yetkili: ["yetkili", "ilgili"],
+    telefon: ["telefon", "tel", "gsm"],
+    eposta: ["e-posta", "eposta", "mail"],
+    vergiDairesi: ["vergi dairesi"],
+    vergiNo: ["vergi no", "vkn", "tckn"],
+    adres: ["adres"],
+    iban: ["iban"],
+    not: ["not", "aciklama", "açıklama"],
+  });
   const basliklıMi = Object.values(sutun).some((i) => i !== -1);
   const adIndex = sutun.ad !== -1 ? sutun.ad : (sutun.kod === 0 ? 1 : 0);
   const al = (r, i) => (i !== -1 && i != null ? String(r[i] == null ? "" : r[i]).trim() : "");
@@ -9695,7 +9834,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
       ayarlar: formAyarlari, belgeAdi: "TEKLİF FORMU", dokumanKodu: "teklif", yazdiran: kullanici?.email,
       ustBilgiler: [
         ["Teklif No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Kaynak Talep No", b.talepEvrakNo || "—"],
-        ["Tedarikçi", [b.tedarikciKod, b.tedarikci].filter(Boolean).join(" · ")], ["Para Birimi", pb === "TRY" ? "TL" : `${pb} (kur: ${sayiTR(kur)})`], ["Geçerlilik", b.gecerlilikTarihi ? trTarih(b.gecerlilikTarihi) : "—"],
+        ["Tedarikçi", cariMetni(b.tedarikciKod, b.tedarikci)], ["Para Birimi", pb === "TRY" ? "TL" : `${pb} (kur: ${sayiTR(kur)})`], ["Geçerlilik", b.gecerlilikTarihi ? trTarih(b.gecerlilikTarihi) : "—"],
         ["Teslim Süresi", b.teslimSuresi ? `${b.teslimSuresi} gün` : (b.teslimTarihi ? trTarih(b.teslimTarihi) : "—")],
         ["Ödeme Şekli", b.odemeSekli || "—"], ["Vade", b.vade ? `${b.vade} gün` : "—"],
       ],
@@ -9758,10 +9897,10 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
     }))), "satinalma-teklifleri.xlsx", "Teklifler"
   );
   const sablonuIndir = () => sablonIndir(
-    ["Teklif No", "Tarih", "Talep No", "Tedarikçi", "Para Birimi", "Kur", "Teslim Süresi", "Ödeme Şekli", "Vade", "Geçerlilik", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "KDV %"],
+    ["Teklif No", "Tarih", "Talep No", "Cari Kod", "Tedarikçi", "Para Birimi", "Kur", "Teslim Süresi", "Ödeme Şekli", "Vade", "Geçerlilik", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "KDV %"],
     [
-      ["TKL-00001", todayISO(), "TLP-0001", "ABC Metal Ltd.", "TRY", "1", "15", "30 gün vadeli", "30", todayISO(), "STK-0001", "Örnek Malzeme", "10", "Adet", "250", "20"],
-      ["TKL-00001", todayISO(), "TLP-0001", "ABC Metal Ltd.", "TRY", "1", "15", "30 gün vadeli", "30", todayISO(), "STK-0002", "İkinci Kalem", "5", "Adet", "180", "20"],
+      ["TKL-00001", todayISO(), "TLP-0001", "320.01.001", "ABC Metal Ltd.", "TRY", "1", "15", "30 gün vadeli", "30", todayISO(), "STK-0001", "Örnek Malzeme", "10", "Adet", "250", "20"],
+      ["TKL-00001", todayISO(), "TLP-0001", "320.01.001", "ABC Metal Ltd.", "TRY", "1", "15", "30 gün vadeli", "30", todayISO(), "STK-0002", "İkinci Kalem", "5", "Adet", "180", "20"],
     ],
     "satinalma-teklif-sablonu.xlsx", "Şablon"
   );
@@ -9773,7 +9912,9 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
     try {
       const { fisler, atlanan } = await satinalmaExcelOku(dosya, {
         evrakNo: ["teklif no", "evrak no", "evrak"],
-        b_tarih: ["tarih"], b_talepEvrakNo: ["talep no", "talep"], b_tedarikci: ["tedarikçi", "tedarikci", "firma", "cari"],
+        b_tarih: ["tarih"], b_talepEvrakNo: ["talep no", "talep"],
+        b_tedarikci: ["tedarikçi", "tedarikci", "cari ismi", "cari adı", "firma adı", "firma", "cari"],
+        b_tedarikciKod: ["tedarikçi kod", "tedarikci kod", "cari kod", "cari kodu"],
         b_paraBirimi: ["para birimi", "para"], b_kur: ["kur"],
         b_teslimSuresi: ["teslim süresi", "teslim suresi"], b_odemeSekli: ["ödeme", "odeme"], b_vade: ["vade"],
         b_gecerlilikTarihi: ["geçerlilik", "gecerlilik"],
@@ -9793,7 +9934,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
             await benzersizEvrakKaydet("satinalma_teklifler", fis.evrakNo, {
               evrakNo: fis.evrakNo, tarih: fis.baslik.tarih || todayISO(),
               talepId: talep?.id || "", talepEvrakNo: fis.baslik.talepEvrakNo || "",
-              tedarikci: fis.baslik.tedarikci || "", tedarikciKod: cariKodBul(fasonFirmalar, fis.baslik.tedarikci), paraBirimi: PARA_BIRIMLERI.some((x) => x.id === pb) ? pb : "TRY", kur,
+              ...cariCozumle(fasonFirmalar, fis.baslik.tedarikci, fis.baslik.tedarikciKod), paraBirimi: PARA_BIRIMLERI.some((x) => x.id === pb) ? pb : "TRY", kur,
               teslimSuresi: fis.baslik.teslimSuresi || "", teslimTarihi: "",
               odemeSekli: fis.baslik.odemeSekli || "", vade: fis.baslik.vade || "",
               gecerlilikTarihi: fis.baslik.gecerlilikTarihi || "", aciklama: "",
@@ -10055,10 +10196,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
                     </td>
                     <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
                     <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.talepEvrakNo || "—"}</td>
-                    <td style={{ fontSize: 12.5 }}>
-                      {t.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{t.tedarikciKod}</span>}
-                      {t.tedarikci || "—"}
-                    </td>
+                    <td style={{ fontSize: 12.5 }}><CariEtiketi kod={t.tedarikciKod} ad={t.tedarikci} /></td>
                     <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
                     <td style={{ textAlign: "right", fontFamily: "monospace" }}>{tutarYaz(sayiCevir(t.genelToplam), t.paraBirimi)}</td>
                     <td style={{ textAlign: "right", fontFamily: "monospace", color: "#1565c0" }}>{tutarTL(teklifTL(t))}</td>
@@ -10295,7 +10433,7 @@ function IzlenebilirlikPenceresi({
                       <tr key={t.id} style={{ background: kazanan ? "#e2f4ea" : undefined }}>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#1565c0" }}>{t.evrakNo}</td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontWeight: kazanan ? 700 : 400 }}>
-                          {[t.tedarikciKod, t.tedarikci].filter(Boolean).join(" · ")}
+                          {cariMetni(t.tedarikciKod, t.tedarikci)}
                         </td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{t.tarih ? trTarih(t.tarih) : "—"}</td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: i === 0 ? "#1b7f4b" : "#152a45" }}>
@@ -10410,7 +10548,7 @@ function IzlenebilirlikPenceresi({
                       <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#1565c0", fontWeight: bu ? 700 : 400 }}>
                         {s.evrakNo}{bu ? " ◄" : ""}
                       </td>
-                      <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{[s.tedarikciKod, s.tedarikci].filter(Boolean).join(" · ")}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{cariMetni(s.tedarikciKod, s.tedarikci)}</td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{s.tarih ? trTarih(s.tarih) : "—"}</td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontSize: 12.5 }}>{(s.satirlar || []).length}</td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5 }}>{tutarTL(siparisTL(s))}</td>
@@ -11348,7 +11486,7 @@ function karsilastirmaYazdir({ ayarlar, talep, teklifler, kalemler, enUcuzTeklif
   w.focus();
 }
 
-function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisler, hammaddeler, kullanici, formAyarlari, siparisOlustur }) {
+function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisler, hammaddeler, fasonFirmalar, kullanici, formAyarlari, siparisOlustur }) {
   const [talepId, setTalepId] = useState("");
   const [sadeceGecerli, setSadeceGecerli] = useState(true);
   // Kalem bazında hangi firmadan alınacağı: { kalemAnahtarı: teklifId }.
@@ -11474,7 +11612,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
             <div style={{ fontWeight: 700, fontSize: 16 }}>Teklif Karşılaştırma</div>
             <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>Firmaları yan yana gör, en uygun olanı tek tıkla siparişe çevir. Tüm fiyatlar TL karşılığı üzerinden karşılaştırılır.</div>
           </div>
-                    <ExcelSeridi alanlar={XLS_ALAN.satinalma_teklifler} dosyaAdi="teklifler" koleksiyon="satinalma_teklifler" hazirla={(k) => evrakaCevir(k, { olusturanEposta: kullanici?.email || "—" })} />
+                    <ExcelSeridi alanlar={XLS_ALAN.satinalma_teklifler} dosyaAdi="teklifler" koleksiyon="satinalma_teklifler" hazirla={(k) => evrakaCevir(k, { olusturanEposta: kullanici?.email || "—" }, fasonFirmalar)} />
           <button className="btn-ghost" onClick={disaAktar} disabled={!teklifler.length}><FileSpreadsheet size={14} /> Excele Aktar</button>
           <button className="btn-ghost" onClick={yazdir} disabled={!teklifler.length}><Printer size={14} /> Yazdır / PDF</button>
         </div>
@@ -11968,7 +12106,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       ayarlar: formAyarlari, dokumanKodu: "siparis", yazdiran: kullanici?.email,
       belgeAdi: "Satınalma Sipariş Fişi",
       ustBilgiler: [
-        ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Tedarikçi", [b.tedarikciKod, b.tedarikci].filter(Boolean).join(" · ")],
+        ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Tedarikçi", cariMetni(b.tedarikciKod, b.tedarikci)],
         ["Belge No", b.belgeNo], ["Termin Tarihi", trTarih(b.teslimTarihi)], ["Ödeme Şekli", b.odemeSekli],
         ["Kaynak Talep No", b.talepEvrakNo], ["Proje Kodu", b.projeKodu || ""], ["Durum", durum],
         ["Para Birimi", (PARA_BIRIMLERI.find((x) => x.id === pb) || PARA_BIRIMLERI[0]).label],
@@ -12033,10 +12171,11 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
   );
 
   const sablonuIndir = () => sablonIndir(
-    ["Evrak No", "Tarih", "Belge No", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Termin Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "Açıklama 1", "Açıklama 2"],
+    ["Evrak No", "Tarih", "Belge No", "Cari Kod", "Tedarikçi", "Proje Kodu", "Para Birimi", "Kur", "Termin Tarihi", "Ödeme Şekli", "Satır Proje Kodu", "Stok Kodu", "Malzeme", "Miktar", "Birim", "Birim Fiyat", "Toplam Tutar", "Açıklama 1", "Açıklama 2"],
     [
-      ["PO-00001", todayISO(), "BLG-1", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0001", "Örnek Hammadde", "10", "Kg", "150", "Ø30X375", "Tolerans h9"],
-      ["PO-00002", todayISO(), "BLG-2", "Örnek Tedarikçi Ltd.", "PRJ-002", "USD", "41,50", todayISO(), "Peşin", "PRJ-002", "STK-0001", "Örnek İthal Malzeme", "1", "Adet", "2500", "", ""],
+      ["PO-00001", todayISO(), "BLG-1", "320.01.001", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0001", "Örnek Hammadde", "10", "Kg", "150", "1.500,00", "Ø30X375", "Tolerans h9"],
+      ["PO-00001", todayISO(), "BLG-1", "320.01.001", "Örnek Tedarikçi Ltd.", "PRJ-001", "TRY", "1", todayISO(), "30 gün vadeli", "PRJ-001", "HMD-0002", "İkinci Kalem", "4", "Adet", "250", "1.000,00", "", ""],
+      ["PO-00002", todayISO(), "BLG-2", "320.01.002", "Örnek İthalat A.Ş.", "PRJ-002", "USD", "41,50", todayISO(), "Peşin", "PRJ-002", "STK-0001", "Örnek İthal Malzeme", "1", "Adet", "2500", "2.500,00", "", ""],
     ],
     "satinalma-siparis-sablonu.xlsx", "Şablon"
   );
@@ -12049,13 +12188,16 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
     try {
       const { fisler, atlanan } = await satinalmaExcelOku(dosya, {
         evrakNo: ["evrak no", "evrak"],
-        b_tarih: ["tarih"], b_belgeNo: ["belge no"], b_tedarikci: ["tedarik"],
+        b_tarih: ["tarih"], b_belgeNo: ["belge no"],
+        b_tedarikci: ["tedarikçi", "tedarikci", "cari ismi", "cari adı", "firma adı", "cari", "firma"],
+        b_tedarikciKod: ["tedarikçi kod", "tedarikci kod", "cari kod", "cari kodu"],
         b_teslimTarihi: ["termin tarihi", "teslim tarihi"], b_odemeSekli: ["ödeme", "odeme"],
         b_projeKodu: ["proje kodu", "proje"],
         b_paraBirimi: ["para birimi", "para", "döviz"], b_kur: ["kur"],
         projeKodu: ["satır proje kodu", "satir proje kodu"],
         stokKodu: ["stok kodu"], stokAdi: ["malzeme", "stok adı", "stok adi", "ismi"],
-        miktar: ["miktar"], birim: ["birim fiyat", "birim"], birimFiyat: ["birim fiyat", "fiyat"],
+        miktar: ["miktar"], birim: ["birim"], birimFiyat: ["birim fiyat", "fiyat"],
+        satirTutar: ["satır tutar", "satir tutar", "toplam tutar", "tutar"],
         aciklama: ["açıklama 1", "aciklama 1", "açıklama", "aciklama"], aciklama2: ["açıklama 2", "aciklama 2"],
       });
       if (!fisler.length) { setIceMsg("Dosyada geçerli satır bulunamadı. Evrak No ve Malzeme sütunları dolu olmalı."); }
@@ -12072,12 +12214,19 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
               const satir = { ...bosSiparisSatiri(), ...r, birim: r.birim || "Adet" };
               delete satir.key;
               satir.projeKodu = String(satir.projeKodu || fisProje).trim();
-              return { ...satir, satirTutar: satirToplam(satir) };
+              // Dosyada birim fiyat yoksa ama satır tutarı varsa birim fiyatı geri hesapla,
+              // böylece raporlarda tutar sıfır görünmez.
+              const mik = sayiCevir(satir.miktar);
+              const hesap = satirToplam(satir);
+              const girilen = sayiCevir(satir.satirTutar);
+              if (!hesap && girilen && mik > 0) satir.birimFiyat = String(girilen / mik);
+              return { ...satir, satirTutar: hesap || girilen };
             });
             projeKodlari.push(fisProje, ...rs.map((r) => r.projeKodu));
+            const fisCari = cariCozumle(fasonFirmalar, fis.baslik.tedarikci, fis.baslik.tedarikciKod);
             await benzersizEvrakKaydet("satinalma_siparisler", fis.evrakNo, {
               evrakNo: fis.evrakNo, tarih: fis.baslik.tarih || todayISO(),
-              belgeNo: fis.baslik.belgeNo || "", tedarikci: fis.baslik.tedarikci || "",
+              belgeNo: fis.baslik.belgeNo || "", tedarikci: fisCari.tedarikci, tedarikciKod: fisCari.tedarikciKod,
               projeKodu: fisProje, paraBirimi: gecerliPB, kur: fisKur,
               teslimTarihi: fis.baslik.teslimTarihi || "", odemeSekli: fis.baslik.odemeSekli || "",
               aciklama: "", talepId: "", talepEvrakNo: "",
@@ -12382,7 +12531,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                   <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
                   <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                   <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
-                  <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                  <td style={{ fontSize: 12.5 }}><CariEtiketi kod={s.tedarikciKod} ad={s.tedarikci} /></td>
                   <AciklamaHucresi kayit={s} alan="aciklama" />
                   <AciklamaHucresi kayit={s} alan="aciklama2" />
                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
@@ -12600,17 +12749,26 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
   const bekleyenTalep = talepler.filter((t) => talepEtkinDurum(t, satinalmaSiparisler) === "bekliyor").length;
   const acikSiparis = siparisler.filter((s) => s.durum === "acik").length;
 
-  // Tedarikçi bazlı özet
-  const tedarikciOzet = useMemo(() => {
+  // Tedarikçi bazlı özet — ekranda yalnız en çok harcama yapılan ilk 5 tedarikçi
+  // gösterilir; kalanlar tek satırda "Diğer" olarak toplanır.
+  const TEDARIKCI_OZET_ADET = 5;
+  const tedarikciOzetTumu = useMemo(() => {
     const m = new Map();
     siparisler.forEach((s) => {
-      const k = s.tedarikci || "—";
-      if (!m.has(k)) m.set(k, { tedarikci: k, adet: 0, kalem: 0, tutar: 0 });
+      const kod = String(s.tedarikciKod || "").trim();
+      const ad = String(s.tedarikci || "").trim();
+      const k = ad || kod || "—";
+      if (!m.has(k)) m.set(k, { tedarikci: k, kod: kod && kod !== ad ? kod : "", adet: 0, kalem: 0, tutar: 0 });
       const o = m.get(k);
       o.adet += 1; o.kalem += (s.satirlar || []).length; o.tutar += siparisTL(s);
     });
     return [...m.values()].sort((a, b) => b.tutar - a.tutar);
   }, [siparisler]);
+  const tedarikciOzet = tedarikciOzetTumu.slice(0, TEDARIKCI_OZET_ADET);
+  const tedarikciOzetKalan = tedarikciOzetTumu.slice(TEDARIKCI_OZET_ADET).reduce(
+    (t, o) => ({ adet: t.adet + o.adet, kalem: t.kalem + o.kalem, tutar: t.tutar + o.tutar, firma: t.firma + 1 }),
+    { adet: 0, kalem: 0, tutar: 0, firma: 0 }
+  );
 
   const talepDisaAktar = () => excelIndir(
     talepler.flatMap((t) => (t.satirlar || []).map((r) => ({
@@ -12700,7 +12858,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
           <div style={{ fontWeight: 700, fontSize: 15 }}>Filtrele</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn-ghost" onClick={raporYazdir}><Printer size={14} /> Yazdır / PDF</button>
-                      <ExcelSeridi alanlar={XLS_ALAN.satinalma_siparisler} dosyaAdi="satinalma" koleksiyon="satinalma_siparisler" hazirla={(k) => evrakaCevir(k)} />
+                      <ExcelSeridi alanlar={XLS_ALAN.satinalma_siparisler} dosyaAdi="satinalma" koleksiyon="satinalma_siparisler" hazirla={(k) => evrakaCevir(k, null, fasonFirmalar)} />
           <button className="btn-ghost" onClick={altTab === "talep" ? talepDisaAktar : siparisDisaAktar}><Download size={14} /> Excele Aktar</button>
             <button className="btn-ghost" onClick={temizle}><RefreshCw size={14} /> Temizle</button>
           </div>
@@ -12774,19 +12932,38 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
 
       {altTab === "siparis" && tedarikciOzet.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Tedarikçi Bazlı Özet</div>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+            Tedarikçi Bazlı Özet
+            <span style={{ fontWeight: 500, fontSize: 12, color: "#7b8a9d" }}>
+              En çok harcama yapılan ilk {Math.min(TEDARIKCI_OZET_ADET, tedarikciOzetTumu.length)} tedarikçi
+              {tedarikciOzetTumu.length > TEDARIKCI_OZET_ADET ? ` (toplam ${tedarikciOzetTumu.length} tedarikçi)` : ""}
+            </span>
+          </div>
           <div style={{ overflowX: "auto" }}>
             <table>
-              <thead><tr><th>Tedarikçi</th><th>Sipariş</th><th>Kalem</th><th>Tutar</th></tr></thead>
+              <thead><tr><th>#</th><th>Tedarikçi</th><th>Sipariş</th><th>Kalem</th><th>Tutar</th></tr></thead>
               <tbody>
-                {tedarikciOzet.map((o) => (
+                {tedarikciOzet.map((o, i) => (
                   <tr key={o.tedarikci}>
-                    <td>{o.tedarikci}</td>
+                    <td style={{ fontFamily: "monospace", color: "#7b8a9d" }}>{i + 1}</td>
+                    <td>
+                      {o.kod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{o.kod}</span>}
+                      {o.tedarikci}
+                    </td>
                     <td style={{ fontFamily: "monospace" }}>{o.adet}</td>
                     <td style={{ fontFamily: "monospace" }}>{o.kalem}</td>
                     <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{paraTR(o.tutar)}</td>
                   </tr>
                 ))}
+                {tedarikciOzetKalan.firma > 0 && (
+                  <tr>
+                    <td style={{ color: "#7b8a9d" }}>—</td>
+                    <td style={{ color: "#5a6b80" }}>Diğer {tedarikciOzetKalan.firma} tedarikçi</td>
+                    <td style={{ fontFamily: "monospace", color: "#5a6b80" }}>{tedarikciOzetKalan.adet}</td>
+                    <td style={{ fontFamily: "monospace", color: "#5a6b80" }}>{tedarikciOzetKalan.kalem}</td>
+                    <td style={{ fontFamily: "monospace", color: "#5a6b80" }}>{paraTR(tedarikciOzetKalan.tutar)}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -12835,7 +13012,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                       <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
                         <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                         <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
-                        <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                        <td style={{ fontSize: 12.5 }}><CariEtiketi kod={s.tedarikciKod} ad={s.tedarikci} /></td>
                         <AciklamaHucresi kayit={s} alan="aciklama" />
                         <AciklamaHucresi kayit={s} alan="aciklama2" />
                         <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>

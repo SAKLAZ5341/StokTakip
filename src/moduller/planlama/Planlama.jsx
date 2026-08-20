@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import SiparisPaneli from "./SiparisPaneli";
 import WbsPaneli from "./WbsPaneli";
 import ProjelendirmeOzeti from "./ProjelendirmeOzeti";
+import IsEmirleriPaneli from "./IsEmirleriPaneli";
 import { kokWbsKoduUret, guvenliCagir } from "./yardimcilar";
 
 // Giriş noktası. BENIOKU.md sözleşmesi gereği ana programın hiçbir dosyasını
@@ -17,6 +18,8 @@ export default function Planlama({ kullanici, yetki, api, ui, veri }) {
   const [malzemeTalepleri, setMalzemeTalepleri] = useState([]);
   const [fasonTalepleri, setFasonTalepleri] = useState([]);
   const [paketler, setPaketler] = useState([]);
+  const [isEmirleri, setIsEmirleri] = useState([]);
+  const [ayarlarListesi, setAyarlarListesi] = useState([]);
   const [seciliSiparisId, setSeciliSiparisId] = useState(null);
 
   useEffect(() => { const durdur = api.dinle("planlama_siparisler", setSiparisler); return durdur; }, []);
@@ -27,6 +30,13 @@ export default function Planlama({ kullanici, yetki, api, ui, veri }) {
   // planlama_paketler: Projelendirme tamamlanınca mühürlenen, Çizelgeleme
   // (gelecek modül) için tek doğruluk kaynağı olacak devir paketleri.
   useEffect(() => { const durdur = api.dinle("planlama_paketler", setPaketler); return durdur; }, []);
+  // planlama_isEmirleri: AS9100 iş emirleri (SERİ/FAI/DELTA/FAI_REWORK/MONTAJ),
+  // her biri kendi istasyon atamalarını taşır — tarihler burada SAKLANMAZ,
+  // cizelgeMotoru.js her seferinde canlı hesaplar.
+  useEffect(() => { const durdur = api.dinle("planlama_isEmirleri", setIsEmirleri); return durdur; }, []);
+  // planlama_ayarlar: modülün kendi sahip olduğu basit takvim ayarı (günlük
+  // kapasite saat) — veri prop'unda vardiya/takvim kaynağı olmadığı için.
+  useEffect(() => { const durdur = api.dinle("planlama_ayarlar", setAyarlarListesi); return durdur; }, []);
 
   const seciliSiparis = siparisler.find((sp) => sp.id === seciliSiparisId) || null;
 
@@ -77,7 +87,7 @@ export default function Planlama({ kullanici, yetki, api, ui, veri }) {
         onSec={setSeciliSiparisId} onProjelendir={projelendir}
       />
 
-      {seciliSiparis ? (
+      {seciliSiparis && (seciliSiparis.durum === "Açık" || seciliSiparis.durum === "Projelendirildi") && (
         <>
           <ProjelendirmeOzeti
             api={api} ui={ui} yazabilir={yazabilir}
@@ -90,9 +100,20 @@ export default function Planlama({ kullanici, yetki, api, ui, veri }) {
             malzemeTalepleri={malzemeTalepleri} fasonTalepleri={fasonTalepleri}
           />
         </>
-      ) : (
+      )}
+
+      {seciliSiparis && seciliSiparis.durum === "Planlamada" && (
+        <IsEmirleriPaneli
+          api={api} ui={ui} veri={veri} yazabilir={yazabilir}
+          siparis={seciliSiparis} tumSiparisler={siparisler} tumWbs={tumWbs}
+          tumIsEmirleri={isEmirleri} malzemeTalepleri={malzemeTalepleri} rotalar={rotalar}
+          ayarlarListesi={ayarlarListesi}
+        />
+      )}
+
+      {!seciliSiparis && (
         <div className="card" style={{ padding: 24, textAlign: "center", color: s.renk?.soluk }}>
-          WBS / rota detaylarını görmek için yukarıdan bir sipariş seçin.
+          WBS / rota / çizelge detaylarını görmek için yukarıdan bir sipariş seçin.
         </div>
       )}
     </div>
