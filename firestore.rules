@@ -118,7 +118,7 @@ service cloud.firestore {
     // o yüzden sipariş yetkisi de yazabilir.
     match /hammadde/{id} {
       allow read: if okuyabilirim();
-      allow write: if yazabilir(['hammadde-acik', 'hammadde-kapali', 'hammadde-raporu', 'hammadde-kayit', 'satinalma-siparis', 'satinalma-karsilastir']);
+      allow write: if yazabilir(['hammadde-acik', 'hammadde-kapali', 'hammadde-raporu', 'hammadde-kayit', 'satinalma-siparis', 'satinalma-karsilastir', 'satinalma-toplu-teklif']);
     }
 
     // ---------------- Depo ----------------
@@ -171,7 +171,7 @@ service cloud.firestore {
     // rapor ekranından Excel ile toplu talep aktarılabilir.
     match /satinalma_talepler/{id} {
       allow read: if okuyabilirim();
-      allow write: if yazabilir(['satinalma-talep', 'satinalma-siparis', 'satinalma-rapor']);
+      allow write: if yazabilir(['satinalma-talep', 'satinalma-siparis', 'satinalma-rapor', 'satinalma-karsilastir', 'satinalma-toplu-teklif']);
     }
     match /satinalma_teklifler/{id} {
       allow read: if okuyabilirim();
@@ -179,7 +179,7 @@ service cloud.firestore {
     }
     match /satinalma_siparisler/{id} {
       allow read: if okuyabilirim();
-      allow write: if yazabilir(['satinalma-siparis', 'satinalma-karsilastir', 'satinalma-rapor']);
+      allow write: if yazabilir(['satinalma-siparis', 'satinalma-karsilastir', 'satinalma-toplu-teklif', 'satinalma-rapor']);
     }
     // Sipariş fişine yazılan proje kodu otomatik olarak proje kartlarına eklenir.
     match /satinalma_projeler/{id} {
