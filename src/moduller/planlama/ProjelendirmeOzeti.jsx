@@ -71,12 +71,12 @@ export default function ProjelendirmeOzeti({ api, ui, yazabilir, siparis, tumWbs
       </div>
 
       {zatenGonderildi ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#22c55e") + "1a", border: `1px solid ${(s.renk?.iyi || "#22c55e")}55`, color: s.renk?.iyi || "#22c55e" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#15803d") + "1a", border: `1px solid ${(s.renk?.iyi || "#15803d")}55`, color: s.renk?.iyi || "#15803d" }}>
           <PackageCheck size={16} /> Bu sipariş paketlenip planlamaya devredildi. WBS artık sadece izlenebilir referans.
         </div>
       ) : durum.hepsiTamam ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#22c55e") + "1a", border: `1px solid ${(s.renk?.iyi || "#22c55e")}55`, flexWrap: "wrap" }}>
-          <span style={{ color: s.renk?.iyi || "#22c55e", fontWeight: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#15803d") + "1a", border: `1px solid ${(s.renk?.iyi || "#15803d")}55`, flexWrap: "wrap" }}>
+          <span style={{ color: s.renk?.iyi || "#15803d", fontWeight: 600 }}>
             <PackageCheck size={16} style={{ verticalAlign: -3, marginRight: 6 }} /> Tüm kalemler tamam — planlamaya devredilebilir.
           </span>
           {yazabilir && (
@@ -86,7 +86,7 @@ export default function ProjelendirmeOzeti({ api, ui, yazabilir, siparis, tumWbs
           )}
         </div>
       ) : (
-        <div style={{ padding: 10, borderRadius: 8, background: (s.renk?.uyari || "#facc15") + "1a", border: `1px solid ${(s.renk?.uyari || "#facc15")}55`, color: s.renk?.uyari || "#facc15", fontSize: 13 }}>
+        <div style={{ padding: 10, borderRadius: 8, background: (s.renk?.uyari || "#a16207") + "1a", border: `1px solid ${(s.renk?.uyari || "#a16207")}55`, color: s.renk?.uyari || "#a16207", fontSize: 13 }}>
           Henüz tamam değil — her WBS kaleminde kırılım, rota ve malzeme kararını tamamlayın.
         </div>
       )}

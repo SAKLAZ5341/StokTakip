@@ -4,7 +4,7 @@ import { hazirlikHesapla, altWbsKoduUret, kokWbsKoduUret, guvenliCagir } from ".
 import RotaPaneli from "./RotaPaneli";
 
 const RENK_ANAHTAR = { yesil: "iyi", sari: "uyari", kirmizi: "hata", gri: "soluk" };
-const RENK_YEDEK = { yesil: "#22c55e", sari: "#facc15", kirmizi: "#ef4444", gri: "#64748b" };
+const RENK_YEDEK = { yesil: "#15803d", sari: "#a16207", kirmizi: "#dc2626", gri: "#64748b" };
 
 function rozetRengi(ui, renkAnahtari) {
   const s = ui.stil || {};
@@ -82,7 +82,7 @@ export default function WbsPaneli({ api, ui, veri, yazabilir, siparis, tumWbs, r
     const hazirlik = hazirlikHesapla(node, tumWbs, malzemeTalepleri, fasonTalepleri);
     return (
       <>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 4px", borderBottom: `1px solid ${s.renk?.kenar || "#2a4b52"}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 4px", borderBottom: `1px solid ${s.renk?.kenar || "#d5dfec"}` }}>
           <div style={{ width: derinlik * 20, flexShrink: 0 }} />
           <button
             onClick={() => altlar.length && acKapa(node.id)}
@@ -138,7 +138,7 @@ export default function WbsPaneli({ api, ui, veri, yazabilir, siparis, tumWbs, r
             {yazabilir && (
               <button
                 className="btn-ghost"
-                style={{ ...s.dugme, padding: "4px 8px", color: node.bomTamamlandi ? (s.renk?.iyi || "#22c55e") : s.renk?.soluk }}
+                style={{ ...s.dugme, padding: "4px 8px", color: node.bomTamamlandi ? (s.renk?.iyi || "#15803d") : s.renk?.soluk }}
                 onClick={() => kirilimTamamToggle(node)}
                 title={node.bomTamamlandi ? "Kırılım tamam işaretli — geri almak için tıkla" : "Bu kalemin (ve alt kırılımının) tanımı bitti mi? Tamamsa tıkla"}
               >
@@ -148,7 +148,7 @@ export default function WbsPaneli({ api, ui, veri, yazabilir, siparis, tumWbs, r
             {yazabilir && node.faiGerekli && (
               <button
                 className="btn-ghost"
-                style={{ ...s.dugme, padding: "4px 8px", color: node.faiOnay ? (s.renk?.iyi || "#22c55e") : (s.renk?.uyari || "#facc15") }}
+                style={{ ...s.dugme, padding: "4px 8px", color: node.faiOnay ? (s.renk?.iyi || "#15803d") : (s.renk?.uyari || "#a16207") }}
                 onClick={() => faiOnayla(node, !node.faiOnay)}
                 title={node.faiOnay ? "FAI onaylı — kaldırmak için tıkla" : "FAI onayla"}
               >
@@ -350,12 +350,12 @@ function MalzemeTalepFormu({ api, ui, veri, node, kapat }) {
         )}
       </div>
       {secimAcik && (
-        <div style={{ marginTop: 10, maxHeight: 220, overflowY: "auto", border: `1px solid ${s.renk?.kenar || "#2a4b52"}`, borderRadius: 8 }}>
+        <div style={{ marginTop: 10, maxHeight: 220, overflowY: "auto", border: `1px solid ${s.renk?.kenar || "#d5dfec"}`, borderRadius: 8 }}>
           {(veri.stokKartlari || []).map((sk) => (
             <div
               key={sk.id || sk.kod}
               onClick={() => { setStokKodu(sk.kod || sk.stokKodu || ""); setStokAdi(sk.ad || sk.stokAdi || ""); setBirim(sk.birim || "adet"); setSecimAcik(false); }}
-              style={{ padding: 8, cursor: "pointer", borderBottom: `1px solid ${s.renk?.kenar || "#2a4b52"}` }}
+              style={{ padding: 8, cursor: "pointer", borderBottom: `1px solid ${s.renk?.kenar || "#d5dfec"}` }}
             >
               <strong>{sk.kod || sk.stokKodu}</strong> — {sk.ad || sk.stokAdi}
             </div>

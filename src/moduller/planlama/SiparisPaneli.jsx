@@ -4,7 +4,7 @@ import { FileDown, FileUp, Plus, ArrowRightCircle } from "lucide-react";
 import { SIPARIS_SABLON_BASLIKLAR, SIPARIS_SABLON_ORNEK, siparisNoUret, guvenliCagir } from "./yardimcilar";
 
 function durumRozetStili(durum, s) {
-  if (durum === "Planlamada") return { background: "rgba(34,197,94,0.15)", color: s.renk?.iyi || "#22c55e" };
+  if (durum === "Planlamada") return { background: "rgba(34,197,94,0.15)", color: s.renk?.iyi || "#15803d" };
   if (durum === "Projelendirildi") return { background: "rgba(45,212,191,0.15)", color: s.renk?.vurgu };
   return { background: "rgba(250,204,21,0.15)", color: s.renk?.uyari };
 }
@@ -210,12 +210,12 @@ function YeniSiparisFormu({ api, ui, veri, kapat }) {
             </button>
           )}
           {cariListesiAcik && (
-            <div style={{ marginTop: 6, maxHeight: 160, overflowY: "auto", border: `1px solid ${s.renk?.kenar || "#2a4b52"}`, borderRadius: 8 }}>
+            <div style={{ marginTop: 6, maxHeight: 160, overflowY: "auto", border: `1px solid ${s.renk?.kenar || "#d5dfec"}`, borderRadius: 8 }}>
               {(veri.cariler || []).map((c) => (
                 <div
                   key={c.id}
                   onClick={() => { alan("musteriAdi", c.ad || c.unvan || ""); setCariListesiAcik(false); }}
-                  style={{ padding: 8, cursor: "pointer", borderBottom: `1px solid ${s.renk?.kenar || "#2a4b52"}` }}
+                  style={{ padding: 8, cursor: "pointer", borderBottom: `1px solid ${s.renk?.kenar || "#d5dfec"}` }}
                 >
                   {c.ad || c.unvan}
                 </div>

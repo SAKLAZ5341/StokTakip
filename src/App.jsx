@@ -105,9 +105,9 @@ const MENU = [
 // Sahip e-postası her zaman yöneticidir; bu kilit hiçbir şekilde kırılamaz.
 const SAHIP_EPOSTA = "fatihsak.lyoness@gmail.com";
 const YETKI_SEVIYELERI = [
-  { id: "yok", label: "Yetki Yok", renk: "#6b7178" },
-  { id: "goruntule", label: "Görüntüle", renk: "#e8a33d" },
-  { id: "duzenle", label: "Düzenle", renk: "#2dd4bf" },
+  { id: "yok", label: "Yetki Yok", renk: "#7b8a9d" },
+  { id: "goruntule", label: "Görüntüle", renk: "#b06a00" },
+  { id: "duzenle", label: "Düzenle", renk: "#1565c0" },
 ];
 // Menüde ayrı grup olarak görünmeyen ama Ana Sayfa kartlarından açılan ekranlar
 const EK_YETKI_GRUPLARI = [
@@ -440,23 +440,23 @@ async function excelDenMetalOku(dosya, metalMalzemeler) {
 function paraTR(n) { return (Number(n) || 0).toLocaleString("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 2 }); }
 
 // ---------- ERP belge başlığı / grid ortak stilleri ----------
-const belgeBaslikKutu = { border: "1px solid #2a4b52", borderRadius: 8, padding: 16, marginBottom: 16, background: "#16232a" };
-const belgeBaslikEtiket = { fontSize: 11, fontWeight: 700, color: "#6b7178", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 };
-const erpGridKutu = { border: "1px solid #2a4b52", borderRadius: 8, overflow: "hidden" };
-const erpGridTh = { padding: "8px 10px", textAlign: "left", fontSize: 11, textTransform: "uppercase", color: "#6b7178", borderBottom: "1px solid #2a4b52", fontWeight: 700, letterSpacing: 0.3, whiteSpace: "nowrap" };
+const belgeBaslikKutu = { border: "1px solid #d5dfec", borderRadius: 8, padding: 16, marginBottom: 16, background: "#f4f7fc" };
+const belgeBaslikEtiket = { fontSize: 11, fontWeight: 700, color: "#7b8a9d", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 };
+const erpGridKutu = { border: "1px solid #d5dfec", borderRadius: 8, overflow: "hidden" };
+const erpGridTh = { padding: "8px 10px", textAlign: "left", fontSize: 11, textTransform: "uppercase", color: "#7b8a9d", borderBottom: "1px solid #d5dfec", fontWeight: 700, letterSpacing: 0.3, whiteSpace: "nowrap" };
 const erpGridTd = { padding: "6px 8px" };
 const erpGridInput = { padding: "6px 8px", fontSize: 12.5 };
 
 // ---------- Mikro tarzı evrak penceresi (ortak bileşen) ----------
 // Etiket solda, alan sağda — klasik ERP fiş düzeni.
 const fisSatir = { display: "flex", alignItems: "center", gap: 8, marginBottom: 7 };
-const fisEtiket = { fontSize: 12.5, color: "#c7cbd1", width: 128, flexShrink: 0 };
-const fisInput = { flex: 1, minWidth: 0, background: "#142a30", border: "1px solid #3d6169", borderRadius: 3, padding: "5px 8px", color: "#e7e5e0", fontSize: 12.5, outline: "none" };
-const fisGridTh = { padding: "6px 8px", textAlign: "left", fontSize: 11.5, color: "#c7cbd1", background: "#22404a", borderBottom: "1px solid #2a4b52", borderRight: "1px solid #2a4b52", fontWeight: 600, whiteSpace: "nowrap" };
-const fisGridTd = { padding: 0, borderBottom: "1px solid #24424a", borderRight: "1px solid #24424a" };
-const fisHucreInput = { width: "100%", background: "transparent", border: "none", padding: "6px 8px", color: "#e7e5e0", fontSize: 12.5, outline: "none" };
-const fisAltBtn = { display: "flex", alignItems: "center", gap: 6, background: "#1b333c", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 4, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
-const fisAnaBtn = { ...fisAltBtn, background: "#2dd4bf", borderColor: "#2dd4bf", color: "#142a30", fontWeight: 700 };
+const fisEtiket = { fontSize: 12.5, color: "#31465f", width: 128, flexShrink: 0 };
+const fisInput = { flex: 1, minWidth: 0, background: "#f2f6fb", border: "1px solid #b6c6da", borderRadius: 3, padding: "5px 8px", color: "#152a45", fontSize: 12.5, outline: "none" };
+const fisGridTh = { padding: "6px 8px", textAlign: "left", fontSize: 11.5, color: "#31465f", background: "#e6edf7", borderBottom: "1px solid #d5dfec", borderRight: "1px solid #d5dfec", fontWeight: 600, whiteSpace: "nowrap" };
+const fisGridTd = { padding: 0, borderBottom: "1px solid #e4ebf5", borderRight: "1px solid #e4ebf5" };
+const fisHucreInput = { width: "100%", background: "transparent", border: "none", padding: "6px 8px", color: "#152a45", fontSize: 12.5, outline: "none" };
+const fisAltBtn = { display: "flex", alignItems: "center", gap: 6, background: "#ffffff", border: "1px solid #b6c6da", color: "#31465f", borderRadius: 4, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
+const fisAnaBtn = { ...fisAltBtn, background: "#1565c0", borderColor: "#1565c0", color: "#ffffff", fontWeight: 700 };
 
 // ---------- Evrak numaratörü ----------
 // "SEN-0001" -> { onek: "SEN-", sayi: 1, genislik: 4 }
@@ -549,19 +549,19 @@ function UyariPenceresi({ acik, kapat, baslik, mesaj, ikincilButon }) {
   return (
     <div
       onMouseDown={kapat}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(13,36,64,0.35)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 460, background: "#1b333c", border: "1px solid #5a2a2a", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.65)" }}
+        style={{ width: "100%", maxWidth: 460, background: "#ffffff", border: "1px solid #f3c4c0", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.65)" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#3a1f1f", borderBottom: "1px solid #5a2a2a", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
-          <AlertTriangle size={15} color="#e07a6b" />
-          <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: "#e07a6b" }}>{baslik}</span>
-          <button onClick={kapat} style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#fdecea", borderBottom: "1px solid #f3c4c0", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
+          <AlertTriangle size={15} color="#c62828" />
+          <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: "#c62828" }}>{baslik}</span>
+          <button onClick={kapat} style={{ background: "none", border: "none", color: "#5a6b80", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
         </div>
         <div style={{ padding: "18px 16px", fontSize: 13.5, lineHeight: 1.6 }}>{mesaj}</div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", borderRadius: "0 0 4px 4px" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #d5dfec", background: "#f4f7fc", borderRadius: "0 0 4px 4px" }}>
           {ikincilButon}
           <button style={fisAnaBtn} onClick={kapat}><Check size={14} /> Tamam</button>
         </div>
@@ -588,7 +588,7 @@ function SecimPenceresi({
   const eskiUsul = !kayitlar && Array.isArray(secenekler);
   const veri = eskiUsul ? secenekler : (kayitlar || []);
   const kolonlar = eskiUsul
-    ? [{ baslik: "Değer", al: (o) => o.deger, mono: true, renk: "#2dd4bf" }, { baslik: "Açıklama", al: (o) => o.aciklama }]
+    ? [{ baslik: "Değer", al: (o) => o.deger, mono: true, renk: "#1565c0" }, { baslik: "Açıklama", al: (o) => o.aciklama }]
     : (sutunlar || []);
   const filtreTanim = filtreler || [];
 
@@ -628,19 +628,19 @@ function SecimPenceresi({
   if (!acik) return null;
   return (
     <div onMouseDown={kapat} className="secim-katman"
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 85, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "50px 14px" }}>
+      style={{ position: "fixed", inset: 0, background: "rgba(13,36,64,0.35)", zIndex: 85, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "50px 14px" }}>
       <div onMouseDown={(e) => e.stopPropagation()} className="secim-kutu"
-        style={{ width: "100%", maxWidth: genislik, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 6, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "10px 12px", borderRadius: "5px 5px 0 0" }}>
-          <Ikon size={15} color="#2dd4bf" />
+        style={{ width: "100%", maxWidth: genislik, background: "#ffffff", border: "1px solid #d5dfec", borderRadius: 6, boxShadow: "0 18px 48px rgba(13,36,64,0.18)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, background: "#f4f7fc", borderBottom: "1px solid #d5dfec", padding: "10px 12px", borderRadius: "5px 5px 0 0" }}>
+          <Ikon size={15} color="#1565c0" />
           <span style={{ fontSize: 13.5, fontWeight: 700, flex: 1 }}>{baslik}</span>
-          <span style={{ fontSize: 11.5, color: "#6b7178" }}>{liste.length} kayıt</span>
-          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
+          <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>{liste.length} kayıt</span>
+          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#5a6b80", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
         </div>
 
-        <div style={{ padding: 11, borderBottom: "1px solid #2a4b52", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 9 }}>
+        <div style={{ padding: 11, borderBottom: "1px solid #d5dfec", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 9 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input autoFocus className="input" style={{ paddingLeft: 30 }} placeholder="Kod, ad veya herhangi bir alanda ara…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           {secenekListesi.filter((f) => f.degerler.length > 1).map((f) => (
@@ -655,16 +655,16 @@ function SecimPenceresi({
         </div>
 
         <div style={{ overflowY: "auto", flex: 1 }}>
-          {liste.length === 0 && <div style={{ padding: 22, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>{bosMesaj}</div>}
+          {liste.length === 0 && <div style={{ padding: 22, fontSize: 12.5, color: "#7b8a9d", textAlign: "center" }}>{bosMesaj}</div>}
           {liste.length > 0 && (
             <table>
               <thead>
-                <tr>{kolonlar.map((c, i) => <th key={i} style={{ width: c.genislik, textAlign: c.sag ? "right" : "left", position: "sticky", top: 0, background: "#1b333c", zIndex: 1 }}>{c.baslik}</th>)}</tr>
+                <tr>{kolonlar.map((c, i) => <th key={i} style={{ width: c.genislik, textAlign: c.sag ? "right" : "left", position: "sticky", top: 0, background: "#ffffff", zIndex: 1 }}>{c.baslik}</th>)}</tr>
               </thead>
               <tbody>
                 {liste.slice(0, 400).map((k, i) => (
                   <tr key={k.id || i} onClick={() => { sec(k); kapat(); }} onMouseEnter={() => setVurgu(i)}
-                    style={{ cursor: "pointer", background: i === vurgu ? "#274852" : undefined }}>
+                    style={{ cursor: "pointer", background: i === vurgu ? "#dce6f4" : undefined }}>
                     {kolonlar.map((c, j) => (
                       <td key={j} style={{ textAlign: c.sag ? "right" : "left", fontFamily: c.mono ? "monospace" : undefined, color: c.renk || undefined, whiteSpace: c.sarma ? undefined : "nowrap" }}>
                         {c.al(k) || "—"}
@@ -675,11 +675,11 @@ function SecimPenceresi({
               </tbody>
             </table>
           )}
-          {liste.length > 400 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 400 kayıt gösteriliyor — aramayı daraltın.</div>}
+          {liste.length > 400 && <div style={{ padding: 10, fontSize: 11.5, color: "#7b8a9d", textAlign: "center" }}>İlk 400 kayıt gösteriliyor — aramayı daraltın.</div>}
         </div>
 
-        <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid #2a4b52", background: "#16232a", borderRadius: "0 0 5px 5px", flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: 11.5, color: "#6b7178", marginRight: "auto" }}>↑↓ ile gez, Enter ile seç, Esc ile kapat</span>
+        <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid #d5dfec", background: "#f4f7fc", borderRadius: "0 0 5px 5px", flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: 11.5, color: "#7b8a9d", marginRight: "auto" }}>↑↓ ile gez, Enter ile seç, Esc ile kapat</span>
           {serbest && q.trim() && (
             <button onClick={() => { sec({ __serbest: q.trim() }); kapat(); }} style={fisAltBtn}>
               <Plus size={13} /> {serbestEtiket}: <b style={{ marginLeft: 4 }}>{q.trim()}</b>
@@ -702,23 +702,23 @@ function SecimAlani({ deger, ipucu, ac, temizle, hucre, uyari }) {
       role="button" tabIndex={0} onClick={ac}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ac(); } }}
       title={deger || ipucu}
-      style={{ ...temel, borderColor: uyari ? "#6b3a33" : temel.borderColor }}
+      style={{ ...temel, borderColor: uyari ? "#f0b8b2" : temel.borderColor }}
     >
-      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: deger ? "#e7e5e0" : "#6b7178" }}>
+      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: deger ? "#152a45" : "#7b8a9d" }}>
         {deger || ipucu || "Seçin…"}
       </span>
       {deger && temizle && (
         <span role="button" title="Temizle" onClick={(e) => { e.stopPropagation(); temizle(); }}
-          style={{ color: "#6b7178", display: "flex", flexShrink: 0 }}><X size={12} /></span>
+          style={{ color: "#7b8a9d", display: "flex", flexShrink: 0 }}><X size={12} /></span>
       )}
-      <Search size={12} color="#2dd4bf" style={{ flexShrink: 0 }} />
+      <Search size={12} color="#1565c0" style={{ flexShrink: 0 }} />
     </div>
   );
 }
 
 // --- Hazır seçiciler ---
 const STOK_SUTUNLARI = [
-  { baslik: "Stok Kodu", al: (s) => s.stokKodu, mono: true, renk: "#2dd4bf", genislik: 160 },
+  { baslik: "Stok Kodu", al: (s) => s.stokKodu, mono: true, renk: "#1565c0", genislik: 160 },
   { baslik: "Stok Adı", al: (s) => s.stokAdi, sarma: true },
   { baslik: "Birim", al: (s) => s.birim, genislik: 75 },
   { baslik: "Ana Grup", al: (s) => [s.anaGrupKodu, s.anaGrupAdi].filter(Boolean).join(" · "), genislik: 170 },
@@ -742,7 +742,7 @@ function StokSecici({ acik, kapat, depoStok, sec, baslik = "Stok Kartı Seç", s
 }
 
 const CARI_SUTUNLARI = [
-  { baslik: "Cari Kod", al: (c) => c.kod, mono: true, renk: "#2dd4bf", genislik: 160 },
+  { baslik: "Cari Kod", al: (c) => c.kod, mono: true, renk: "#1565c0", genislik: 160 },
   { baslik: "Cari İsmi", al: (c) => c.ad, sarma: true },
   { baslik: "Tip", al: (c) => (CARI_TIPLERI[c.tip] || {}).label || c.tip || "", genislik: 115 },
   { baslik: "Yetkili", al: (c) => c.yetkili, genislik: 160 },
@@ -1229,7 +1229,7 @@ function modulKabugu(modulId, { kullanici, yetki, veri }) {
       tabloBaslik: fisGridTh, tabloHucre: fisGridTd, hucreGiris: fisHucreInput,
       dugme: fisAltBtn, anaDugme: fisAnaBtn,
       belgeKutu: belgeBaslikKutu, belgeEtiket: belgeBaslikEtiket,
-      renk: { zemin: "#142a30", kart: "#1b333c", kenar: "#2a4b52", vurgu: "#2dd4bf", uyari: "#e8a33d", hata: "#e07a6b", iyi: "#4ade80", soluk: "#6b7178", yazi: "#e7e5e0" },
+      renk: { zemin: "#f2f6fb", kart: "#ffffff", kenar: "#d5dfec", vurgu: "#1565c0", uyari: "#b06a00", hata: "#c62828", iyi: "#1b7f4b", soluk: "#7b8a9d", yazi: "#152a45" },
     },
     Pencere: ModulPenceresi,
     SecimPenceresi, SecimAlani, Stat, UyariPenceresi,
@@ -1307,20 +1307,20 @@ function EvrakPenceresi({ acik, kapat, baslik, ikon: Ikon, children, butonlar, g
     <div
       onMouseDown={kapat}
       className="evrak-katman"
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "32px 14px", overflowY: "auto" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(13,36,64,0.18)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "32px 14px", overflowY: "auto" }}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
         className="evrak-kutu"
-        style={{ width: "100%", maxWidth: genislik, background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 5, boxShadow: "0 20px 55px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column" }}
+        style={{ width: "100%", maxWidth: genislik, background: "#ffffff", border: "1px solid #d5dfec", borderRadius: 5, boxShadow: "0 18px 48px rgba(13,36,64,0.18)", display: "flex", flexDirection: "column" }}
       >
-        <div className="evrak-baslik" style={{ display: "flex", alignItems: "center", gap: 9, background: "#16232a", borderBottom: "1px solid #2a4b52", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
-          {Ikon && <Ikon size={15} color="#2dd4bf" />}
+        <div className="evrak-baslik" style={{ display: "flex", alignItems: "center", gap: 9, background: "#f4f7fc", borderBottom: "1px solid #d5dfec", padding: "9px 11px", borderRadius: "4px 4px 0 0" }}>
+          {Ikon && <Ikon size={15} color="#1565c0" />}
           <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{baslik}</span>
-          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
+          <button onClick={kapat} title="Kapat (Esc)" style={{ background: "none", border: "none", color: "#5a6b80", cursor: "pointer", padding: 3, display: "flex" }}><X size={16} /></button>
         </div>
         <div className="evrak-govde" style={{ padding: 14 }}>{children}</div>
-        <div className="evrak-alt" style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #2a4b52", background: "#16232a", flexWrap: "wrap", borderRadius: "0 0 4px 4px" }}>
+        <div className="evrak-alt" style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 14px", borderTop: "1px solid #d5dfec", background: "#f4f7fc", flexWrap: "wrap", borderRadius: "0 0 4px 4px" }}>
           {butonlar}
         </div>
       </div>
@@ -1368,14 +1368,14 @@ const stokBulAd = (liste, ad) => {
 const stokKodBul = (liste, ad) => String(stokBulAd(liste, ad)?.stokKodu || "").trim();
 
 const FASON_DURUM = {
-  bekliyor: { label: "Bekliyor", renk: "#e8a33d" },
-  uretimde: { label: "Üretimde", renk: "#2dd4bf" },
-  tamamlandi: { label: "Tamamlandı", renk: "#4b8f5e" },
+  bekliyor: { label: "Bekliyor", renk: "#b06a00" },
+  uretimde: { label: "Üretimde", renk: "#1565c0" },
+  tamamlandi: { label: "Tamamlandı", renk: "#2e7d4f" },
 };
 const FASON_KALITE = {
-  okeylendi: { label: "Okeylendi", renk: "#4b8f5e" },
-  red: { label: "Red", renk: "#e07a6b" },
-  olcumde: { label: "Ölçümde", renk: "#e8a33d" },
+  okeylendi: { label: "Okeylendi", renk: "#2e7d4f" },
+  red: { label: "Red", renk: "#c62828" },
+  olcumde: { label: "Ölçümde", renk: "#b06a00" },
 };
 
 async function excelDenFasonFirmaOku(dosya) {
@@ -1774,14 +1774,14 @@ function GirisEkrani() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#142a30", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <div style={{ background: "#1b333c", border: "1px solid #2a4b52", borderRadius: 12, padding: 32, width: 320 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: "#2dd4bf", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-          <Lock size={20} color="#142a30" />
+    <div style={{ minHeight: "100vh", background: "#f2f6fb", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ background: "#ffffff", border: "1px solid #d5dfec", borderRadius: 12, padding: 32, width: 320 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: "#1565c0", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+          <Lock size={20} color="#f2f6fb" />
         </div>
-        <div style={{ color: "#e7e5e0", fontWeight: 700, fontSize: 17, marginBottom: 2, letterSpacing: -0.2 }}>SAKLAZ</div>
-        <div style={{ color: "#2dd4bf", fontWeight: 600, fontSize: 11.5, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14 }}>Üretim ERP</div>
-        <div style={{ color: "#8b929a", fontSize: 12.5, marginBottom: 18 }}>
+        <div style={{ color: "#152a45", fontWeight: 700, fontSize: 17, marginBottom: 2, letterSpacing: -0.2 }}>SAKLAZ</div>
+        <div style={{ color: "#1565c0", fontWeight: 600, fontSize: 11.5, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14 }}>Üretim ERP</div>
+        <div style={{ color: "#5a6b80", fontSize: 12.5, marginBottom: 18 }}>
           {sifremiUnuttum ? "Şifre sıfırlama linki için e-postanı gir" : kayitModu ? "Yeni hesap oluştur" : "Devam etmek için giriş yap"}
         </div>
         {kayitModu && !sifremiUnuttum && (
@@ -1790,7 +1790,7 @@ function GirisEkrani() {
             value={ad}
             onChange={(e) => setAd(e.target.value)}
             placeholder="Ad Soyad (opsiyonel)"
-            style={{ width: "100%", background: "#142a30", border: "1px solid #3d6169", borderRadius: 7, padding: "10px 12px", color: "#e7e5e0", fontSize: 14, outline: "none", marginBottom: 10 }}
+            style={{ width: "100%", background: "#f2f6fb", border: "1px solid #b6c6da", borderRadius: 7, padding: "10px 12px", color: "#152a45", fontSize: 14, outline: "none", marginBottom: 10 }}
           />
         )}
         <input
@@ -1799,7 +1799,7 @@ function GirisEkrani() {
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !sifremiUnuttum && (kayitModu ? kayitOl() : dene())}
           placeholder="E-posta"
-          style={{ width: "100%", background: "#142a30", border: `1px solid ${hata ? "#c0392b" : "#3d6169"}`, borderRadius: 7, padding: "10px 12px", color: "#e7e5e0", fontSize: 14, outline: "none", marginBottom: 10 }}
+          style={{ width: "100%", background: "#f2f6fb", border: `1px solid ${hata ? "#c0392b" : "#b6c6da"}`, borderRadius: 7, padding: "10px 12px", color: "#152a45", fontSize: 14, outline: "none", marginBottom: 10 }}
         />
         {!sifremiUnuttum && (
           <input
@@ -1808,29 +1808,29 @@ function GirisEkrani() {
             onChange={(e) => setSifre(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (kayitModu ? kayitOl() : dene())}
             placeholder={kayitModu ? "Şifre (en az 6 karakter)" : "Şifre"}
-            style={{ width: "100%", background: "#142a30", border: `1px solid ${hata ? "#c0392b" : "#3d6169"}`, borderRadius: 7, padding: "10px 12px", color: "#e7e5e0", fontSize: 14, outline: "none", marginBottom: 12 }}
+            style={{ width: "100%", background: "#f2f6fb", border: `1px solid ${hata ? "#c0392b" : "#b6c6da"}`, borderRadius: 7, padding: "10px 12px", color: "#152a45", fontSize: 14, outline: "none", marginBottom: 12 }}
           />
         )}
         <button
           onClick={sifremiUnuttum ? sifreSifirla : kayitModu ? kayitOl : dene}
           disabled={gonderiliyor}
-          style={{ width: "100%", background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 0", fontWeight: 700, fontSize: 13.5, cursor: "pointer", marginTop: sifremiUnuttum ? 12 : 0 }}
+          style={{ width: "100%", background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 7, padding: "10px 0", fontWeight: 700, fontSize: 13.5, cursor: "pointer", marginTop: sifremiUnuttum ? 12 : 0 }}
         >
           {gonderiliyor ? "Gönderiliyor…" : sifremiUnuttum ? "Sıfırlama Linki Gönder" : kayitModu ? "Kayıt Ol" : "Giriş Yap"}
         </button>
-        {hata && <div style={{ color: "#e07a6b", fontSize: 12, marginTop: 10 }}>{hata}</div>}
-        {sifirlamaMesaji && <div style={{ color: "#2dd4bf", fontSize: 12, marginTop: 10 }}>{sifirlamaMesaji}</div>}
+        {hata && <div style={{ color: "#c62828", fontSize: 12, marginTop: 10 }}>{hata}</div>}
+        {sifirlamaMesaji && <div style={{ color: "#1565c0", fontSize: 12, marginTop: 10 }}>{sifirlamaMesaji}</div>}
         {!sifremiUnuttum && !kayitModu && (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
-              <div style={{ flex: 1, height: 1, background: "#2a4b52" }} />
-              <span style={{ color: "#6b7178", fontSize: 11 }}>veya</span>
-              <div style={{ flex: 1, height: 1, background: "#2a4b52" }} />
+              <div style={{ flex: 1, height: 1, background: "#d5dfec" }} />
+              <span style={{ color: "#7b8a9d", fontSize: 11 }}>veya</span>
+              <div style={{ flex: 1, height: 1, background: "#d5dfec" }} />
             </div>
             <button
               onClick={googleIleGiris}
               disabled={gonderiliyor}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#142a30", color: "#e7e5e0", border: "1px solid #3d6169", borderRadius: 7, padding: "10px 0", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#f2f6fb", color: "#152a45", border: "1px solid #b6c6da", borderRadius: 7, padding: "10px 0", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}
             >
               <Chrome size={16} /> Google ile Giriş Yap
             </button>
@@ -1839,7 +1839,7 @@ function GirisEkrani() {
         {!sifremiUnuttum && (
           <button
             onClick={() => { setKayitModu((s) => !s); setHata(""); }}
-            style={{ width: "100%", background: "none", border: "none", color: "#8b929a", fontSize: 12, cursor: "pointer", marginTop: 14, textDecoration: "underline" }}
+            style={{ width: "100%", background: "none", border: "none", color: "#5a6b80", fontSize: 12, cursor: "pointer", marginTop: 14, textDecoration: "underline" }}
           >
             {kayitModu ? "Zaten hesabım var, girişe dön" : "Hesabın yok mu? Kayıt Ol"}
           </button>
@@ -1847,7 +1847,7 @@ function GirisEkrani() {
         {!kayitModu && (
           <button
             onClick={() => { setSifremiUnuttum((s) => !s); setHata(""); setSifirlamaMesaji(""); }}
-            style={{ width: "100%", background: "none", border: "none", color: "#8b929a", fontSize: 12, cursor: "pointer", marginTop: 8, textDecoration: "underline" }}
+            style={{ width: "100%", background: "none", border: "none", color: "#5a6b80", fontSize: 12, cursor: "pointer", marginTop: 8, textDecoration: "underline" }}
           >
             {sifremiUnuttum ? "Girişe geri dön" : "Şifremi unuttum"}
           </button>
@@ -1887,8 +1887,8 @@ export default function App() {
 
   if (kullanici === undefined) {
     return (
-      <div style={{ minHeight: "100vh", background: "#142a30", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#2dd4bf", fontFamily: "monospace", fontSize: 14, letterSpacing: 1 }}>YÜKLENİYOR…</div>
+      <div style={{ minHeight: "100vh", background: "#f2f6fb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#1565c0", fontFamily: "monospace", fontSize: 14, letterSpacing: 1 }}>YÜKLENİYOR…</div>
       </div>
     );
   }
@@ -1899,11 +1899,11 @@ export default function App() {
 function KilitliEkran({ baslik }) {
   return (
     <div className="card" style={{ padding: 40, textAlign: "center", display: "grid", gap: 12, justifyItems: "center" }}>
-      <div style={{ width: 54, height: 54, borderRadius: 14, background: "#24424a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Lock size={24} color="#8b929a" />
+      <div style={{ width: 54, height: 54, borderRadius: 14, background: "#e4ebf5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Lock size={24} color="#5a6b80" />
       </div>
       <div style={{ fontWeight: 700, fontSize: 16 }}>Bu bölüme erişim yetkiniz yok</div>
-      <div style={{ fontSize: 13, color: "#8b929a", maxWidth: 460, lineHeight: 1.6 }}>
+      <div style={{ fontSize: 13, color: "#5a6b80", maxWidth: 460, lineHeight: 1.6 }}>
         {baslik ? `"${baslik}" ekranını görüntüleme yetkiniz bulunmuyor. ` : ""}
         Yetki almak için yöneticinize başvurun. Yönetici, Kullanıcılar ekranından size görüntüleme veya düzenleme yetkisi verebilir.
       </div>
@@ -1913,7 +1913,7 @@ function KilitliEkran({ baslik }) {
 
 function SaltOkunurSerit() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#332a16", border: "1px solid #6b5220", color: "#e8a33d", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff6e2", border: "1px solid #e6cd93", color: "#b06a00", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
       <Lock size={14} />
       <span>Sadece görüntüleme yetkiniz var — bu bölümde kayıt, düzenleme ve silme işlemleri kapalıdır.</span>
     </div>
@@ -2187,40 +2187,41 @@ function Panel({ onCikis, kullanici }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#142a30", color: "#e7e5e0", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "#f2f6fb", color: "#152a45", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
       <style>{`
         * { box-sizing: border-box; }
         input, select, button { font-family: inherit; }
-        ::placeholder { color: #6b7178; }
-        .card { background: #1b333c; border: 1px solid #2a4b52; border-radius: 10px; }
-        .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8b929a; margin-bottom: 6px; display: block; font-weight: 600; }
-        .input { width: 100%; background: #142a30; border: 1px solid #3d6169; border-radius: 7px; padding: 10px 12px; color: #e7e5e0; font-size: 14px; outline: none; transition: border-color .15s; }
+        ::placeholder { color: #7b8a9d; }
+        .card { background: #ffffff; border: 1px solid #d5dfec; border-radius: 10px; }
+        .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #5a6b80; margin-bottom: 6px; display: block; font-weight: 600; }
+        .input { width: 100%; background: #f2f6fb; border: 1px solid #b6c6da; border-radius: 7px; padding: 10px 12px; color: #152a45; font-size: 14px; outline: none; transition: border-color .15s; }
         /* Açılır listelerin (select) açılan seçenekleri: işletim sistemi varsayılanı
            beyaz zemin/açık yazı olduğu için koyu temada okunmuyordu. */
-        select { color-scheme: dark; }
-        select option { background: #1b333c; color: #e7e5e0; }
-        select option:checked, select option:hover { background: #2a4b52; color: #ffffff; }
-        select optgroup { background: #142a30; color: #8b929a; }
+        select { color-scheme: light; }
+        select option { background: #ffffff; color: #152a45; }
+        select option:checked, select option:hover { background: #d5dfec; color: #ffffff; }
+        select optgroup { background: #f2f6fb; color: #5a6b80; }
         /* Sayı kutularındaki artır/azalt okları görünmesin — rakam elle yazılır */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
-        .input:focus { border-color: #2dd4bf; }
+        .input:focus { border-color: #1565c0; }
         table { border-collapse: collapse; width: 100%; }
         /* Başlıklar gerekirse alt satıra iner (kelime ortasından bölünmez) —
            böylece sütunu çok sayıda olan tablolar da ekrana sığar. */
-        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #8b929a; padding: 8px 8px; border-bottom: 1px solid #2a4b52; font-weight: 600; white-space: normal; }
-        td { padding: 8px 8px; border-bottom: 1px solid #24424a; font-size: 13px; overflow-wrap: break-word; }
-        tr:hover td { background: #274852; }
-        .btn-ghost { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #3d6169; color: #c7cbd1; border-radius: 7px; padding: 8px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-        .btn-ghost:hover { border-color: #2dd4bf; color: #2dd4bf; }
-        .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #113330; color: #2dd4bf; border: 1px solid #1f4d47; white-space: nowrap; }
-        .navbtn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 13.5px; font-weight: 600; background: transparent; color: #c7cbd1; }
-        .navbtn:hover { background: #274852; }
-        .navbtn.active { background: #2dd4bf; color: #142a30; }
-        .navsub { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 8px 12px 8px 38px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #9aa0a8; }
-        .navsub:hover { background: #274852; color: #c7cbd1; }
-        .navsub.active { background: #3a3220; color: #2dd4bf; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #5a6b80; padding: 8px 8px; border-bottom: 1px solid #d5dfec; font-weight: 600; white-space: normal; }
+        td { padding: 8px 8px; border-bottom: 1px solid #e4ebf5; font-size: 13px; overflow-wrap: break-word; }
+        tr:hover td { background: #dce6f4; }
+        .btn-ghost { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #b6c6da; color: #31465f; border-radius: 7px; padding: 8px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .btn-ghost:hover { border-color: #1565c0; color: #1565c0; }
+        .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #e3f0ff; color: #1565c0; border: 1px solid #bcd8f7; white-space: nowrap; }
+        /* ---- Sol menü ve üst şerit: koyu lacivert (beyaz içerikle kontrast) ---- */
+        .navbtn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 13.5px; font-weight: 600; background: transparent; color: #c7d6e8; }
+        .navbtn:hover { background: #1c3760; color: #ffffff; }
+        .navbtn.active { background: #2f8fe0; color: #0d2440; }
+        .navsub { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 8px 12px 8px 38px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent; color: #9fb4cd; }
+        .navsub:hover { background: #1c3760; color: #ffffff; }
+        .navsub.active { background: #123259; color: #7fc0ff; }
         .navbtn.kilitli, .navsub.kilitli { opacity: 0.38; cursor: not-allowed; }
         .navbtn.kilitli:hover, .navsub.kilitli:hover { background: transparent; color: inherit; }
         .mobil-menu-btn { display: none; }
@@ -2235,7 +2236,7 @@ function Panel({ onCikis, kullanici }) {
           /* Menü: soldan açılan çekmece */
           .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: 272px !important; transform: translateX(-100%); transition: transform .22s ease; overflow-y: auto; box-shadow: 6px 0 24px rgba(0,0,0,.45); }
           .sidebar.open { transform: translateX(0); }
-          .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30; }
+          .sidebar-backdrop { position: fixed; inset: 0; background: rgba(13,36,64,0.35); z-index: 30; }
           .navbtn, .navsub { padding-top: 13px; padding-bottom: 13px; font-size: 14.5px; }
           .navsub { padding-left: 40px; }
 
@@ -2258,14 +2259,14 @@ function Panel({ onCikis, kullanici }) {
           table { display: block; }
           thead { display: none; }
           tbody, tfoot { display: block; width: 100%; }
-          tbody tr { display: block; background: #16232a; border: 1px solid #2a4b52; border-radius: 10px; margin-bottom: 10px; padding: 4px 0; }
+          tbody tr { display: block; background: #f4f7fc; border: 1px solid #d5dfec; border-radius: 10px; margin-bottom: 10px; padding: 4px 0; }
           tbody tr:hover td { background: transparent; }
-          tbody td { display: flex; align-items: center; gap: 10px; width: 100%; border: none; border-bottom: 1px solid #22404a; padding: 9px 12px; font-size: 13.5px; }
+          tbody td { display: flex; align-items: center; gap: 10px; width: 100%; border: none; border-bottom: 1px solid #e6edf7; padding: 9px 12px; font-size: 13.5px; }
           tbody tr td:last-child { border-bottom: none; }
           tbody td::before {
             content: attr(data-label);
             flex: 0 0 116px; min-width: 116px;
-            color: #8b929a; font-size: 10.5px; font-weight: 700;
+            color: #5a6b80; font-size: 10.5px; font-weight: 700;
             text-transform: uppercase; letter-spacing: .05em; line-height: 1.3;
             text-align: left;
           }
@@ -2295,15 +2296,15 @@ function Panel({ onCikis, kullanici }) {
           /* Alt hızlı erişim çubuğu */
           .mobil-alt-bar {
             position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
-            display: flex; background: #16232a; border-top: 1px solid #2a4b52;
+            display: flex; background: #122c4d; border-top: 1px solid #0a1b30;
             padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px));
           }
           .mobil-alt-bar button {
             flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
-            background: none; border: none; color: #8b929a; font-size: 10.5px; font-weight: 700;
+            background: none; border: none; color: #5a6b80; font-size: 10.5px; font-weight: 700;
             padding: 7px 2px; cursor: pointer; border-radius: 8px;
           }
-          .mobil-alt-bar button.active { color: #2dd4bf; background: #113330; }
+          .mobil-alt-bar button.active { color: #1565c0; background: #e3f0ff; }
         }
 
         /* Çok dar telefonlar */
@@ -2324,7 +2325,7 @@ function Panel({ onCikis, kullanici }) {
         }
       `}</style>
 
-      <header className="ust-baslik" style={{ borderBottom: "1px solid #2a4b52", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+      <header className="ust-baslik" style={{ borderBottom: "1px solid #0a1b30", background: "#122c4d", color: "#eaf2fb", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <button
           className="btn-ghost mobil-menu-btn"
           onClick={() => setMobilMenuAcik(true)}
@@ -2334,19 +2335,19 @@ function Panel({ onCikis, kullanici }) {
         <button
           onClick={geriGit}
           title="Geri"
-          style={{ background: "none", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 7, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+          style={{ background: "rgba(255,255,255,0.08)", border: "1px solid #33578a", color: "#dce8f7", borderRadius: 7, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
         >
           <ArrowLeft size={16} />
         </button>
-        <div style={{ width: 34, height: 34, borderRadius: 8, background: "#2dd4bf", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Factory size={19} color="#142a30" />
+        <div style={{ width: 34, height: 34, borderRadius: 8, background: "#2f8fe0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Factory size={19} color="#ffffff" />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: -0.2 }}>SAKLAZ <span style={{ color: "#2dd4bf" }}>ERP</span></div>
-          <div style={{ fontSize: 11.5, color: "#8b929a" }}>{aktifBaslik()}</div>
+          <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: -0.2 }}>SAKLAZ <span style={{ color: "#7fc0ff" }}>ERP</span></div>
+          <div style={{ fontSize: 11.5, color: "#a9c2de" }}>{aktifBaslik()}</div>
         </div>
-        <button onClick={onCikis} style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 7, padding: "7px 12px", fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-          {kullanici?.email && <span className="sadece-masaustu" style={{ color: "#6b7178", fontSize: 11.5 }}>{kullanici.email}</span>}
+        <button onClick={onCikis} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid #33578a", color: "#dce8f7", borderRadius: 7, padding: "7px 12px", fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+          {kullanici?.email && <span className="sadece-masaustu" style={{ color: "#a9c2de", fontSize: 11.5 }}>{kullanici.email}</span>}
           <span className="sadece-masaustu">Çıkış Yap</span>
           <LogOut size={15} className="sadece-mobil" />
         </button>
@@ -2354,7 +2355,7 @@ function Panel({ onCikis, kullanici }) {
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         {mobilMenuAcik && <div className="sidebar-backdrop" onClick={() => setMobilMenuAcik(false)} />}
-        <aside className={`sidebar${mobilMenuAcik ? " open" : ""}`} style={{ width: 230, flexShrink: 0, borderRight: "1px solid #2a4b52", background: "#1b333c", padding: "16px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <aside className={`sidebar${mobilMenuAcik ? " open" : ""}`} style={{ width: 230, flexShrink: 0, borderRight: "1px solid #0a1b30", background: "#122c4d", padding: "16px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
           {MENU.map((item) => {
             const Icon = item.icon;
             if (item.children) {
@@ -2409,7 +2410,7 @@ function Panel({ onCikis, kullanici }) {
         <main className="ana-icerik" style={{ flex: 1, padding: "18px 16px", overflowY: "auto", minWidth: 0 }}>
           <div style={{ width: "100%", maxWidth: "100%", margin: 0 }}>
             {!kullanicilarYuklendi && (
-              <div style={{ color: "#2dd4bf", fontFamily: "monospace", fontSize: 13, letterSpacing: 1, padding: 40, textAlign: "center" }}>YETKİLER YÜKLENİYOR…</div>
+              <div style={{ color: "#1565c0", fontFamily: "monospace", fontSize: 13, letterSpacing: 1, padding: 40, textAlign: "center" }}>YETKİLER YÜKLENİYOR…</div>
             )}
             {kullanicilarYuklendi && aktifYetki === "yok" && <KilitliEkran baslik={aktifBaslik()} />}
             {kullanicilarYuklendi && aktifYetki === "goruntule" && <SaltOkunurSerit />}
@@ -2615,8 +2616,8 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
 
   return (
     <div style={{ display: "grid", gap: 24 }}>
-      <div className="card" style={{ padding: 28, background: "linear-gradient(135deg, #1b333c 0%, #16232a 100%)" }}>
-        <div style={{ fontSize: 12, color: "#2dd4bf", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>SAKLAZ · ÜRETİM ERP</div>
+      <div className="card" style={{ padding: 28, background: "linear-gradient(135deg, #ffffff 0%, #f4f7fc 100%)" }}>
+        <div style={{ fontSize: 12, color: "#1565c0", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>SAKLAZ · ÜRETİM ERP</div>
         {isimDuzenle ? (
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
             <input
@@ -2625,23 +2626,23 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
               onKeyDown={(e) => e.key === "Enter" && isimKaydet()}
               autoFocus
             />
-            <button onClick={isimKaydet} style={{ background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Kaydet</button>
+            <button onClick={isimKaydet} style={{ background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Kaydet</button>
             <button onClick={() => setIsimDuzenle(false)} className="btn-ghost">Vazgeç</button>
           </div>
         ) : (
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.3, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {selamlama}, {gosterilenIsim}
-            <button onClick={() => { setIsimGirdi(benimKaydim?.ad || ""); setIsimDuzenle(true); }} title="İsmini düzenle" style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 6, padding: "3px 9px", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>✎ İsmini Düzenle</button>
+            <button onClick={() => { setIsimGirdi(benimKaydim?.ad || ""); setIsimDuzenle(true); }} title="İsmini düzenle" style={{ background: "none", border: "1px solid #b6c6da", color: "#5a6b80", borderRadius: 6, padding: "3px 9px", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>✎ İsmini Düzenle</button>
           </div>
         )}
-        {isimMsg && <div style={{ fontSize: 12, color: "#2dd4bf", marginTop: 4 }}>{isimMsg}</div>}
-        <div style={{ fontSize: 13, color: "#8b929a", marginTop: 6 }}>{new Date().toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+        {isimMsg && <div style={{ fontSize: 12, color: "#1565c0", marginTop: 4 }}>{isimMsg}</div>}
+        <div style={{ fontSize: 13, color: "#5a6b80", marginTop: 6 }}>{new Date().toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
       </div>
 
       {uyarilar.length > 0 && (
         <div style={{ display: "grid", gap: 10 }}>
           {uyarilar.map((u, i) => (
-            <button key={i} onClick={() => git(u.git)} style={{ display: "flex", alignItems: "center", gap: 10, background: "#3a1f1f", border: "1px solid #5a2a2a", borderRadius: 10, padding: "12px 16px", color: "#e07a6b", fontSize: 13, cursor: "pointer", textAlign: "left" }}>
+            <button key={i} onClick={() => git(u.git)} style={{ display: "flex", alignItems: "center", gap: 10, background: "#fdecea", border: "1px solid #f3c4c0", borderRadius: 10, padding: "12px 16px", color: "#c62828", fontSize: 13, cursor: "pointer", textAlign: "left" }}>
               <AlertTriangle size={16} style={{ flexShrink: 0 }} />
               {u.metin}
               <ChevronRight size={14} style={{ marginLeft: "auto", flexShrink: 0 }} />
@@ -2651,7 +2652,7 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
       )}
 
       <div>
-        <div className="sect-label" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b929a", fontWeight: 600, marginBottom: 12 }}>Modüller</div>
+        <div className="sect-label" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5a6b80", fontWeight: 600, marginBottom: 12 }}>Modüller</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 14 }}>
           {modulKartlari.map((k) => {
             const Icon = k.icon;
@@ -2661,18 +2662,18 @@ function AnaSayfa({ kullanici, git, yetki, kullanicilar, teams, machines, record
                 title={kilitli ? "Bu bölüm için yetkiniz yok" : undefined}
                 className="card" style={{ padding: 20, textAlign: "left", cursor: kilitli ? "not-allowed" : "pointer", opacity: kilitli ? 0.38 : 1, display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9, background: "#113330", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icon size={18} color="#2dd4bf" />
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: "#e3f0ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon size={18} color="#1565c0" />
                   </div>
-                  {kilitli ? <Lock size={14} color="#6b7178" /> : <ChevronRight size={16} color="#6b7178" />}
+                  {kilitli ? <Lock size={14} color="#7b8a9d" /> : <ChevronRight size={16} color="#7b8a9d" />}
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14.5 }}>{k.baslik}</div>
-                  <div style={{ fontSize: 11.5, color: "#8b929a", marginTop: 2 }}>{k.aciklama}</div>
+                  <div style={{ fontSize: 11.5, color: "#5a6b80", marginTop: 2 }}>{k.aciklama}</div>
                 </div>
                 <div style={{ marginTop: 4 }}>
-                  <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "monospace", color: "#2dd4bf" }}>{k.deger}</span>
-                  <span style={{ fontSize: 11.5, color: "#6b7178", marginLeft: 6 }}>{k.altYazi}</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "monospace", color: "#1565c0" }}>{k.deger}</span>
+                  <span style={{ fontSize: 11.5, color: "#7b8a9d", marginLeft: 6 }}>{k.altYazi}</span>
                 </div>
               </button>
             );
@@ -2797,7 +2798,7 @@ function KayitEkle({ teams, machines, records, depoStok }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
           </div>
         </div>
-        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Çıkış Fişi Aç
         </button>
         <EvrakPenceresi
@@ -2805,14 +2806,14 @@ function KayitEkle({ teams, machines, records, depoStok }) {
           baslik="Günlük Üretim Çıkış Fişi" ikon={ClipboardList} genislik={720}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={submit}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={set("tarih")} /></div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Takım</span>
@@ -2844,13 +2845,13 @@ function KayitEkle({ teams, machines, records, depoStok }) {
         />
         </EvrakPenceresi>
         {iceMsg && (
-          <div style={{ marginTop: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+          <div style={{ marginTop: 14, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
         )}
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
           Excel'den içe aktarırken sütun sırası: Tarih, Takım, Mağaza, Makine, Ürün, Adet. Başlık satırı olabilir.
         </div>
         {(teams.length === 0 || machines.length === 0) && (
-          <div style={{ marginTop: 14, fontSize: 12.5, color: "#c98a2e", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>
+          <div style={{ marginTop: 14, fontSize: 12.5, color: "#c98a2e", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>
             {teams.length === 0 && machines.length === 0 ? "Önce Takımlar ve Makineler sekmelerinden liste oluşturun."
               : teams.length === 0 ? "Önce Takımlar sekmesinden takım ekleyin."
               : "Önce Makineler sekmesinden makine listesini ekleyin."}
@@ -2859,10 +2860,10 @@ function KayitEkle({ teams, machines, records, depoStok }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>{arama ? "Arama Sonuçları" : "Son Kayıtlar"}</div>
           <div style={{ position: "relative", minWidth: 220 }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input
               className="input"
               style={{ paddingLeft: 30 }}
@@ -2876,7 +2877,7 @@ function KayitEkle({ teams, machines, records, depoStok }) {
           <table>
             <thead><tr><th>Tarih</th><th>Takım</th><th>Mağaza</th><th>Makine</th><th>Ürün</th><th>Adet</th><th></th></tr></thead>
             <tbody>
-              {listelenecek.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>{arama ? "Sonuç bulunamadı." : "Henüz kayıt yok."}</td></tr>}
+              {listelenecek.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>{arama ? "Sonuç bulunamadı." : "Henüz kayıt yok."}</td></tr>}
               {listelenecek.map((r) => (
                 <tr key={r.id}>
                   <td style={{ fontFamily: "monospace" }}>{r.tarih}</td>
@@ -2884,8 +2885,8 @@ function KayitEkle({ teams, machines, records, depoStok }) {
                   <td>{r.magaza || "—"}</td>
                   <td>{r.makine}</td>
                   <td>{r.urun || "—"}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{r.adet}</td>
-                  <td><button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{r.adet}</td>
+                  <td><button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -2906,9 +2907,9 @@ function HammaddeRaporlari({ hammaddeler }) {
           onClick={() => setAltTab("stok")}
           style={{
             flex: 1, padding: "10px 16px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13,
-            background: altTab === "stok" ? "#2dd4bf" : "#1b333c",
-            color: altTab === "stok" ? "#142a30" : "#c7cbd1",
-            border: `1px solid ${altTab === "stok" ? "#2dd4bf" : "#2a4b52"}`,
+            background: altTab === "stok" ? "#1565c0" : "#ffffff",
+            color: altTab === "stok" ? "#f2f6fb" : "#31465f",
+            border: `1px solid ${altTab === "stok" ? "#1565c0" : "#d5dfec"}`,
           }}
         >
           Hammadde Stok Raporu
@@ -2917,9 +2918,9 @@ function HammaddeRaporlari({ hammaddeler }) {
           onClick={() => setAltTab("siparis")}
           style={{
             flex: 1, padding: "10px 16px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13,
-            background: altTab === "siparis" ? "#2dd4bf" : "#1b333c",
-            color: altTab === "siparis" ? "#142a30" : "#c7cbd1",
-            border: `1px solid ${altTab === "siparis" ? "#2dd4bf" : "#2a4b52"}`,
+            background: altTab === "siparis" ? "#1565c0" : "#ffffff",
+            color: altTab === "siparis" ? "#f2f6fb" : "#31465f",
+            border: `1px solid ${altTab === "siparis" ? "#1565c0" : "#d5dfec"}`,
           }}
         >
           Sipariş Durum Raporu
@@ -2986,7 +2987,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Talep no, malzeme, ölçü ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -3016,7 +3017,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Malzeme Bazında Dağılım ({malzemeGruplari.length})</div>
                     <ExcelSeridi alanlar={XLS_ALAN.metal_malzemeler} dosyaAdi="metal-malzemeleri" koleksiyon="metal_malzemeler" />
           <button className="btn-ghost" onClick={disaAktarMalzeme}><Download size={14} /> Excele Aktar</button>
@@ -3024,11 +3025,11 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
         <table>
           <thead><tr><th>Malzeme</th><th>Toplam Kg</th><th>Toplam Tutar</th><th>Kayıt Sayısı</th></tr></thead>
           <tbody>
-            {malzemeGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+            {malzemeGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
             {malzemeGruplari.map((g) => (
               <tr key={g.malzeme}>
                 <td>{g.malzeme}</td>
-                <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{g.kg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg</td>
+                <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{g.kg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg</td>
                 <td style={{ fontFamily: "monospace" }}>{paraTR(g.tutar)}</td>
                 <td style={{ fontFamily: "monospace" }}>{g.sayi}</td>
               </tr>
@@ -3038,7 +3039,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Talep Bazında Dağılım ({talepGruplari.length})</div>
                     <ExcelSeridi alanlar={XLS_ALAN.metal_talepler} dosyaAdi="metal-talepleri" koleksiyon="metal_talepler" />
           <button className="btn-ghost" onClick={disaAktarTalep}><Download size={14} /> Excele Aktar</button>
@@ -3047,7 +3048,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
           <table>
             <thead><tr><th></th><th>Talep No</th><th>Toplam Kg</th><th>Toplam Tutar</th><th>Kalem</th></tr></thead>
             <tbody>
-              {talepGruplari.length === 0 && <tr><td colSpan={5} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {talepGruplari.length === 0 && <tr><td colSpan={5} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {talepGruplari.map((g) => {
                 const acik = genisletilen.has(g.talepNo);
                 return (
@@ -3055,7 +3056,7 @@ function MetalOlcuRaporu({ metalTalepler, metalMalzemeler }) {
                     <tr onClick={() => grupToggle(g.talepNo)} style={{ cursor: "pointer" }}>
                       <td>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
                       <td style={{ fontWeight: 700 }}>{g.talepNo}</td>
-                      <td style={{ fontFamily: "monospace", color: "#2dd4bf" }}>{g.kg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg</td>
+                      <td style={{ fontFamily: "monospace", color: "#1565c0" }}>{g.kg.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} kg</td>
                       <td style={{ fontFamily: "monospace" }}>{paraTR(g.tutar)}</td>
                       <td style={{ fontFamily: "monospace" }}>{g.kalem.length}</td>
                     </tr>
@@ -3159,7 +3160,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu / adı ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div><label className="field-label">Hareket Başlangıç</label><input className="input" type="date" value={f.baslangic} onChange={setF2("baslangic")} /></div>
@@ -3175,7 +3176,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Makine Bazında Çıkış ({makineBazliCikis.length})</div>
                     <ExcelSeridi alanlar={XLS_ALAN.depo_hareketler} dosyaAdi="depo-hareketleri" koleksiyon="depo_hareketler" />
           <button className="btn-ghost" onClick={disaAktarMakine}><Download size={14} /> Excele Aktar</button>
@@ -3184,11 +3185,11 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
           <table>
             <thead><tr><th>Makine</th><th>Toplam Çıkış</th><th>Hareket Sayısı</th></tr></thead>
             <tbody>
-              {makineBazliCikis.length === 0 && <tr><td colSpan={3} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Bu dönemde makineye çıkış yok.</td></tr>}
+              {makineBazliCikis.length === 0 && <tr><td colSpan={3} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Bu dönemde makineye çıkış yok.</td></tr>}
               {makineBazliCikis.map((g) => (
                 <tr key={g.makine}>
                   <td><span className="pill">{g.makine}</span></td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#e07a6b" }}>{g.toplam.toLocaleString("tr-TR")}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#c62828" }}>{g.toplam.toLocaleString("tr-TR")}</td>
                   <td style={{ fontFamily: "monospace" }}>{g.hareketSayisi}</td>
                 </tr>
               ))}
@@ -3198,7 +3199,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Güncel Stok Durumu ({filtrelenmisStok.length})</div>
           <button className="btn-ghost" onClick={disaAktarStok}><Download size={14} /> Excele Aktar</button>
         </div>
@@ -3206,12 +3207,12 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
           <table>
             <thead><tr><th>Stok Kodu</th><th>Stok Adı</th><th>Miktar</th><th>Birim</th></tr></thead>
             <tbody>
-              {filtrelenmisStok.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmisStok.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmisStok.map((s) => (
                 <tr key={s.id}>
                   <td style={{ fontFamily: "monospace" }}>{s.stokKodu}</td>
                   <td>{s.stokAdi}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: s.miktar <= 0 ? "#e07a6b" : "#2dd4bf" }}>{s.miktar}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: s.miktar <= 0 ? "#c62828" : "#1565c0" }}>{s.miktar}</td>
                   <td>{s.birim || "Adet"}</td>
                 </tr>
               ))}
@@ -3221,7 +3222,7 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Kalem Bazında Hareket Özeti ({enCokHareketGorenler.length})</div>
                     <ExcelSeridi alanlar={XLS_ALAN.depo_hareketler} dosyaAdi="depo-hareketleri" koleksiyon="depo_hareketler" />
           <button className="btn-ghost" onClick={disaAktarHareket}><Download size={14} /> Excele Aktar</button>
@@ -3230,13 +3231,13 @@ function DepoStokRaporu({ depoStok, depoHareketler }) {
           <table>
             <thead><tr><th>Stok Kodu</th><th>Stok Adı</th><th>Toplam Giriş</th><th>Toplam Çıkış</th><th>Hareket Sayısı</th></tr></thead>
             <tbody>
-              {enCokHareketGorenler.length === 0 && <tr><td colSpan={5} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Bu dönemde hareket yok.</td></tr>}
+              {enCokHareketGorenler.length === 0 && <tr><td colSpan={5} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Bu dönemde hareket yok.</td></tr>}
               {enCokHareketGorenler.map((g) => (
                 <tr key={g.stokKodu}>
                   <td style={{ fontFamily: "monospace" }}>{g.stokKodu}</td>
                   <td>{g.stokAdi}</td>
-                  <td style={{ fontFamily: "monospace", color: "#2dd4bf" }}>{g.giris}</td>
-                  <td style={{ fontFamily: "monospace", color: "#e07a6b" }}>{g.cikis}</td>
+                  <td style={{ fontFamily: "monospace", color: "#1565c0" }}>{g.giris}</td>
+                  <td style={{ fontFamily: "monospace", color: "#c62828" }}>{g.cikis}</td>
                   <td style={{ fontFamily: "monospace" }}>{g.hareketSayisi}</td>
                 </tr>
               ))}
@@ -3377,7 +3378,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Proje kodu / adı ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -3416,7 +3417,7 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
         <div className="card" style={{ padding: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>İş Durum Dağılımı</div>
           {Object.entries(FASON_DURUM).map(([k, d]) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #223b42" }}>
+            <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #eef3f9" }}>
               <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: d.renk, display: "inline-block" }} />{d.label}</span>
               <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{durumDagilimi[k] || 0}</span>
             </div>
@@ -3425,30 +3426,30 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
         <div className="card" style={{ padding: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Kalite Kontrolü Dağılımı</div>
           {Object.entries(FASON_KALITE).map(([k, q]) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #223b42" }}>
+            <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #eef3f9" }}>
               <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: q.renk, display: "inline-block" }} />{q.label}</span>
               <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{kaliteDagilimi[k] || 0}</span>
             </div>
           ))}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0" }}>
-            <span style={{ fontSize: 13, color: "#8b929a" }}>Belirsiz</span>
-            <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#8b929a" }}>{kaliteDagilimi.belirsiz || 0}</span>
+            <span style={{ fontSize: 13, color: "#5a6b80" }}>Belirsiz</span>
+            <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#5a6b80" }}>{kaliteDagilimi.belirsiz || 0}</span>
           </div>
         </div>
         <div className="card" style={{ padding: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Hammadde Gönderim Oranı</div>
-          <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: "#2dd4bf" }}>{gonderilenSayisi} / {filtrelenmisIsler.length}</div>
-          <div style={{ fontSize: 12, color: "#8b929a", marginTop: 6 }}>işe hammadde gönderilmiş</div>
+          <div style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: "#1565c0" }}>{gonderilenSayisi} / {filtrelenmisIsler.length}</div>
+          <div style={{ fontSize: 12, color: "#5a6b80", marginTop: 6 }}>işe hammadde gönderilmiş</div>
         </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14 }}>Firma Bazında Detay ({firmaDetay.length})</div>
-            <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 2 }}>
+            <div style={{ fontSize: 11.5, color: "#7b8a9d", marginTop: 2 }}>
               {f.firmaId ? "Seçili firma" : f.gorunum === "acik" ? "Sadece açık (tamamlanmamış) işi veya bakiyesi olan cariler" : f.gorunum === "isli" ? "Fason işi açılmış cariler" : `Tüm cariler — ${fasonFirmalar.length} kayıt`}
-              {" · "}<b style={{ color: "#2dd4bf" }}>Firmaya tıklayınca iş dökümü açılır</b>
+              {" · "}<b style={{ color: "#1565c0" }}>Firmaya tıklayınca iş dökümü açılır</b>
             </div>
           </div>
                     <ExcelSeridi alanlar={XLS_ALAN.fason_isler} dosyaAdi="fason-isleri" koleksiyon="fason_isler" />
@@ -3459,22 +3460,22 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
             <thead><tr><th>Cari Kod</th><th>Firma</th><th>Toplam İş</th><th>Aktif İş</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
             <tbody>
               {firmaDetay.length === 0 && (
-                <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+                <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>
                   {f.gorunum === "acik" ? "Açık işi olan cari yok. Tüm carileri görmek için üstteki \"Listelenecek Cariler\" seçimini değiştir." : "Kayıt bulunamadı."}
                 </td></tr>
               )}
               {firmaDetay.map((r) => (
                 <tr key={r.firma.id} onClick={() => setDetayFirmaId(r.firma.id)} style={{ cursor: "pointer" }} title="İş dökümünü aç">
-                  <td style={{ fontFamily: "monospace", color: r.firma.kod ? "#2dd4bf" : "#4a5560" }}>{r.firma.kod || "—"}</td>
+                  <td style={{ fontFamily: "monospace", color: r.firma.kod ? "#1565c0" : "#aab6c6" }}>{r.firma.kod || "—"}</td>
                   <td>
                     <span style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{r.firma.ad}</span>
-                    <ChevronRight size={13} style={{ verticalAlign: "middle", marginLeft: 6, color: "#6b7178" }} />
+                    <ChevronRight size={13} style={{ verticalAlign: "middle", marginLeft: 6, color: "#7b8a9d" }} />
                   </td>
                   <td style={{ fontFamily: "monospace" }}>{r.isSayisi}</td>
                   <td style={{ fontFamily: "monospace" }}>{r.aktifIsSayisi}</td>
-                  <td style={{ fontFamily: "monospace", color: "#e8a33d" }}>{paraTR(r.giden)}</td>
-                  <td style={{ fontFamily: "monospace", color: "#4b8f5e" }}>{paraTR(r.gelen)}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: r.bakiye >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(r.bakiye)}</td>
+                  <td style={{ fontFamily: "monospace", color: "#b06a00" }}>{paraTR(r.giden)}</td>
+                  <td style={{ fontFamily: "monospace", color: "#2e7d4f" }}>{paraTR(r.gelen)}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: r.bakiye >= 0 ? "#1565c0" : "#c62828" }}>{paraTR(r.bakiye)}</td>
                 </tr>
               ))}
             </tbody>
@@ -3497,27 +3498,27 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))", gap: 12, marginBottom: 14 }}>
               {[
-                ["Toplam İş", String(detay.satirlar.length), "#e7e5e0"],
-                ["Açık İş", String(detay.acik), "#e8a33d"],
-                ["Giden", tutarTL(detay.giden), "#e8a33d"],
-                ["Gelen", tutarTL(detay.gelen), "#4b8f5e"],
-                ["Net Bakiye", tutarTL(detay.bakiye), detay.bakiye >= 0 ? "#2dd4bf" : "#e07a6b"],
+                ["Toplam İş", String(detay.satirlar.length), "#152a45"],
+                ["Açık İş", String(detay.acik), "#b06a00"],
+                ["Giden", tutarTL(detay.giden), "#b06a00"],
+                ["Gelen", tutarTL(detay.gelen), "#2e7d4f"],
+                ["Net Bakiye", tutarTL(detay.bakiye), detay.bakiye >= 0 ? "#1565c0" : "#c62828"],
               ].map(([et, dg, renk]) => (
-                <div key={et} style={{ border: "1px solid #2a4b52", borderRadius: 4, background: "#16232a", padding: "10px 13px" }}>
-                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#6b7178", fontWeight: 700, marginBottom: 5 }}>{et}</div>
+                <div key={et} style={{ border: "1px solid #d5dfec", borderRadius: 4, background: "#f4f7fc", padding: "10px 13px" }}>
+                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#7b8a9d", fontWeight: 700, marginBottom: 5 }}>{et}</div>
                   <div style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: renk }}>{dg}</div>
                 </div>
               ))}
             </div>
 
             {(detay.firma.yetkili || detay.firma.telefon) && (
-              <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 12 }}>
-                {detay.firma.yetkili && <span style={{ marginRight: 16 }}>Yetkili: <b style={{ color: "#c7cbd1" }}>{detay.firma.yetkili}</b></span>}
-                {detay.firma.telefon && <span>Telefon: <b style={{ color: "#c7cbd1" }}>{detay.firma.telefon}</b></span>}
+              <div style={{ fontSize: 12.5, color: "#5a6b80", marginBottom: 12 }}>
+                {detay.firma.yetkili && <span style={{ marginRight: 16 }}>Yetkili: <b style={{ color: "#31465f" }}>{detay.firma.yetkili}</b></span>}
+                {detay.firma.telefon && <span>Telefon: <b style={{ color: "#31465f" }}>{detay.firma.telefon}</b></span>}
               </div>
             )}
 
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden", maxHeight: 420, overflowY: "auto" }}>
+            <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden", maxHeight: 420, overflowY: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
@@ -3535,22 +3536,22 @@ function FasonTakipRaporu({ fasonFirmalar, fasonIsler, fasonHareketler, formAyar
                 </thead>
                 <tbody>
                   {detay.satirlar.length === 0 && (
-                    <tr><td colSpan={10} style={{ ...fisGridTd, color: "#6b7178", textAlign: "center", padding: 20 }}>Bu firmaya verilmiş iş yok.</td></tr>
+                    <tr><td colSpan={10} style={{ ...fisGridTd, color: "#7b8a9d", textAlign: "center", padding: 20 }}>Bu firmaya verilmiş iş yok.</td></tr>
                   )}
                   {detay.satirlar.map((r, i) => {
                     const d = FASON_DURUM[r.is.durum] || FASON_DURUM.bekliyor;
                     return (
                       <tr key={r.is.id}>
-                        <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                        <td style={{ ...fisGridTd, textAlign: "center", color: "#7b8a9d" }}>{i + 1}</td>
                         <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.evrakNo || "—"}</td>
                         <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.projeKodu || "—"}</td>
                         <td style={fisGridTd}>{r.is.projeAdi || "—"}</td>
                         <td style={{ ...fisGridTd, fontFamily: "monospace" }}>{r.is.miktar || "—"}</td>
                         <td style={fisGridTd}><span className="pill" style={{ background: "transparent", color: d.renk, borderColor: d.renk }}>{d.label}</span></td>
-                        <td style={{ ...fisGridTd, color: r.hammaddeGitti ? "#4b8f5e" : "#6b7178", fontSize: 11.5 }}>{r.hammaddeGitti ? "Gönderildi" : "Gönderilmedi"}</td>
-                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#e8a33d" }}>{r.giden ? sayiTR(r.giden) : "—"}</td>
-                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#4b8f5e" }}>{r.gelen ? sayiTR(r.gelen) : "—"}</td>
-                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.bakiye >= 0 ? "#2dd4bf" : "#e07a6b" }}>{r.bakiye ? sayiTR(r.bakiye) : "—"}</td>
+                        <td style={{ ...fisGridTd, color: r.hammaddeGitti ? "#2e7d4f" : "#7b8a9d", fontSize: 11.5 }}>{r.hammaddeGitti ? "Gönderildi" : "Gönderilmedi"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#b06a00" }}>{r.giden ? sayiTR(r.giden) : "—"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#2e7d4f" }}>{r.gelen ? sayiTR(r.gelen) : "—"}</td>
+                        <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.bakiye >= 0 ? "#1565c0" : "#c62828" }}>{r.bakiye ? sayiTR(r.bakiye) : "—"}</td>
                       </tr>
                     );
                   })}
@@ -3611,7 +3612,7 @@ function UretimRaporu({ teams, machines, records }) {
           <div style={{ gridColumn: "1 / -1" }}>
             <label className="field-label">Serbest Arama</label>
             <div style={{ position: "relative" }}>
-              <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+              <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
               <input className="input" style={{ paddingLeft: 30 }} placeholder="Takım, mağaza, makine, ürün ara…" value={f.arama} onChange={set("arama")} />
             </div>
           </div>
@@ -3647,12 +3648,12 @@ function UretimRaporu({ teams, machines, records }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Sonuçlar ({filtered.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Sonuçlar ({filtered.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
           <table>
             <thead><tr><th>Tarih</th><th>Takım</th><th>Mağaza</th><th>Makine</th><th>Ürün</th><th>Adet</th><th></th></tr></thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
               {filtered.map((r) => (
                 <tr key={r.id}>
                   <td style={{ fontFamily: "monospace" }}>{r.tarih}</td>
@@ -3660,8 +3661,8 @@ function UretimRaporu({ teams, machines, records }) {
                   <td>{r.magaza || "—"}</td>
                   <td>{r.makine}</td>
                   <td>{r.urun || "—"}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{r.adet}</td>
-                  <td><button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{r.adet}</td>
+                  <td><button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -3675,8 +3676,8 @@ function UretimRaporu({ teams, machines, records }) {
 function Stat({ label, value, highlight }) {
   return (
     <div className="card stat-kart" style={{ padding: "16px 18px" }}>
-      <div className="stat-etiket" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b929a", fontWeight: 600, marginBottom: 8 }}>{label}</div>
-      <div className="stat-deger" style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: highlight ? "#2dd4bf" : "#e7e5e0" }}>{value}</div>
+      <div className="stat-etiket" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5a6b80", fontWeight: 600, marginBottom: 8 }}>{label}</div>
+      <div className="stat-deger" style={{ fontSize: 26, fontWeight: 800, fontFamily: "monospace", color: highlight ? "#1565c0" : "#152a45" }}>{value}</div>
     </div>
   );
 }
@@ -3756,7 +3757,7 @@ function StokRaporu({ hammaddeler }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Kalite, cari, ölçü (Ø35 gibi), parça, proje ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -3774,7 +3775,7 @@ function StokRaporu({ hammaddeler }) {
             </select>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
           Bu rapor, henüz "Tamamlandı" işaretlenmemiş (Açık Siparişler'deki) hammadde kayıtlarını, Kalite / malzeme türüne göre gruplayıp toplam adedini gösterir. Bir satıra tıklayınca o kaliteye ait tüm kayıtlar açılır.
         </div>
       </div>
@@ -3786,20 +3787,20 @@ function StokRaporu({ hammaddeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Malzeme Bazında Stok ({kaliteGruplari.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Malzeme Bazında Stok ({kaliteGruplari.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 600, overflowY: "auto" }}>
           <table>
             <thead><tr><th style={{ width: 24 }}></th><th>Kalite / Malzeme</th><th>Toplam Kg</th><th>Kayıt Sayısı</th></tr></thead>
             <tbody>
-              {kaliteGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
+              {kaliteGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
               {kaliteGruplari.map((g) => {
                 const acik = genisletilenler.has(g.kalite);
                 return (
                   <React.Fragment key={g.kalite}>
                     <tr onClick={() => grupToggle(g.kalite)} style={{ cursor: "pointer" }}>
-                      <td style={{ color: "#6b7178" }}>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
+                      <td style={{ color: "#7b8a9d" }}>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
                       <td style={{ fontWeight: 700 }}>{g.kalite}</td>
-                      <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{g.adet.toLocaleString("tr-TR")} kg</td>
+                      <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{g.adet.toLocaleString("tr-TR")} kg</td>
                       <td style={{ fontFamily: "monospace" }}>{g.kayitSayisi}</td>
                     </tr>
                     {acik && (
@@ -3823,7 +3824,7 @@ function StokRaporu({ hammaddeler }) {
                                   <td style={{ fontFamily: "monospace" }}>{h.projeKodu || "—"}</td>
                                   <td>{h.aciklama1 || "—"}</td>
                                   <td>{h.aciklama2 || "—"}</td>
-                                  <td style={{ fontFamily: "monospace", color: "#2dd4bf" }}>{(h.miktar || 0).toLocaleString("tr-TR")}</td>
+                                  <td style={{ fontFamily: "monospace", color: "#1565c0" }}>{(h.miktar || 0).toLocaleString("tr-TR")}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -3895,7 +3896,7 @@ function SiparisRaporu({ hammaddeler }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari, proje ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -3923,16 +3924,16 @@ function SiparisRaporu({ hammaddeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Cari Bazında Sipariş Durumu ({cariGruplari.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Cari Bazında Sipariş Durumu ({cariGruplari.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
           <table>
             <thead><tr><th>Cari İsmi</th><th>Açık Sipariş</th><th>Tamamlanan</th><th>Toplam</th></tr></thead>
             <tbody>
-              {cariGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
+              {cariGruplari.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Sonuç bulunamadı.</td></tr>}
               {cariGruplari.map((g) => (
                 <tr key={g.cari}>
                   <td>{g.cari}</td>
-                  <td style={{ fontFamily: "monospace", color: "#2dd4bf", fontWeight: 700 }}>{g.acik}</td>
+                  <td style={{ fontFamily: "monospace", color: "#1565c0", fontWeight: 700 }}>{g.acik}</td>
                   <td style={{ fontFamily: "monospace" }}>{g.tamamlanan}</td>
                   <td style={{ fontFamily: "monospace", fontWeight: 700 }}>{g.acik + g.tamamlanan}</td>
                 </tr>
@@ -4116,7 +4117,7 @@ function ExcelSeridi({ alanlar, dosyaAdi, sayfaAdi = "Veri", koleksiyon, hazirla
         </>
       )}
       {disaAktar && <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaEtiketi || "Excele Aktar"}</button>}
-      {msg && <span style={{ fontSize: 12, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 6, padding: "5px 9px" }}>{msg}</span>}
+      {msg && <span style={{ fontSize: 12, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 6, padding: "5px 9px" }}>{msg}</span>}
     </div>
   );
 }
@@ -4405,8 +4406,8 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 12 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>{baslikMetni}</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 4, maxWidth: 620 }}>
-              {aciklamaMetni} Satınalma siparişinde stok kodu <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{HAMMADDE_ONEK}</b> ile başlayan kalemler buraya otomatik düşer.
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 4, maxWidth: 620 }}>
+              {aciklamaMetni} Satınalma siparişinde stok kodu <b style={{ color: "#1565c0", fontFamily: "monospace" }}>{HAMMADDE_ONEK}</b> ile başlayan kalemler buraya otomatik düşer.
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -4421,13 +4422,13 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
             />
           </div>
         </div>
-        {msg && <div style={{ fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{msg}</div>}
+        {msg && <div style={{ fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{msg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu, stok adı, cari, sipariş no, proje ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -4466,19 +4467,19 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
       </div>
 
       {secililer.size > 0 && (
-        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#2dd4bf" }}>
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#1565c0" }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{secililer.size} kalem seçili</span>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={() => topluIsaretle(true)} disabled={islemde} style={{ background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>✓ Geldi (Kapat)</button>
+            <button onClick={() => topluIsaretle(true)} disabled={islemde} style={{ background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>✓ Geldi (Kapat)</button>
             <button onClick={() => topluIsaretle(false)} disabled={islemde} className="btn-ghost">↺ Yeniden Aç</button>
-            <button onClick={secilenleriSil} disabled={islemde} style={{ background: "none", border: "1px solid #6b3a33", color: "#e07a6b", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Seçilenleri Sil</button>
+            <button onClick={secilenleriSil} disabled={islemde} style={{ background: "none", border: "1px solid #f0b8b2", color: "#c62828", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Seçilenleri Sil</button>
             <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
           </div>
         </div>
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>
           {baslikMetni} ({liste.length})
         </div>
         <div style={{ overflowX: "auto", maxHeight: 600, overflowY: "auto" }}>
@@ -4493,7 +4494,7 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
               </tr>
             </thead>
             <tbody>
-              {liste.length === 0 && <tr><td colSpan={15} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+              {liste.length === 0 && <tr><td colSpan={15} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>
                 {gorunum === "kapali" ? "Kapanmış hammadde yok." : gorunum === "acik" ? "Açık hammadde yok." : `Kayıt yok. Satınalma siparişlerinde ${HAMMADDE_ONEK} kodlu kalem varsa "Siparişlerden Aktar" ile çekebilirsin.`}
               </td></tr>}
               {liste.map((h) => {
@@ -4502,48 +4503,48 @@ function HammaddeRaporu({ hammaddeler, satinalmaSiparisler, depoStok, fasonFirma
                   <tr key={h.id} style={{ background: h.tamamlandi ? "rgba(45,212,191,0.05)" : undefined }}>
                     <td><input type="checkbox" checked={secililer.has(h.id)} onChange={() => birSecToggle(h.id)} /></td>
                     <td style={{ fontFamily: "monospace", fontSize: 12 }}>{h.siparisEvrakNo || "—"}</td>
-                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#e8a33d" }}>{h.projeKodu || "—"}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#b06a00" }}>{h.projeKodu || "—"}</td>
                     <td>
-                      {h.cariKod && <span style={{ fontFamily: "monospace", color: "#8b929a", marginRight: 6, fontSize: 11.5 }}>{h.cariKod}</span>}
+                      {h.cariKod && <span style={{ fontFamily: "monospace", color: "#5a6b80", marginRight: 6, fontSize: 11.5 }}>{h.cariKod}</span>}
                       {h.cari || "—"}
                     </td>
                     <td>
                       {h.stokKodu
-                        ? <span style={{ fontFamily: "monospace", color: stokVar ? "#2dd4bf" : "#e8a33d", fontSize: 12 }} title={stokVar ? "Stok kartı var" : "Stok kartı yok — depoya işlenmez"}>{h.stokKodu}</span>
-                        : <span style={{ color: "#4a5560" }}>—</span>}
+                        ? <span style={{ fontFamily: "monospace", color: stokVar ? "#1565c0" : "#b06a00", fontSize: 12 }} title={stokVar ? "Stok kartı var" : "Stok kartı yok — depoya işlenmez"}>{h.stokKodu}</span>
+                        : <span style={{ color: "#aab6c6" }}>—</span>}
                     </td>
                     <td>{ad(h)}</td>
-                    <td style={{ fontSize: 12.5, color: h.aciklama1 ? "#c7cbd1" : "#4a5560" }}>{h.aciklama1 || "—"}</td>
-                    <td style={{ fontSize: 12.5, color: h.aciklama2 ? "#c7cbd1" : "#4a5560" }}>{h.aciklama2 || "—"}</td>
+                    <td style={{ fontSize: 12.5, color: h.aciklama1 ? "#31465f" : "#aab6c6" }}>{h.aciklama1 || "—"}</td>
+                    <td style={{ fontSize: 12.5, color: h.aciklama2 ? "#31465f" : "#aab6c6" }}>{h.aciklama2 || "—"}</td>
                     <td style={{ textAlign: "right", fontFamily: "monospace" }}>{sayiTR(siparisAl(h))}</td>
                     <td style={{ textAlign: "right" }}>
                       <input
-                        style={{ width: 68, textAlign: "right", fontFamily: "monospace", background: "#16232a", border: "1px solid #2a4b52", color: gelenAl(h) > 0 ? "#2dd4bf" : "#c7cbd1", borderRadius: 4, padding: "4px 5px", fontSize: 12 }}
+                        style={{ width: 68, textAlign: "right", fontFamily: "monospace", background: "#f4f7fc", border: "1px solid #d5dfec", color: gelenAl(h) > 0 ? "#1565c0" : "#31465f", borderRadius: 4, padding: "4px 5px", fontSize: 12 }}
                         value={miktarTaslak[h.id] !== undefined ? miktarTaslak[h.id] : String(gelenAl(h))}
                         onChange={(e) => setMiktarTaslak((m) => ({ ...m, [h.id]: e.target.value }))}
                         onBlur={() => miktarUygula(h)}
                         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
                       />
                     </td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace", color: kalanAl(h) > 0 ? "#e8a33d" : "#6b7178" }}>{sayiTR(kalanAl(h))}</td>
-                    <td style={{ fontSize: 12, color: "#8b929a" }}>{h.birim || "—"}</td>
-                    <td style={{ fontSize: 12, color: "#8b929a" }}>{h.teslimTarihi || "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", color: kalanAl(h) > 0 ? "#b06a00" : "#7b8a9d" }}>{sayiTR(kalanAl(h))}</td>
+                    <td style={{ fontSize: 12, color: "#5a6b80" }}>{h.birim || "—"}</td>
+                    <td style={{ fontSize: 12, color: "#5a6b80" }}>{h.teslimTarihi || "—"}</td>
                     <td>
                       {h.tamamlandi
-                        ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Geldi</span>
+                        ? <span className="pill" style={{ background: "#e3f0ff", color: "#1565c0", borderColor: "#bcd8f7" }}>Geldi</span>
                         : kismiMi(h)
-                          ? <span className="pill" style={{ background: "#2b2415", color: "#e8a33d", borderColor: "#4a3d1e" }}>Kısmi</span>
+                          ? <span className="pill" style={{ background: "#fff6e2", color: "#b06a00", borderColor: "#f0dcae" }}>Kısmi</span>
                           : <span className="pill">Bekliyor</span>}
                     </td>
                     <td style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       {h.tamamlandi ? (
                         <button onClick={() => geriAl(h)} disabled={islemde} title="Yeniden aç (depo girişi de geri alınır)"
-                          style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 11, whiteSpace: "nowrap" }}>↺ Aç</button>
+                          style={{ background: "none", border: "1px solid #b6c6da", color: "#5a6b80", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 11, whiteSpace: "nowrap" }}>↺ Aç</button>
                       ) : (
                         <button onClick={() => geldiIsaretle(h)} disabled={islemde} title="Geldi olarak işaretle (kalem kapanır, depo stoğuna girer)"
-                          style={{ background: "#2dd4bf", border: "none", color: "#142a30", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>✓ Geldi</button>
+                          style={{ background: "#1565c0", border: "none", color: "#ffffff", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>✓ Geldi</button>
                       )}
-                      <button onClick={() => sil(h.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                      <button onClick={() => sil(h.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
@@ -4606,7 +4607,7 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
           />
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Malzeme Kartı Aç
           </button>
           <button className="btn-ghost" onClick={varsayilanEkle}>Varsayılan Malzemeleri Ekle (Çelik, Paslanmaz, Bronz, Kestamid, Alüminyum)</button>
@@ -4616,14 +4617,14 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
           baslik="Malzeme Tanım Kartı" ikon={Ruler} genislik={560}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Malzeme Adı</span><input style={fisInput} placeholder="Örn: Pirinç" value={ad} onChange={(e) => setAd(e.target.value)} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Yoğunluk (g/cm³)</span><input style={fisInput} type="number" step="0.001" placeholder="Örn: 8.40" value={yogunluk} onChange={(e) => setYogunluk(e.target.value)} /></div>
           </div>
@@ -4631,9 +4632,9 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Malzeme Listesi ({metalMalzemeler.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Malzeme Listesi ({metalMalzemeler.length})</div>
         {metalMalzemeler.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Henüz malzeme tanımlanmadı.</div>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>Henüz malzeme tanımlanmadı.</div>
         ) : (
           <table>
             <thead><tr><th>Malzeme Adı</th><th>Yoğunluk (g/cm³)</th><th></th></tr></thead>
@@ -4642,7 +4643,7 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
                 <tr key={m.id}>
                   <td>{m.ad}</td>
                   <td style={{ fontFamily: "monospace" }}>{m.yogunluk}</td>
-                  <td><button onClick={() => sil(m.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  <td><button onClick={() => sil(m.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -4657,7 +4658,7 @@ function MetalMalzemeYonetimi({ metalMalzemeler }) {
 function MetalOlcuFormu({ tur, setTur, dims, setDims, yogunluk, setYogunluk, malzemeler, malzemeAdi, setMalzemeAdi, boy, setBoy, boyBirim, setBoyBirim, adet, setAdet }) {
   return (
     <>
-      <div style={{ marginBottom: 6, fontSize: 12.5, fontWeight: 600, color: "#8b929a" }}>1. Malzeme</div>
+      <div style={{ marginBottom: 6, fontSize: 12.5, fontWeight: 600, color: "#5a6b80" }}>1. Malzeme</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {malzemeler.map((m) => (
           <button
@@ -4665,18 +4666,18 @@ function MetalOlcuFormu({ tur, setTur, dims, setDims, yogunluk, setYogunluk, mal
             onClick={() => { setMalzemeAdi(m.ad); setYogunluk(String(m.yogunluk)); }}
             style={{
               padding: "9px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12.5,
-              background: malzemeAdi === m.ad ? "#2dd4bf" : "#1b333c",
-              color: malzemeAdi === m.ad ? "#142a30" : "#c7cbd1",
-              border: `1px solid ${malzemeAdi === m.ad ? "#2dd4bf" : "#2a4b52"}`,
+              background: malzemeAdi === m.ad ? "#1565c0" : "#ffffff",
+              color: malzemeAdi === m.ad ? "#f2f6fb" : "#31465f",
+              border: `1px solid ${malzemeAdi === m.ad ? "#1565c0" : "#d5dfec"}`,
             }}
           >
             {m.ad}
           </button>
         ))}
-        {malzemeler.length === 0 && <span style={{ fontSize: 12.5, color: "#6b7178" }}>Önce "Malzeme Tanımları" ekranından malzeme ekle.</span>}
+        {malzemeler.length === 0 && <span style={{ fontSize: 12.5, color: "#7b8a9d" }}>Önce "Malzeme Tanımları" ekranından malzeme ekle.</span>}
       </div>
 
-      <div style={{ marginBottom: 6, fontSize: 12.5, fontWeight: 600, color: "#8b929a" }}>2. Kesit Türü</div>
+      <div style={{ marginBottom: 6, fontSize: 12.5, fontWeight: 600, color: "#5a6b80" }}>2. Kesit Türü</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {KESIT_TIPLERI.map((k) => (
           <button
@@ -4684,9 +4685,9 @@ function MetalOlcuFormu({ tur, setTur, dims, setDims, yogunluk, setYogunluk, mal
             onClick={() => setTur(k.id)}
             style={{
               padding: "9px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12.5,
-              background: tur === k.id ? "#142a30" : "#1b333c",
-              color: tur === k.id ? "#fff" : "#c7cbd1",
-              border: `1px solid ${tur === k.id ? "#142a30" : "#2a4b52"}`,
+              background: tur === k.id ? "#f2f6fb" : "#ffffff",
+              color: tur === k.id ? "#fff" : "#31465f",
+              border: `1px solid ${tur === k.id ? "#f2f6fb" : "#d5dfec"}`,
             }}
           >
             {k.label}
@@ -4827,13 +4828,13 @@ function MetalTalepEkle({ metalMalzemeler }) {
             </button>
           </div>
         </div>
-        {iceMsg && <div style={{ fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>Sütun sırası: Talep No, Tür (Mil/Kare/Lama/Boru), Malzeme, Ölçü1, Ölçü2 (Lama/Boru için), Boy (m), Adet, Fiyat.</div>
+        {iceMsg && <div style={{ fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>Sütun sırası: Talep No, Tür (Mil/Kare/Lama/Boru), Malzeme, Ölçü1, Ölçü2 (Lama/Boru için), Boy (m), Adet, Fiyat.</div>
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Metal Ölçü Talebi</div>
-        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Talep Fişi Aç
         </button>
         <EvrakPenceresi
@@ -4841,21 +4842,21 @@ function MetalTalepEkle({ metalMalzemeler }) {
           baslik="Metal Ölçü Talep Fişi" ikon={Ruler} genislik={780}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12 }}>
             <div style={{ ...fisSatir, marginBottom: 0 }}>
               <span style={fisEtiket}>Talep / Proje No</span>
               <input style={fisInput} placeholder="Örn: ARC-2026-014" value={talepNo} onChange={(e) => setTalepNo(e.target.value)} />
             </div>
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <MetalOlcuFormu
               tur={tur} setTur={setTur} dims={dims} setDims={setDims}
               yogunluk={yogunluk} setYogunluk={setYogunluk}
@@ -4866,9 +4867,9 @@ function MetalTalepEkle({ metalMalzemeler }) {
             <div style={{ marginTop: 12 }}><label className="field-label">Birim Fiyat (TL/kg, opsiyonel)</label><input className="input" type="number" step="0.01" placeholder="opsiyonel" value={fiyat} onChange={(e) => setFiyat(e.target.value)} style={{ maxWidth: 220 }} /></div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#22404a", border: "1px solid #2a4b52", borderRadius: 4, padding: "11px 14px", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
-            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#8b929a" }}>
-              Parça ağırlığı: <b style={{ color: "#2dd4bf" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> kg · Toplam: <b style={{ color: "#2dd4bf" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> kg
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#e6edf7", border: "1px solid #d5dfec", borderRadius: 4, padding: "11px 14px", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontFamily: "monospace", fontSize: 13, color: "#5a6b80" }}>
+              Parça ağırlığı: <b style={{ color: "#1565c0" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> kg · Toplam: <b style={{ color: "#1565c0" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> kg
             </span>
           </div>
         </EvrakPenceresi>
@@ -4955,7 +4956,7 @@ function MetalHizliHesap({ metalMalzemeler, kullanici }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>Hızlı KG Hesaplama</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Ölçüleri gir, otomatik hesaplasın. "Kaydet" dediğinde "Geçmiş Ölçümler" sayfasına otomatik eklenir.</div>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>Ölçüleri gir, otomatik hesaplasın. "Kaydet" dediğinde "Geçmiş Ölçümler" sayfasına otomatik eklenir.</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn-ghost" onClick={() => sablonIndir(["Talep No", "Tür", "Malzeme", "Ölçü1 (mm)", "Ölçü2 (mm)", "Boy (m)", "Adet", "Fiyat (TL/kg)"], [["—", "Mil", "Çelik", 20, "", 6, 10, ""]], "metal-olcum-sablonu.xlsx", "Şablon")}><FileDown size={14} /> Şablon İndir</button>
@@ -4963,7 +4964,7 @@ function MetalHizliHesap({ metalMalzemeler, kullanici }) {
             <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excel'den İçe Aktar"}</button>
           </div>
         </div>
-        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
 
         <MetalOlcuFormu
           tur={tur} setTur={setTur} dims={dims} setDims={setDims}
@@ -4978,22 +4979,22 @@ function MetalHizliHesap({ metalMalzemeler, kullanici }) {
           <input className="input" placeholder="Örn: hangi parça/proje için" value={not} onChange={(e) => setNot(e.target.value)} />
         </div>
 
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", background: "#16232a", border: "1px dashed #2a4b52", borderRadius: 8, padding: 20, marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", background: "#f4f7fc", border: "1px dashed #d5dfec", borderRadius: 8, padding: 20, marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 11, color: "#6b7178", textTransform: "uppercase", letterSpacing: "0.06em" }}>Parça Ağırlığı</div>
-            <div><b style={{ fontSize: 26, color: "#2dd4bf" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> <span style={{ fontSize: 14, color: "#8b929a" }}>kg</span></div>
+            <div style={{ fontSize: 11, color: "#7b8a9d", textTransform: "uppercase", letterSpacing: "0.06em" }}>Parça Ağırlığı</div>
+            <div><b style={{ fontSize: 26, color: "#1565c0" }}>{birimKg > 0 ? birimKg.toFixed(3) : "–"}</b> <span style={{ fontSize: 14, color: "#5a6b80" }}>kg</span></div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: "#6b7178", textTransform: "uppercase", letterSpacing: "0.06em" }}>Toplam ({adet || 0} adet)</div>
-            <div><b style={{ fontSize: 26, color: "#2dd4bf" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> <span style={{ fontSize: 14, color: "#8b929a" }}>kg</span></div>
+            <div style={{ fontSize: 11, color: "#7b8a9d", textTransform: "uppercase", letterSpacing: "0.06em" }}>Toplam ({adet || 0} adet)</div>
+            <div><b style={{ fontSize: 26, color: "#1565c0" }}>{toplamKg > 0 ? toplamKg.toFixed(3) : "–"}</b> <span style={{ fontSize: 14, color: "#5a6b80" }}>kg</span></div>
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={kaydet} style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={kaydet} style={{ display: "flex", alignItems: "center", gap: 7, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 7, padding: "10px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Kaydet
           </button>
-          {msg && <span style={{ fontSize: 12.5, color: "#8b929a" }}>{msg}</span>}
+          {msg && <span style={{ fontSize: 12.5, color: "#5a6b80" }}>{msg}</span>}
         </div>
       </div>
     </div>
@@ -5032,7 +5033,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Filtrele</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Malzeme, ölçü, not ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -5060,7 +5061,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Geçmiş Ölçümler ({filtrelenmis.length})</div>
           <ExcelSeridi alanlar={XLS_ALAN.metal_talepler} dosyaAdi="metal-olcumleri" koleksiyon="metal_talepler" />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
@@ -5069,7 +5070,7 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
           <table>
             <thead><tr><th>Tarih</th><th>Malzeme</th><th>Tür</th><th>Ölçü</th><th>Boy</th><th>Adet</th><th>Toplam Kg</th><th>Not</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Henüz ölçüm kaydedilmedi.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Henüz ölçüm kaydedilmedi.</td></tr>}
               {filtrelenmis.map((t) => (
                 <tr key={t.id}>
                   <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>{t.tarih ? new Date(t.tarih).toLocaleString("tr-TR") : "—"}</td>
@@ -5078,9 +5079,9 @@ function MetalGecmisOlcumler({ metalTalepler, metalMalzemeler }) {
                   <td>{t.dimLabel}</td>
                   <td style={{ fontFamily: "monospace" }}>{t.boy?.toFixed(2)} m</td>
                   <td style={{ fontFamily: "monospace" }}>{t.adet}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{t.toplamKg?.toFixed(3)}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{t.toplamKg?.toFixed(3)}</td>
                   <td style={{ fontSize: 12.5 }}>{t.not || "—"}</td>
-                  <td><button onClick={() => sil(t.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  <td><button onClick={() => sil(t.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -5248,10 +5249,10 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
-        {tasimaMsg && <div style={{ marginBottom: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{tasimaMsg}</div>}
+        {tasimaMsg && <div style={{ marginBottom: 12, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{tasimaMsg}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Talep no, malzeme veya ölçü ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -5278,26 +5279,26 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Talep Listesi ({gruplar.length} talep)</div>
-          <button onClick={tumunuTemizle} className="btn-ghost" style={{ color: "#e07a6b", borderColor: "#5a2a2a" }}>Tüm Listeyi Temizle</button>
+          <button onClick={tumunuTemizle} className="btn-ghost" style={{ color: "#c62828", borderColor: "#f3c4c0" }}>Tüm Listeyi Temizle</button>
         </div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
             <thead><tr><th></th><th>Talep</th><th>Malzeme</th><th>Tür</th><th>Ölçü</th><th>Boy</th><th>Adet</th><th>Birim Kg</th><th>Toplam Kg</th><th>TL/Kg</th><th>Tutar</th><th></th></tr></thead>
             <tbody>
-              {gruplar.length === 0 && <tr><td colSpan={12} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {gruplar.length === 0 && <tr><td colSpan={12} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {gruplar.map(({ key, kalemler }) => {
                 const acik = genisletilen.has(key);
                 const kg = kalemler.reduce((s, i) => s + (i.toplamKg || 0), 0);
                 const tutar = kalemler.reduce((s, i) => s + (i.tutar || 0), 0);
                 return (
                   <React.Fragment key={key}>
-                    <tr onClick={() => grupToggle(key)} style={{ cursor: "pointer", background: "#16232a" }}>
+                    <tr onClick={() => grupToggle(key)} style={{ cursor: "pointer", background: "#f4f7fc" }}>
                       <td>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
-                      <td colSpan={5}><span className="pill">{key}</span> <span style={{ color: "#6b7178", fontSize: 12 }}>{kalemler.length} kalem</span></td>
+                      <td colSpan={5}><span className="pill">{key}</span> <span style={{ color: "#7b8a9d", fontSize: 12 }}>{kalemler.length} kalem</span></td>
                       <td colSpan={3} style={{ fontFamily: "monospace" }}>{kg.toFixed(2)} kg</td>
-                      <td colSpan={3} style={{ fontFamily: "monospace", color: "#2dd4bf", fontWeight: 700 }}>{tutar ? tutar.toFixed(2) + " TL" : "—"}</td>
+                      <td colSpan={3} style={{ fontFamily: "monospace", color: "#1565c0", fontWeight: 700 }}>{tutar ? tutar.toFixed(2) + " TL" : "—"}</td>
                     </tr>
                     {acik && kalemler.map((it) => (
                       <tr key={it.id}>
@@ -5309,10 +5310,10 @@ function MetalTalepListesi({ metalTalepler, metalMalzemeler }) {
                         <td style={{ fontFamily: "monospace" }}>{it.boy?.toFixed(2)} m</td>
                         <td style={{ fontFamily: "monospace" }}>{it.adet}</td>
                         <td style={{ fontFamily: "monospace" }}>{it.birimKg?.toFixed(3)}</td>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{it.toplamKg?.toFixed(3)}</td>
+                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{it.toplamKg?.toFixed(3)}</td>
                         <td style={{ fontFamily: "monospace" }}>{it.fiyat || "—"}</td>
                         <td style={{ fontFamily: "monospace" }}>{it.fiyat ? it.tutar?.toFixed(2) + " TL" : "—"}</td>
-                        <td><button onClick={() => sil(it.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                        <td><button onClick={() => sil(it.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                       </tr>
                     ))}
                   </React.Fragment>
@@ -5378,7 +5379,7 @@ function StokSilme({ records }) {
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Stok Kayıtlarını Filtrele</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Takım, mağaza, makine, tarih ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -5413,7 +5414,7 @@ function StokSilme({ records }) {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Stok Kayıtları ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Stok Kayıtları ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 560, overflowY: "auto" }}>
           <table>
             <thead>
@@ -5423,7 +5424,7 @@ function StokSilme({ records }) {
               </tr>
             </thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmis.map((r) => (
                 <tr key={r.id}>
                   <td><input type="checkbox" checked={secililer.has(r.id)} onChange={() => birSecToggle(r.id)} /></td>
@@ -5432,7 +5433,7 @@ function StokSilme({ records }) {
                   <td>{r.magaza || "—"}</td>
                   <td>{r.makine}</td>
                   <td>{r.urun || "—"}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{r.adet}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{r.adet}</td>
                 </tr>
               ))}
             </tbody>
@@ -5494,7 +5495,7 @@ function HammaddeSilme({ hammaddeler }) {
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Hammadde Kayıtlarını Filtrele</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari, proje, kalite, parça ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -5530,7 +5531,7 @@ function HammaddeSilme({ hammaddeler }) {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Hammadde Kayıtları ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Hammadde Kayıtları ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 560, overflowY: "auto" }}>
           <table>
             <thead>
@@ -5540,15 +5541,15 @@ function HammaddeSilme({ hammaddeler }) {
               </tr>
             </thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmis.map((h) => (
                 <tr key={h.id}>
                   <td><input type="checkbox" checked={secililer.has(h.id)} onChange={() => birSecToggle(h.id)} /></td>
-                  <td>{h.stokKodu && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6, fontSize: 12 }}>{h.stokKodu}</span>}{h.cari}</td>
+                  <td>{h.stokKodu && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6, fontSize: 12 }}>{h.stokKodu}</span>}{h.cari}</td>
                   <td style={{ fontFamily: "monospace" }}>{h.projeKodu || "—"}</td>
                   <td>{h.kalite || "—"}</td>
                   <td>{h.aciklama2 || "—"}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{(h.miktar || 0).toLocaleString("tr-TR")} kg</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{(h.miktar || 0).toLocaleString("tr-TR")} kg</td>
                   <td>{h.tamamlandi ? <span className="pill">Tamamlandı</span> : <span className="pill" style={{ background: "#1f2d3a", color: "#7fb0e0", borderColor: "#2c4a63" }}>Açık</span>}</td>
                 </tr>
               ))}
@@ -5597,7 +5598,7 @@ function DepoSilme({ depoStok }) {
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>Depo Stok Kartlarını Filtrele</div>
         <div style={{ position: "relative" }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu veya adı ara…" value={arama} onChange={(e) => setArama(e.target.value)} />
         </div>
       </div>
@@ -5617,7 +5618,7 @@ function DepoSilme({ depoStok }) {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Depo Stok Kartları ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Depo Stok Kartları ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 560, overflowY: "auto" }}>
           <table>
             <thead>
@@ -5627,13 +5628,13 @@ function DepoSilme({ depoStok }) {
               </tr>
             </thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={5} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={5} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmis.map((s) => (
                 <tr key={s.id}>
                   <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
                   <td style={{ fontFamily: "monospace" }}>{s.stokKodu}</td>
                   <td>{s.stokAdi}</td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{s.miktar}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{s.miktar}</td>
                   <td>{s.birim || "Adet"}</td>
                 </tr>
               ))}
@@ -5690,17 +5691,17 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
 
       {yaklasanlar.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Yaklaşan Hatırlatıcılar</div>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Yaklaşan Hatırlatıcılar</div>
           {yaklasanlar.map((r) => {
             const bugun = todayISO();
             const gecikti = r.tarih && r.tarih < bugun;
             const bugunMu = r.tarih === bugun;
             return (
-              <div key={r.id} style={{ padding: "12px 20px", borderBottom: "1px solid #223b42", display: "flex", alignItems: "center", gap: 10 }}>
-                <Bell size={14} color="#8b929a" />
+              <div key={r.id} style={{ padding: "12px 20px", borderBottom: "1px solid #eef3f9", display: "flex", alignItems: "center", gap: 10 }}>
+                <Bell size={14} color="#5a6b80" />
                 <div>
                   <div style={{ fontSize: 13.5 }}>{r.baslik}</div>
-                  <div style={{ fontSize: 11.5, color: gecikti ? "#e07a6b" : bugunMu ? "#e8a33d" : "#6b7178" }}>
+                  <div style={{ fontSize: 11.5, color: gecikti ? "#c62828" : bugunMu ? "#b06a00" : "#7b8a9d" }}>
                     {r.tarih}{gecikti ? " · gecikti" : bugunMu ? " · bugün" : ""}
                   </div>
                 </div>
@@ -5711,12 +5712,12 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>
           Firma Bazlı Bakiye ({hareketliFirmalar.length})
-          <div style={{ fontSize: 11.5, color: "#6b7178", fontWeight: 400, marginTop: 2 }}>Sadece işi veya hareketi olan cariler listelenir.</div>
+          <div style={{ fontSize: 11.5, color: "#7b8a9d", fontWeight: 400, marginTop: 2 }}>Sadece işi veya hareketi olan cariler listelenir.</div>
         </div>
         {hareketliFirmalar.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Hareket görmüş firma yok.</div>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>Hareket görmüş firma yok.</div>
         ) : (
           <table>
             <thead><tr><th>Cari Kod</th><th>Firma</th><th>Giden</th><th>Gelen</th><th>Bakiye</th></tr></thead>
@@ -5724,11 +5725,11 @@ function FasonOzet({ fasonFirmalar, fasonIsler, fasonHareketler, fasonHatirlatic
               {hareketliFirmalar.map(({ firma: f, bakiye: b }) => {
                 return (
                   <tr key={f.id}>
-                    <td style={{ fontFamily: "monospace", color: f.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{f.kod || "—"}</td>
+                    <td style={{ fontFamily: "monospace", color: f.kod ? "#1565c0" : "#aab6c6", whiteSpace: "nowrap" }}>{f.kod || "—"}</td>
                     <td>{f.ad}</td>
-                    <td style={{ fontFamily: "monospace", color: "#e8a33d" }}>{paraTR(b.giden)}</td>
-                    <td style={{ fontFamily: "monospace", color: "#4b8f5e" }}>{paraTR(b.gelen)}</td>
-                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: b.bakiye >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(b.bakiye)}</td>
+                    <td style={{ fontFamily: "monospace", color: "#b06a00" }}>{paraTR(b.giden)}</td>
+                    <td style={{ fontFamily: "monospace", color: "#2e7d4f" }}>{paraTR(b.gelen)}</td>
+                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: b.bakiye >= 0 ? "#1565c0" : "#c62828" }}>{paraTR(b.bakiye)}</td>
                   </tr>
                 );
               })}
@@ -5857,7 +5858,7 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
-        <button onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Firma Kartı Aç
         </button>
         <EvrakPenceresi
@@ -5865,26 +5866,26 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
           baslik="Fason Firma (Cari) Kartı" ikon={Building2} genislik={640}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={() => { setForm({ ad: "", yetkili: "", not: "" }); setMsg(""); }}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Cari Kod</span><input style={fisInput} placeholder="Örn: 120.01.001 (boş bırakılabilir)" value={form.kod} onChange={(e) => setForm((s) => ({ ...s, kod: e.target.value }))} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Firma Adı</span><input style={fisInput} value={form.ad} onChange={(e) => setForm((s) => ({ ...s, ad: e.target.value }))} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Yetkili / Telefon</span><input style={fisInput} value={form.yetkili} onChange={(e) => setForm((s) => ({ ...s, yetkili: e.target.value }))} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Not</span><input style={fisInput} value={form.not} onChange={(e) => setForm((s) => ({ ...s, not: e.target.value }))} /></div>
           </div>
         </EvrakPenceresi>
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: "12px 16px" }}>
         <div style={{ position: "relative" }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari kodu veya firma adı ara…" value={arama} onChange={(e) => setArama(e.target.value)} />
         </div>
       </div>
@@ -5904,9 +5905,9 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Firmalar ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Firmalar ({filtrelenmis.length})</div>
         {filtrelenmis.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Firma bulunamadı.</div>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>Firma bulunamadı.</div>
         ) : (
           <table>
             <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Cari Kod</th><th>Firma Adı</th><th>Yetkili</th><th>İş Sayısı</th><th>Bakiye</th><th></th></tr></thead>
@@ -5922,22 +5923,22 @@ function FasonFirmalar({ fasonFirmalar, fasonIsler, fasonHareketler }) {
                         <td><input className="input" style={{ padding: "5px 8px", fontSize: 13 }} value={duzenleForm.ad} onChange={(e) => setDuzenleForm((s) => ({ ...s, ad: e.target.value }))} /></td>
                         <td><input className="input" style={{ padding: "5px 8px", fontSize: 13 }} value={duzenleForm.yetkili} onChange={(e) => setDuzenleForm((s) => ({ ...s, yetkili: e.target.value }))} /></td>
                         <td style={{ fontFamily: "monospace" }}>{fasonIsler.filter((j) => j.firmaId === f.id).length}</td>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(firmaBakiye(f.id))}</td>
+                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#1565c0" : "#c62828" }}>{paraTR(firmaBakiye(f.id))}</td>
                         <td style={{ display: "flex", gap: 4 }}>
-                          <button onClick={() => duzenlemeyiKaydet(f.id)} style={{ background: "none", border: "none", color: "#2dd4bf", cursor: "pointer", padding: 4 }}><Check size={14} /></button>
-                          <button onClick={duzenlemeyiIptalEt} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><X size={14} /></button>
+                          <button onClick={() => duzenlemeyiKaydet(f.id)} style={{ background: "none", border: "none", color: "#1565c0", cursor: "pointer", padding: 4 }}><Check size={14} /></button>
+                          <button onClick={duzenlemeyiIptalEt} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><X size={14} /></button>
                         </td>
                       </>
                     ) : (
                       <>
-                        <td style={{ fontFamily: "monospace", color: f.kod ? "#2dd4bf" : "#4a5560" }}>{f.kod || "—"}</td>
+                        <td style={{ fontFamily: "monospace", color: f.kod ? "#1565c0" : "#aab6c6" }}>{f.kod || "—"}</td>
                         <td>{f.ad}</td>
                         <td>{f.yetkili || "—"}</td>
                         <td style={{ fontFamily: "monospace" }}>{fasonIsler.filter((j) => j.firmaId === f.id).length}</td>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#2dd4bf" : "#e07a6b" }}>{paraTR(firmaBakiye(f.id))}</td>
+                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: firmaBakiye(f.id) >= 0 ? "#1565c0" : "#c62828" }}>{paraTR(firmaBakiye(f.id))}</td>
                         <td style={{ display: "flex", gap: 4 }}>
-                          <button onClick={() => duzenlemeyeBasla(f)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Pencil size={14} /></button>
-                          <button onClick={() => sil(f.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                          <button onClick={() => duzenlemeyeBasla(f)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Pencil size={14} /></button>
+                          <button onClick={() => sil(f.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
                         </td>
                       </>
                     )}
@@ -6166,7 +6167,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
         ikon={ClipboardList}
         butonlar={
           <>
-            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
             <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
             <button style={fisAltBtn} onClick={hamEkle}><Plus size={14} /> Hammadde Ekle</button>
             <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
@@ -6176,7 +6177,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
         }
       >
         {/* --- Fiş başlığı: etiket solda, alan sağda (Mikro düzeni) --- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(290px, 100%), 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#f4f7fc", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(290px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Evrak No</span>
@@ -6209,13 +6210,13 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Satır Sayısı</span>
-              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a" }} value={satirlar.filter((r) => r.projeAdi.trim()).length} readOnly />
+              <input style={{ ...fisInput, background: "#f4f7fc", color: "#5a6b80" }} value={satirlar.filter((r) => r.projeAdi.trim()).length} readOnly />
             </div>
           </div>
         </div>
 
         {/* --- Satır grid'i --- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
               <thead>
@@ -6232,27 +6233,27 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
               <tbody>
                 {satirlar.map((r, i) => (
                   <tr key={r.key}>
-                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#7b8a9d", background: "#f4f7fc", padding: "0 4px" }}>{i + 1}</td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.projeAdi} onChange={(e) => satirGuncelle(r.key, "projeAdi", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.ucret} onChange={(e) => satirGuncelle(r.key, "ucret", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.resimRef} onChange={(e) => satirGuncelle(r.key, "resimRef", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} /></td>
                     <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
-                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#c2cddc" : "#7b8a9d", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={7} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
-                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
+                  <td colSpan={7} style={{ padding: 7, background: "#f4f7fc", borderTop: "1px solid #d5dfec" }}>
+                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #b6c6da", color: "#5a6b80", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={7} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
-                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{paraTR(araToplam)}</span>
+                  <td colSpan={7} style={{ padding: "9px 12px", background: "#e6edf7", borderTop: "1px solid #d5dfec", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#1565c0", marginLeft: 6 }}>{paraTR(araToplam)}</span>
                   </td>
                 </tr>
               </tfoot>
@@ -6261,14 +6262,14 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
         </div>
 
         {/* --- Firmaya gönderilen hammadde --- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden", marginTop: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 13px", background: "#16232a", borderBottom: "1px solid #2a4b52", flexWrap: "wrap" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden", marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 13px", background: "#f4f7fc", borderBottom: "1px solid #d5dfec", flexWrap: "wrap" }}>
             <span style={{ fontWeight: 700, fontSize: 12.5, flex: 1 }}>Firmaya Gönderilen Hammadde</span>
-            <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#c7cbd1", cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#31465f", cursor: "pointer" }}>
               <input type="checkbox" checked={depodanDus} onChange={(e) => setDepodanDus(e.target.checked)} />
               Depo stoğundan düş
             </label>
-            <span style={{ fontSize: 11.5, color: "#6b7178" }}>Boş bırakabilirsin — sonradan Hareketler ekranından da girebilirsin.</span>
+            <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>Boş bırakabilirsin — sonradan Hareketler ekranından da girebilirsin.</span>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -6290,36 +6291,36 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
                 const yetersiz = r.mevcut != null && sayiCevir(r.miktar) > r.mevcut;
                 return (
                   <tr key={r.key}>
-                    <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, textAlign: "center", color: "#7b8a9d" }}>{i + 1}</td>
                     <td style={fisGridTd}>
                       <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
                         ac={() => setSecici({ tur: "stok", key: r.key })}
                         temizle={() => hamGuncelle(r.key, "stokKodu", "")} />
                     </td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.stokAdi} onChange={(e) => hamGuncelle(r.key, "stokAdi", e.target.value)} placeholder="Stok kartında yoksa elle yaz" /></td>
-                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", color: yetersiz ? "#e07a6b" : undefined }} value={r.miktar} onChange={(e) => hamGuncelle(r.key, "miktar", e.target.value)} /></td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", color: yetersiz ? "#c62828" : undefined }} value={r.miktar} onChange={(e) => hamGuncelle(r.key, "miktar", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => hamGuncelle(r.key, "birim", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={r.birimFiyat} onChange={(e) => hamGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
-                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf" }}>{tutar ? sayiTR(tutar) : "—"}</td>
-                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: yetersiz ? "#e07a6b" : "#8b929a", fontSize: 11.5 }}>
+                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#1565c0" }}>{tutar ? sayiTR(tutar) : "—"}</td>
+                    <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: yetersiz ? "#c62828" : "#5a6b80", fontSize: 11.5 }}>
                       {r.mevcut == null ? "—" : `${r.mevcut} ${r.birim || ""}`}
                     </td>
                     <td style={{ ...fisGridTd, textAlign: "center" }}>
-                      <button onClick={() => hamSil(r.key)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 2 }}><X size={13} /></button>
+                      <button onClick={() => hamSil(r.key)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 2 }}><X size={13} /></button>
                     </td>
                   </tr>
                 );
               })}
               <tr>
-                <td colSpan={9} style={{ padding: "7px 10px", background: "#16232a" }}>
-                  <button onClick={hamEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Hammadde Satırı Ekle</button>
+                <td colSpan={9} style={{ padding: "7px 10px", background: "#f4f7fc" }}>
+                  <button onClick={hamEkle} style={{ background: "none", border: "1px dashed #b6c6da", color: "#5a6b80", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Hammadde Satırı Ekle</button>
                 </td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={9} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
-                  Gönderilen Hammadde Toplamı: <span style={{ fontFamily: "monospace", color: "#e8a33d", marginLeft: 6 }}>{tutarTL(hamToplam)}</span>
+                <td colSpan={9} style={{ padding: "9px 12px", background: "#e6edf7", borderTop: "1px solid #d5dfec", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                  Gönderilen Hammadde Toplamı: <span style={{ fontFamily: "monospace", color: "#b06a00", marginLeft: 6 }}>{tutarTL(hamToplam)}</span>
                 </td>
               </tr>
             </tfoot>
@@ -6349,18 +6350,18 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
         <button
           onClick={fisiAc}
           disabled={fasonFirmalar.length === 0}
-          style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonFirmalar.length === 0 ? "default" : "pointer", opacity: fasonFirmalar.length === 0 ? 0.5 : 1 }}
+          style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonFirmalar.length === 0 ? "default" : "pointer", opacity: fasonFirmalar.length === 0 ? 0.5 : 1 }}
         >
           <Plus size={16} /> Yeni İş Fişi Aç
         </button>
-        {fasonFirmalar.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce Firmalar sekmesinden firma ekleyin.</div>}
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {fasonFirmalar.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#b06a00" }}>Önce Firmalar sekmesinden firma ekleyin.</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Proje kodu, adı, resim ref ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -6402,12 +6403,12 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>İşler ({gruplar.reduce((s, g) => s + g.isler.length, 0)})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>İşler ({gruplar.reduce((s, g) => s + g.isler.length, 0)})</div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
             <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th></th><th>Proje / Kod</th><th>Firma</th><th>Miktar</th><th>Ücret</th><th>Durum</th><th>Hammadde</th><th>Kalite</th><th></th></tr></thead>
             <tbody>
-              {gruplar.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>İş bulunamadı.</td></tr>}
+              {gruplar.length === 0 && <tr><td colSpan={10} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>İş bulunamadı.</td></tr>}
               {gruplar.map((g) => {
                 if (g.isler.length === 1) {
                   const j = g.isler[0];
@@ -6419,7 +6420,7 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
                       <td><input type="checkbox" checked={secililer.has(j.id)} onChange={() => birSecToggle(j.id)} /></td>
                       <td></td>
                       <td>{j.projeKodu ? `${j.projeKodu} · ` : ""}{j.projeAdi}</td>
-                      <td>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad || "—"}</td>
+                      <td>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad || "—"}</td>
                       <td style={{ fontFamily: "monospace" }}>{j.miktar || "—"}</td>
                       <td style={{ fontFamily: "monospace" }}>{j.ucret ? paraTR(j.ucret) : "—"}</td>
                       <td>
@@ -6427,13 +6428,13 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
                           {Object.entries(FASON_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
                         </select>
                       </td>
-                      <td>{gonderildi ? <span className="pill">✓ Gönderildi</span> : <span className="pill" style={{ background: "#3a1f1f", color: "#e07a6b", borderColor: "#5a2a2a" }}>✕ Yok</span>}</td>
+                      <td>{gonderildi ? <span className="pill">✓ Gönderildi</span> : <span className="pill" style={{ background: "#fdecea", color: "#c62828", borderColor: "#f3c4c0" }}>✕ Yok</span>}</td>
                       <td style={{ display: "flex", gap: 4 }}>
                         {Object.entries(FASON_KALITE).map(([k, q]) => (
-                          <button key={k} onClick={() => kaliteDegistir(j.id, j.kaliteDurumu, k)} title={q.label} style={{ width: 20, height: 20, borderRadius: 5, border: `1px solid ${j.kaliteDurumu === k ? q.renk : "#2a4b52"}`, background: j.kaliteDurumu === k ? q.renk : "transparent", cursor: "pointer" }} />
+                          <button key={k} onClick={() => kaliteDegistir(j.id, j.kaliteDurumu, k)} title={q.label} style={{ width: 20, height: 20, borderRadius: 5, border: `1px solid ${j.kaliteDurumu === k ? q.renk : "#d5dfec"}`, background: j.kaliteDurumu === k ? q.renk : "transparent", cursor: "pointer" }} />
                         ))}
                       </td>
-                      <td><button onClick={() => sil(j.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                      <td><button onClick={() => sil(j.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                     </tr>
                   );
                 }
@@ -6443,11 +6444,11 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
                 const grupHepsiSecili = g.isler.every((j) => secililer.has(j.id));
                 return (
                   <React.Fragment key={g.key}>
-                    <tr onClick={() => grupToggle(g.key)} style={{ cursor: "pointer", background: "#16232a" }}>
+                    <tr onClick={() => grupToggle(g.key)} style={{ cursor: "pointer", background: "#f4f7fc" }}>
                       <td onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={grupHepsiSecili} onChange={() => grupSecToggle(g.isler)} /></td>
                       <td>{acik ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</td>
-                      <td colSpan={3}><span className="pill">{g.isler[0].projeKodu}</span> <span style={{ color: "#6b7178", fontSize: 12 }}>{g.isler.length} kalem</span></td>
-                      <td colSpan={2} style={{ fontSize: 12 }}>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad}</td>
+                      <td colSpan={3}><span className="pill">{g.isler[0].projeKodu}</span> <span style={{ color: "#7b8a9d", fontSize: 12 }}>{g.isler.length} kalem</span></td>
+                      <td colSpan={2} style={{ fontSize: 12 }}>{firma?.kod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{firma.kod}</span>}{firma?.ad}</td>
                       <td colSpan={3} style={{ fontFamily: "monospace" }}>Hammadde: {sentCount} / {g.isler.length}</td>
                     </tr>
                     {acik && g.isler.map((j) => {
@@ -6466,13 +6467,13 @@ function FasonIsler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok, kull
                               {Object.entries(FASON_DURUM).map(([k, d]) => <option key={k} value={k}>{d.label}</option>)}
                             </select>
                           </td>
-                          <td>{gonderildi ? <span className="pill">✓</span> : <span className="pill" style={{ background: "#3a1f1f", color: "#e07a6b", borderColor: "#5a2a2a" }}>✕</span>}</td>
+                          <td>{gonderildi ? <span className="pill">✓</span> : <span className="pill" style={{ background: "#fdecea", color: "#c62828", borderColor: "#f3c4c0" }}>✕</span>}</td>
                           <td style={{ display: "flex", gap: 4 }}>
                             {Object.entries(FASON_KALITE).map(([k, q]) => (
-                              <button key={k} onClick={() => kaliteDegistir(j.id, j.kaliteDurumu, k)} title={q.label} style={{ width: 20, height: 20, borderRadius: 5, border: `1px solid ${j.kaliteDurumu === k ? q.renk : "#2a4b52"}`, background: j.kaliteDurumu === k ? q.renk : "transparent", cursor: "pointer" }} />
+                              <button key={k} onClick={() => kaliteDegistir(j.id, j.kaliteDurumu, k)} title={q.label} style={{ width: 20, height: 20, borderRadius: 5, border: `1px solid ${j.kaliteDurumu === k ? q.renk : "#d5dfec"}`, background: j.kaliteDurumu === k ? q.renk : "transparent", cursor: "pointer" }} />
                             ))}
                           </td>
-                          <td><button onClick={() => sil(j.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                          <td><button onClick={() => sil(j.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                         </tr>
                       );
                     })}
@@ -6566,7 +6567,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
-        <button onClick={fisiAc} disabled={fasonIsler.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonIsler.length === 0 ? "default" : "pointer", opacity: fasonIsler.length === 0 ? 0.5 : 1 }}>
+        <button onClick={fisiAc} disabled={fasonIsler.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: fasonIsler.length === 0 ? "default" : "pointer", opacity: fasonIsler.length === 0 ? 0.5 : 1 }}>
           <Plus size={16} /> Yeni Hareket Fişi Aç
         </button>
         <EvrakPenceresi
@@ -6575,14 +6576,14 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
           ikon={RefreshCw} genislik={900}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12 }}>
             <div style={fisSatir}>
               <span style={fisEtiket}>İş (Proje)</span>
               <select style={fisInput} value={form.isId} onChange={(e) => setForm((s) => ({ ...s, isId: e.target.value }))}>
@@ -6600,7 +6601,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
             <div>
               <div style={fisSatir}>
                 <span style={fisEtiket}>Stok Kodu</span>
@@ -6623,7 +6624,7 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
               <div style={fisSatir}><span style={fisEtiket}>Birim Fiyat (₺)</span><input style={fisInput} type="number" step="0.01" value={form.birimFiyat} onChange={(e) => setForm((s) => ({ ...s, birimFiyat: e.target.value }))} /></div>
               <div style={{ ...fisSatir, marginBottom: 0 }}>
                 <span style={fisEtiket}>Tutar</span>
-                <input style={{ ...fisInput, background: "#16232a", color: "#2dd4bf", fontFamily: "monospace", textAlign: "right" }} value={paraTR((Number(form.miktar) || 0) * (Number(form.birimFiyat) || 0))} readOnly />
+                <input style={{ ...fisInput, background: "#f4f7fc", color: "#1565c0", fontFamily: "monospace", textAlign: "right" }} value={paraTR((Number(form.miktar) || 0) * (Number(form.birimFiyat) || 0))} readOnly />
               </div>
             </div>
           </div>
@@ -6632,14 +6633,14 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
           sec={(st) => setForm((x) => ({ ...x, stokKodu: st.__serbest || st.stokKodu, urunAdi: st.stokAdi || x.urunAdi, birim: st.birim || x.birim }))}
         />
         </EvrakPenceresi>
-        {fasonIsler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce İşler sekmesinden bir iş ekleyin.</div>}
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {fasonIsler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#b06a00" }}>Önce İşler sekmesinden bir iş ekleyin.</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Malzeme/ürün, cins, kalite, proje kodu ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -6666,26 +6667,26 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Hareketler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Hareketler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
             <thead><tr><th>Tarih</th><th>Tip</th><th>Ürün / Malzeme</th><th>İş</th><th>Miktar</th><th>Tutar</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Hareket bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Hareket bulunamadı.</td></tr>}
               {filtrelenmis.map((m) => {
                 const tutar = (Number(m.miktar) || 0) * (Number(m.birimFiyat) || 0);
                 return (
                   <tr key={m.id}>
                     <td style={{ fontFamily: "monospace" }}>{m.tarih}</td>
-                    <td>{m.tip === "giden" ? <span className="pill">↑ Giden</span> : <span className="pill" style={{ background: "#113330", color: "#4b8f5e", borderColor: "#1f4d47" }}>↓ Gelen</span>}</td>
+                    <td>{m.tip === "giden" ? <span className="pill">↑ Giden</span> : <span className="pill" style={{ background: "#e3f0ff", color: "#2e7d4f", borderColor: "#bcd8f7" }}>↓ Gelen</span>}</td>
                     <td>
-                      {m.stokKodu && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6, fontSize: 12 }}>{m.stokKodu}</span>}
+                      {m.stokKodu && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6, fontSize: 12 }}>{m.stokKodu}</span>}
                       {m.urunAdi}{m.kalite ? ` · ${m.kalite}` : ""}
                     </td>
                     <td style={{ fontSize: 12 }}>{isLabel(m.isId)}</td>
                     <td style={{ fontFamily: "monospace" }}>{m.miktar} {m.birim}</td>
-                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: m.tip === "giden" ? "#e8a33d" : "#4b8f5e" }}>{paraTR(tutar)}</td>
-                    <td><button onClick={() => sil(m.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: m.tip === "giden" ? "#b06a00" : "#2e7d4f" }}>{paraTR(tutar)}</td>
+                    <td><button onClick={() => sil(m.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                   </tr>
                 );
               })}
@@ -6701,11 +6702,39 @@ function FasonHareketler({ fasonFirmalar, fasonIsler, fasonHareketler, depoStok 
 // Her gün gelen fason Excel'i buraya yüklenir; program mevcut listeyi günceller,
 // senin işaretlediğin durumlar (Gönderildi / Üretimde) korunur.
 const FASON_LISTE_DURUM = {
-  gonderilmedi: { label: "Gönderilmedi", renk: "#e8a33d", zemin: "#2b2415", kenar: "#4a3d1e", excel: "FFFFD966" },
-  uretimde: { label: "Üretimde", renk: "#e07a6b", zemin: "#3a1f1f", kenar: "#6b3a33", excel: "FFFF0000" },
-  gonderildi: { label: "Gönderildi", renk: "#2dd4bf", zemin: "#113330", kenar: "#1f4d47", excel: "FF00B050" },
-  geldi: { label: "Geldi", renk: "#4ade80", zemin: "#14331f", kenar: "#1f4d2e", excel: "FF008000" },
+  gonderilmedi: { label: "Gönderilmedi", renk: "#b06a00", zemin: "#fff6e2", kenar: "#f0dcae", excel: "FFFFD966" },
+  uretimde: { label: "Üretimde", renk: "#c62828", zemin: "#fdecea", kenar: "#f0b8b2", excel: "FFFF0000" },
+  kismi: { label: "Kısmi Gönderildi", renk: "#4d7c0f", zemin: "#f3fae4", kenar: "#cfe8a1", excel: "FFC6E0B4" },
+  gonderildi: { label: "Gönderildi", renk: "#1565c0", zemin: "#e3f0ff", kenar: "#bcd8f7", excel: "FF00B050" },
+  geldi: { label: "Geldi", renk: "#1b7f4b", zemin: "#e7f6ed", kenar: "#b9e2c8", excel: "FF008000" },
 };
+
+// ---- Kısmi gönderim ----
+// Bir satırın adedinin tamamı bir seferde gönderilemeyebilir. Kullanıcı
+// "gönderilen adet"i yazar; kalan varsa satır listede kalır, gönderilen kısım
+// aynı anda Fason Rapor ekranında da görünür. Tamamı gönderilince satır
+// otomatik "Gönderildi" olur ve listeden düşer.
+const fasonToplamAdet = (k) => sayiCevir(k && k.adet);
+const fasonGonderilen = (k) => Math.max(0, sayiCevir(k && k.gonderilenAdet));
+const fasonKalan = (k) => {
+  const t = fasonToplamAdet(k);
+  if (t <= 0) return 0;                       // adet bilinmiyorsa kalan hesaplanamaz
+  return Math.max(0, t - fasonGonderilen(k));
+};
+const fasonTamGonderildi = (k) => {
+  const t = fasonToplamAdet(k);
+  return t > 0 && fasonGonderilen(k) >= t;
+};
+// Ekranda gösterilecek durum: kayıtlı durum + kısmi gönderim bilgisi
+function fasonEtkinDurum(k) {
+  const d = fasonListeDurumu(k);
+  if (d === "geldi" || d === "gonderildi") return d;
+  if (fasonGonderilen(k) > 0) return "kismi";
+  return d;
+}
+// Hangi ekranda görünür? Kısmi satırlar HER İKİSİNDE de görünür.
+const fasonListedeKalir = (k) => !FASON_RAPOR_DURUMU(fasonListeDurumu(k));
+const fasonRaporaGirer = (k) => FASON_RAPOR_DURUMU(fasonListeDurumu(k)) || fasonGonderilen(k) > 0;
 // Fason Listesi ekranında seçilebilen durumlar (gönderilmemiş işler)
 const FASON_LISTE_DURUMLARI = ["gonderilmedi", "uretimde", "gonderildi"];
 // Fason Rapor ekranında seçilebilen durumlar (gönderilmiş işler)
@@ -6718,12 +6747,13 @@ const fasonListeDurumu = (k) => (FASON_LISTE_DURUM[k && k.durum] ? k.durum : "go
 // Fason Listesi'nde gönderim (başlangıç) tarihi, Fason Rapor'da dönüş (bitiş)
 // tarihi esas alınır — hangi tarihin geçtiği o ekranda anlamlı olan tarihtir.
 const FASON_RENK = {
-  geldi: { ad: "Geldi", zemin: "#14331f", cizgi: "#2f7d4f", excel: "FF008000" },
-  gonderildi: { ad: "Gönderildi", zemin: "#113330", cizgi: "#1f6f66", excel: "FF00B050" },
-  gecikti: { ad: "Tarihi geçti", zemin: "#3a1f1f", cizgi: "#8c3b32", excel: "FFFF0000" },
-  bugun: { ad: "Günü geldi", zemin: "#3a2a12", cizgi: "#b3701c", excel: "FFFFA500" },
-  uretimde: { ad: "Üretimde", zemin: "#3a1f1f", cizgi: "#6b3a33", excel: "FFFF0000" },
-  bekliyor: { ad: "Bekliyor", zemin: "#2b2415", cizgi: "#4a3d1e", excel: "FFFFD966" },
+  geldi: { ad: "Geldi", zemin: "#e7f6ed", cizgi: "#2e9e63", excel: "FF008000" },
+  gonderildi: { ad: "Gönderildi", zemin: "#e3f0ff", cizgi: "#2f86d6", excel: "FF00B050" },
+  kismi: { ad: "Kısmi gönderildi", zemin: "#f3fae4", cizgi: "#8bbf3c", excel: "FFC6E0B4" },
+  gecikti: { ad: "Tarihi geçti", zemin: "#fdecea", cizgi: "#d9534f", excel: "FFFF0000" },
+  bugun: { ad: "Günü geldi", zemin: "#fff3e0", cizgi: "#e08a1e", excel: "FFFFA500" },
+  uretimde: { ad: "Üretimde", zemin: "#fdecea", cizgi: "#f0b8b2", excel: "FFFF0000" },
+  bekliyor: { ad: "Bekliyor", zemin: "#fff6e2", cizgi: "#f0dcae", excel: "FFFFD966" },
 };
 function fasonSatirRenkAnahtari(k, gorunum = "liste", bugun = todayISO()) {
   const d = fasonListeDurumu(k);
@@ -6732,6 +6762,8 @@ function fasonSatirRenkAnahtari(k, gorunum = "liste", bugun = todayISO()) {
   const tarih = String((gorunum === "rapor" ? k.bitisTarihi : k.baslangicTarihi) || "").slice(0, 10);
   if (tarih && tarih < bugun) return "gecikti";
   if (tarih && tarih === bugun) return "bugun";
+  // Kısmi gönderim: tarihi geçmemiş/bugün olmayan satırlarda ayrı renk
+  if (fasonGonderilen(k) > 0) return "kismi";
   if (d === "uretimde") return "uretimde";
   if (d === "gonderildi") return "gonderildi";
   return "bekliyor";
@@ -6927,13 +6959,14 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
   const liste = useMemo(() => {
     const q = f.arama.trim().toLocaleLowerCase("tr");
     return (fasonListesi || []).filter((k) => {
-      // Gönderildi/Geldi işaretlenen iş listeden kalkar, Fason Rapor'a geçer
-      if (FASON_RAPOR_DURUMU(fasonListeDurumu(k)) !== rapor) return false;
+      // Gönderildi/Geldi işaretlenen iş listeden kalkar, Fason Rapor'a geçer.
+      // Kısmi gönderilen satır listede kalır AMA rapor ekranında da görünür.
+      if (rapor ? !fasonRaporaGirer(k) : !fasonListedeKalir(k)) return false;
       if (f.dusenGizle && k.listeDisi) return false;
       if (f.musteri && sadeMetin(k.musteri) !== f.musteri) return false;
       if (f.firma && sadeMetin(k.firma) !== f.firma) return false;
       if (f.islem && sadeMetin(k.islem) !== f.islem) return false;
-      if (f.durum && fasonListeDurumu(k) !== f.durum) return false;
+      if (f.durum && fasonEtkinDurum(k) !== f.durum) return false;
       if (q && ![k.musteri, k.siparisNo, k.urun, k.ebat, k.islem, k.firma, k.sonrakiOperasyon]
         .some((x) => String(x || "").toLocaleLowerCase("tr").includes(q))) return false;
       return true;
@@ -6942,18 +6975,23 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
   }, [fasonListesi, f, rapor]);
 
   const benzersiz = (alan) => [...new Set((fasonListesi || []).map((k) => sadeMetin(k[alan])).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
-  const ekranKayitlari = (fasonListesi || []).filter((k) => FASON_RAPOR_DURUMU(fasonListeDurumu(k)) === rapor);
-  const sayac = (d) => ekranKayitlari.filter((k) => !k.listeDisi && fasonListeDurumu(k) === d).length;
+  const ekranKayitlari = (fasonListesi || []).filter((k) => (rapor ? fasonRaporaGirer(k) : fasonListedeKalir(k)));
+  const sayac = (d) => ekranKayitlari.filter((k) => !k.listeDisi && fasonEtkinDurum(k) === d).length;
   const renkSayaci = (anahtar) => ekranKayitlari.filter((k) => !k.listeDisi && fasonSatirRenkAnahtari(k, gorunum, bugun) === anahtar).length;
   const aktifSayi = ekranKayitlari.filter((k) => !k.listeDisi).length;
   const dusenSayi = ekranKayitlari.filter((k) => k.listeDisi).length;
   const secilebilir = rapor ? FASON_RAPOR_DURUMLARI : FASON_LISTE_DURUMLARI;
+  // "Kısmi" elle seçilmez, gönderilen adetten türer — ama süzgeçte yer alır.
+  const suzulebilir = rapor ? FASON_RAPOR_DURUMLARI : [...FASON_LISTE_DURUMLARI, "kismi"];
 
   const durumSec = async (kayit, yeniDurum) => {
     try {
-      await updateDoc(doc(db, "fason_listesi", kayit.id), {
-        durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—",
-      });
+      const veri = { durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—" };
+      // "Gönderildi" denince adedin tamamı gönderilmiş sayılır; listeye geri
+      // alınınca gönderilen adet sıfırlanır.
+      if (yeniDurum === "gonderildi" && fasonToplamAdet(kayit) > 0) veri.gonderilenAdet = fasonToplamAdet(kayit);
+      if (yeniDurum === "gonderilmedi" || yeniDurum === "uretimde") veri.gonderilenAdet = 0;
+      await updateDoc(doc(db, "fason_listesi", kayit.id), veri);
     } catch (err) { if (!err?.yetkiHatasi) bilgi("Durum kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
   };
   const topluDurum = async (yeniDurum) => {
@@ -6963,9 +7001,12 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
     try {
       for (let i = 0; i < secilenler.length; i += 400) {
         const batch = writeBatch(db);
-        secilenler.slice(i, i + 400).forEach((k) => batch.update(doc(db, "fason_listesi", k.id), {
-          durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—",
-        }));
+        secilenler.slice(i, i + 400).forEach((k) => {
+          const veri = { durum: yeniDurum, durumTarihi: Date.now(), durumVeren: kullanici?.email || "—" };
+          if (yeniDurum === "gonderildi" && fasonToplamAdet(k) > 0) veri.gonderilenAdet = fasonToplamAdet(k);
+          if (yeniDurum === "gonderilmedi" || yeniDurum === "uretimde") veri.gonderilenAdet = 0;
+          batch.update(doc(db, "fason_listesi", k.id), veri);
+        });
         await batch.commit();
       }
       bilgi(`${secilenler.length} satır "${FASON_LISTE_DURUM[yeniDurum].label}" yapıldı.`);
@@ -6973,6 +7014,23 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
     } catch (err) { if (!err?.yetkiHatasi) bilgi("Kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
     setYukleniyor(false);
   };
+  // Gönderilen adet yazıldığında: tamamı gönderildiyse satır otomatik
+  // "Gönderildi" olur (rapora geçer), kalan varsa listede kalır.
+  const gonderilenYaz = async (kayit, deger) => {
+    const toplam = fasonToplamAdet(kayit);
+    let adet = Math.max(0, sayiCevir(deger));
+    if (toplam > 0 && adet > toplam) adet = toplam;
+    const veri = { gonderilenAdet: adet, gonderilenTarihi: Date.now(), gonderilenYazan: kullanici?.email || "—" };
+    if (toplam > 0 && adet >= toplam) veri.durum = "gonderildi";
+    else if (fasonListeDurumu(kayit) === "gonderildi") veri.durum = "gonderilmedi";
+    try { await updateDoc(doc(db, "fason_listesi", kayit.id), veri); }
+    catch (err) { if (!err?.yetkiHatasi) bilgi("Adet kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
+  };
+  const aciklamaYaz = async (kayit, metin) => {
+    try { await updateDoc(doc(db, "fason_listesi", kayit.id), { satirAciklama: String(metin || "").trim() }); }
+    catch (err) { if (!err?.yetkiHatasi) bilgi("Açıklama kaydedilemedi: " + (err?.message || "bilinmeyen hata")); }
+  };
+
   const sil = async (kayit) => {
     if (!window.confirm(`"${kayit.urun}" satırı listeden silinecek. Emin misiniz?`)) return;
     try { await deleteDoc(doc(db, "fason_listesi", kayit.id)); }
@@ -7035,14 +7093,17 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
   // Renkli çıktı: Üretimde kırmızı, Gönderildi yeşil, Gönderilmedi sarı
   const disaAktar = () => {
     const kapsam = secililer.size ? liste.filter((k) => secililer.has(k.id)) : liste;
-    const basliklar = [...FASON_LISTE_SUTUNLARI.map((c) => c.baslik), "Durum", "Liste Dışı"];
+    const basliklar = [...FASON_LISTE_SUTUNLARI.map((c) => c.baslik), "Gönderilen Adet", "Kalan Adet", "Açıklama", "Durum", "Liste Dışı"];
     const satirlar = kapsam.map((k) => [
       ...FASON_LISTE_SUTUNLARI.map((c) => {
         if (c.sayi) return k[c.alan] === "" || k[c.alan] == null ? "" : Number(k[c.alan]);
         if (c.tarih) return trTarih(k[c.alan]);
         return String(k[c.alan] || "");
       }),
-      FASON_LISTE_DURUM[fasonListeDurumu(k)].label,
+      fasonGonderilen(k) || "",
+      fasonToplamAdet(k) > 0 ? fasonKalan(k) : "",
+      String(k.satirAciklama || ""),
+      FASON_LISTE_DURUM[fasonEtkinDurum(k)].label,
       k.listeDisi ? "Listeden düştü" : "",
     ]);
     renkliExcelIndir({
@@ -7050,7 +7111,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
       // Ekranda görünen rengin aynısı: geldi/gönderildi yeşil, tarihi geçen kırmızı,
       // günü gelen turuncu, geri kalan sarı
       satirRenkleri: kapsam.map((k) => fasonSatirRengi(k, gorunum, bugun).excel),
-      sutunGenislikleri: [...FASON_LISTE_SUTUNLARI.map((c) => c.gen), 14, 12],
+      sutunGenislikleri: [...FASON_LISTE_SUTUNLARI.map((c) => c.gen), 14, 12, 30, 16, 12],
       dosyaAdi: `${rapor ? "fason-rapor" : "fason-listesi"}-${todayISO()}.xlsx`,
       sayfaAdi: rapor ? "Fason Rapor" : "Fason Listesi",
     });
@@ -7067,8 +7128,8 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
 
   const KutuStat = ({ etiket, deger, renk }) => (
     <div className="card" style={{ padding: "16px 20px" }}>
-      <div style={{ fontSize: 11, color: "#8b929a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{etiket}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", color: renk || "#e7e5e0" }}>{deger}</div>
+      <div style={{ fontSize: 11, color: "#5a6b80", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{etiket}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", color: renk || "#152a45" }}>{deger}</div>
     </div>
   );
 
@@ -7080,39 +7141,45 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
           <>
             <KutuStat etiket="Gelmedi" deger={sayac("gonderildi")} renk={FASON_LISTE_DURUM.gonderildi.renk} />
             <KutuStat etiket="Geldi" deger={sayac("geldi")} renk={FASON_LISTE_DURUM.geldi.renk} />
-            <KutuStat etiket="Dönüşü Gecikti" deger={renkSayaci("gecikti")} renk="#e07a6b" />
-            <KutuStat etiket="Bugün Dönmeli" deger={renkSayaci("bugun")} renk="#e8a33d" />
+            <KutuStat etiket="Dönüşü Gecikti" deger={renkSayaci("gecikti")} renk="#c62828" />
+            <KutuStat etiket="Bugün Dönmeli" deger={renkSayaci("bugun")} renk="#b06a00" />
           </>
         ) : (
           <>
-            <KutuStat etiket="Tarihi Geçti" deger={renkSayaci("gecikti")} renk="#e07a6b" />
-            <KutuStat etiket="Günü Geldi" deger={renkSayaci("bugun")} renk="#e8a33d" />
+            <KutuStat etiket="Tarihi Geçti" deger={renkSayaci("gecikti")} renk="#c62828" />
+            <KutuStat etiket="Günü Geldi" deger={renkSayaci("bugun")} renk="#b06a00" />
+            <KutuStat etiket="Kısmi Gönderildi" deger={sayac("kismi")} renk={FASON_LISTE_DURUM.kismi.renk} />
             <KutuStat etiket="Üretimde" deger={sayac("uretimde")} renk={FASON_LISTE_DURUM.uretimde.renk} />
-            <KutuStat etiket="Listeden Düşen" deger={dusenSayi} renk="#6b7178" />
+            <KutuStat etiket="Listeden Düşen" deger={dusenSayi} renk="#7b8a9d" />
           </>
         )}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{rapor ? "Fason Rapor — Gönderilen İşler" : "Günlük Fason Listesi"}</div>
-        <div style={{ fontSize: 12.5, color: "#8b929a", lineHeight: 1.6, marginBottom: 14 }}>
+        <div style={{ fontSize: 12.5, color: "#5a6b80", lineHeight: 1.6, marginBottom: 14 }}>
           {rapor ? (
             <>
               Fason Listesi'nde <b>"Gönderildi"</b> işaretlediğin işler buraya düşer ve listeden kalkar.
-              Parça geri geldiğinde <b style={{ color: "#4ade80" }}>"Geldi"</b> de — satır yeşile döner.
-              Dönüş tarihi geçmiş işler <b style={{ color: "#e07a6b" }}>kırmızı</b>,
-              bugün dönmesi gerekenler <b style={{ color: "#e8a33d" }}>turuncu</b> görünür.
+              Parça geri geldiğinde <b style={{ color: "#1b7f4b" }}>"Geldi"</b> de — satır yeşile döner.
+              Dönüş tarihi geçmiş işler <b style={{ color: "#c62828" }}>kırmızı</b>,
+              bugün dönmesi gerekenler <b style={{ color: "#b06a00" }}>turuncu</b> görünür.
             </>
           ) : (
             <>
               Her gün gelen fason Excel'ini <b>"Listeyi Excel'den Güncelle"</b> ile yükle. Dosya önce ekranda gösterilir,
               sen onaylayana kadar listende hiçbir şey değişmez. Onaylayınca aynı iş satırları üzerine yazılır,
               yeni satırlar eklenir, dosyada olmayanlar <b>"listeden düştü"</b> diye işaretlenir.
-              <b style={{ color: "#2dd4bf" }}> Senin işaretlediğin durumlar silinmez.</b> Satırlar ve sütunlar dosyadaki sırayla durur.
+              <b style={{ color: "#1565c0" }}> Senin işaretlediğin durumlar silinmez.</b> Satırlar ve sütunlar dosyadaki sırayla durur.
               <br />
-              Gönderim tarihi geçmiş işler <b style={{ color: "#e07a6b" }}>kırmızı</b>,
-              bugün gönderilmesi gerekenler <b style={{ color: "#e8a33d" }}>turuncu</b>.
-              <b style={{ color: "#2dd4bf" }}> "Gönderildi"</b> dediğinde satır yeşile döner ve <b>Fason Rapor</b> ekranına geçer.
+              Gönderim tarihi geçmiş işler <b style={{ color: "#c62828" }}>kırmızı</b>,
+              bugün gönderilmesi gerekenler <b style={{ color: "#b06a00" }}>turuncu</b>.
+              <b style={{ color: "#1565c0" }}> "Gönderildi"</b> dediğinde satır yeşile döner ve <b>Fason Rapor</b> ekranına geçer.
+              <br />
+              Adedin bir kısmını gönderdiysen <b>Gönderilen</b> kutusuna kaç adet gittiğini yaz:
+              satır <b style={{ color: "#4d7c0f" }}>kısmi</b> olarak işaretlenir, <b>kalan</b> adetle listede kalır,
+              gönderilen kısım aynı anda Fason Rapor'da da görünür. Tamamı girilince satır kendiliğinden rapora geçer.
+              <b> Açıklama</b> kutusuna her satır için not yazabilirsin.
             </>
           )}
         </div>
@@ -7128,24 +7195,24 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Renkli Excele Aktar</button>
           {!rapor && <button className="btn-ghost" onClick={sablonAl}><FileDown size={14} /> Şablon İndir</button>}
         </div>
-        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 6, padding: "9px 12px" }}>{msg}</div>}
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 6, padding: "9px 12px" }}>{msg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ position: "relative", marginBottom: 12 }}>
-          <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#6b7178" }} />
+          <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#7b8a9d" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Müşteri, sipariş no, ürün, işlem, firma ara…" value={f.arama} onChange={setF2("arama")} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 12 }}>
-          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Müşteri</div>
+          <div><div style={{ fontSize: 11, color: "#5a6b80", marginBottom: 5, textTransform: "uppercase" }}>Müşteri</div>
             <select className="input" value={f.musteri} onChange={setF2("musteri")}><option value="">Tümü</option>{benzersiz("musteri").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
-          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Firma</div>
+          <div><div style={{ fontSize: 11, color: "#5a6b80", marginBottom: 5, textTransform: "uppercase" }}>Firma</div>
             <select className="input" value={f.firma} onChange={setF2("firma")}><option value="">Tümü</option>{benzersiz("firma").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
-          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>İşlem</div>
+          <div><div style={{ fontSize: 11, color: "#5a6b80", marginBottom: 5, textTransform: "uppercase" }}>İşlem</div>
             <select className="input" value={f.islem} onChange={setF2("islem")}><option value="">Tümü</option>{benzersiz("islem").map((x) => <option key={x} value={x}>{x}</option>)}</select></div>
-          <div><div style={{ fontSize: 11, color: "#8b929a", marginBottom: 5, textTransform: "uppercase" }}>Durum</div>
-            <select className="input" value={f.durum} onChange={setF2("durum")}><option value="">Tümü</option>{secilebilir.map((k) => <option key={k} value={k}>{FASON_LISTE_DURUM[k].label}</option>)}</select></div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#c7cbd1", alignSelf: "end", paddingBottom: 9 }}>
+          <div><div style={{ fontSize: 11, color: "#5a6b80", marginBottom: 5, textTransform: "uppercase" }}>Durum</div>
+            <select className="input" value={f.durum} onChange={setF2("durum")}><option value="">Tümü</option>{suzulebilir.map((k) => <option key={k} value={k}>{FASON_LISTE_DURUM[k].label}</option>)}</select></div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#31465f", alignSelf: "end", paddingBottom: 9 }}>
             <input type="checkbox" checked={f.dusenGizle} onChange={(e) => setF((s) => ({ ...s, dusenGizle: e.target.checked }))} />
             Listeden düşenleri gizle
           </label>
@@ -7153,7 +7220,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
       </div>
 
       {secililer.size > 0 && (
-        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#2dd4bf" }}>
+        <div className="card" style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", borderColor: "#1565c0" }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>{secililer.size} satır seçili</span>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {secilebilir.map((k) => (
@@ -7162,7 +7229,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                 {FASON_LISTE_DURUM[k].label} yap
               </button>
             ))}
-            <button onClick={secilenleriSil} disabled={yukleniyor} style={{ background: "none", border: "1px solid #6b3a33", color: "#e07a6b", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Seçilenleri Sil</button>
+            <button onClick={secilenleriSil} disabled={yukleniyor} style={{ background: "none", border: "1px solid #f0b8b2", color: "#c62828", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Seçilenleri Sil</button>
             <button onClick={() => setSecililer(new Set())} className="btn-ghost">Seçimi Temizle</button>
           </div>
         </div>
@@ -7184,28 +7251,28 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
       >
         {onizleme && (
           <>
-            <div style={{ fontSize: 12.5, color: "#c7cbd1", background: "#16232a", border: "1px solid #2a4b52", borderRadius: 5, padding: "10px 12px", marginBottom: 12, lineHeight: 1.6 }}>
-              <b style={{ color: "#2dd4bf" }}>{onizleme.satirlar.length} satır</b> okundu
+            <div style={{ fontSize: 12.5, color: "#31465f", background: "#f4f7fc", border: "1px solid #d5dfec", borderRadius: 5, padding: "10px 12px", marginBottom: 12, lineHeight: 1.6 }}>
+              <b style={{ color: "#1565c0" }}>{onizleme.satirlar.length} satır</b> okundu
               {onizleme.atlanan ? ` · ${onizleme.atlanan} boş satır atlandı` : ""}.
               Aşağıda dosyadan ne alındığını gör, doğruysa <b>"Onayla ve Listeye Yaz"</b> de.
               Bu adıma kadar listende hiçbir şey değişmedi.
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#8b929a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Sütun eşleşmesi</div>
+              <div style={{ fontSize: 11, color: "#5a6b80", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Sütun eşleşmesi</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {(onizleme.sutunlar || []).map((c) => (
                   <span key={c.alan} className="pill" title={c.dosyaBasligi ? `Dosyadaki başlık: ${c.dosyaBasligi}` : "Dosyada bu sütun bulunamadı"}
                     style={{
                       background: "transparent",
-                      color: c.kaynak === "başlık" ? "#2dd4bf" : c.kaynak === "sabit yer" ? "#e8a33d" : "#e07a6b",
-                      borderColor: c.kaynak === "başlık" ? "#1f4d47" : c.kaynak === "sabit yer" ? "#4a3d1e" : "#6b3a33",
+                      color: c.kaynak === "başlık" ? "#1565c0" : c.kaynak === "sabit yer" ? "#b06a00" : "#c62828",
+                      borderColor: c.kaynak === "başlık" ? "#bcd8f7" : c.kaynak === "sabit yer" ? "#f0dcae" : "#f0b8b2",
                     }}>
                     {c.baslik}{c.kaynak === "sabit yer" ? " (yerinden)" : c.kaynak === "bulunamadı" ? " (yok)" : ""}
                   </span>
                 ))}
               </div>
             </div>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ overflowX: "auto", maxHeight: 420, overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead><tr>
@@ -7215,7 +7282,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                   <tbody>
                     {onizleme.satirlar.map((r, i) => (
                       <tr key={i}>
-                        <td style={{ ...fisGridTd, textAlign: "center", padding: "5px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{r.sira}</td>
+                        <td style={{ ...fisGridTd, textAlign: "center", padding: "5px 4px", fontSize: 11.5, color: "#7b8a9d", background: "#f4f7fc" }}>{r.sira}</td>
                         {FASON_LISTE_SUTUNLARI.map((c) => (
                           <td key={c.alan} style={{ ...fisGridTd, padding: "5px 8px", fontSize: 12 }}>
                             {c.tarih ? trTarih(r[c.alan]) : String(r[c.alan] === "" || r[c.alan] == null ? "—" : r[c.alan])}
@@ -7232,7 +7299,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
       </EvrakPenceresi>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>{rapor ? "Fason Rapor" : "Fason Listesi"} ({liste.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>{rapor ? "Fason Rapor" : "Fason Listesi"} ({liste.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 640, overflowY: "auto" }}>
           <table>
             <thead>
@@ -7243,17 +7310,21 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                 {FASON_LISTE_SUTUNLARI.map((c) => (
                   <th key={c.alan} style={c.sayi ? { textAlign: "right" } : undefined}>{c.baslik}</th>
                 ))}
+                <th style={{ width: 96, textAlign: "right" }}>Gönderilen</th>
+                <th style={{ width: 78, textAlign: "right" }}>Kalan</th>
+                <th style={{ width: 190 }}>Açıklama</th>
                 <th style={{ width: rapor ? 190 : 250 }}>Durum</th><th style={{ width: rapor ? 120 : 34 }}></th>
               </tr>
             </thead>
             <tbody>
-              {liste.length === 0 && <tr><td colSpan={FASON_LISTE_SUTUNLARI.length + 4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>
+              {liste.length === 0 && <tr><td colSpan={FASON_LISTE_SUTUNLARI.length + 7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>
                 {rapor
                   ? "Henüz gönderilen iş yok. Fason Listesi ekranında bir işe \"Gönderildi\" dediğinde buraya düşer."
                   : "Liste boş. \"Listeyi Excel'den Güncelle\" ile günlük fason dosyanı yükle."}
               </td></tr>}
               {liste.map((k) => {
                 const d = fasonListeDurumu(k);
+                const etkin = fasonEtkinDurum(k);
                 const renk = fasonSatirRengi(k, gorunum, bugun);
                 return (
                   <tr key={k.id} style={{
@@ -7262,7 +7333,7 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                     opacity: k.listeDisi ? 0.65 : 1,
                   }}>
                     <td><input type="checkbox" checked={secililer.has(k.id)} onChange={() => birSecToggle(k.id)} /></td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 11.5, color: "#6b7178" }}>{k.sira || "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 11.5, color: "#7b8a9d" }}>{k.sira || "—"}</td>
                     {FASON_LISTE_SUTUNLARI.map((c) => {
                       const ham = k[c.alan];
                       const bos = ham === "" || ham == null;
@@ -7272,22 +7343,62 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                           fontSize: 12.5,
                           textAlign: c.sayi ? "right" : undefined,
                           fontFamily: c.sayi || c.tarih || c.alan === "siparisNo" ? "monospace" : undefined,
-                          color: c.alan === "siparisNo" ? "#e8a33d" : (c.tarih || c.saat) ? "#8b929a" : undefined,
+                          color: c.alan === "siparisNo" ? "#b06a00" : (c.tarih || c.saat) ? "#5a6b80" : undefined,
                           minWidth: c.alan === "urun" ? 170 : undefined,
                         }}>
                           {metin || "—"}
-                          {c.alan === "musteri" && k.listeDisi && <div style={{ fontSize: 10.5, color: "#6b7178" }}>listeden düştü</div>}
+                          {c.alan === "adet" && fasonGonderilen(k) > 0 && fasonToplamAdet(k) > 0 && (
+                            <div style={{ fontSize: 10.5, color: FASON_LISTE_DURUM.kismi.renk, fontFamily: "monospace" }}>
+                              {sayiTR(fasonGonderilen(k))} gitti
+                            </div>
+                          )}
+                          {c.alan === "musteri" && k.listeDisi && <div style={{ fontSize: 10.5, color: "#7b8a9d" }}>listeden düştü</div>}
                         </td>
                       );
                     })}
+                    <td style={{ textAlign: "right", padding: "4px 6px" }}>
+                      <input
+                        type="number" min="0" step="1" defaultValue={fasonGonderilen(k) || ""}
+                        key={`g-${k.id}-${fasonGonderilen(k)}`}
+                        title={fasonToplamAdet(k) > 0 ? `Toplam ${sayiTR(fasonToplamAdet(k))} adetten kaçı gönderildi?` : "Gönderilen adet"}
+                        placeholder="—"
+                        onBlur={(e) => { const yeni = sayiCevir(e.target.value); if (yeni !== fasonGonderilen(k)) gonderilenYaz(k, e.target.value); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+                        style={{
+                          width: 74, background: "#f2f6fb", border: "1px solid #b6c6da", borderRadius: 4,
+                          padding: "4px 6px", color: "#152a45", fontSize: 12, textAlign: "right", fontFamily: "monospace",
+                        }}
+                      />
+                    </td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: fasonKalan(k) > 0 ? "#b06a00" : "#7b8a9d" }}>
+                      {fasonToplamAdet(k) > 0 ? sayiTR(fasonKalan(k)) : "—"}
+                    </td>
+                    <td style={{ padding: "4px 6px" }}>
+                      <input
+                        defaultValue={k.satirAciklama || ""} key={`a-${k.id}-${k.satirAciklama || ""}`}
+                        placeholder="Not yaz…" title={k.satirAciklama || "Bu satır için not"}
+                        onBlur={(e) => { if (String(e.target.value || "").trim() !== String(k.satirAciklama || "").trim()) aciklamaYaz(k, e.target.value); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+                        style={{
+                          width: "100%", minWidth: 150, background: "#f2f6fb", border: "1px solid #b6c6da",
+                          borderRadius: 4, padding: "4px 6px", color: "#152a45", fontSize: 12,
+                        }}
+                      />
+                    </td>
                     <td>
-                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                        {etkin === "kismi" && (
+                          <span className="pill" title={`${sayiTR(fasonGonderilen(k))} / ${sayiTR(fasonToplamAdet(k))} gönderildi`}
+                            style={{ background: FASON_LISTE_DURUM.kismi.zemin, color: FASON_LISTE_DURUM.kismi.renk, borderColor: FASON_LISTE_DURUM.kismi.kenar }}>
+                            {sayiTR(fasonGonderilen(k))} / {sayiTR(fasonToplamAdet(k))}
+                          </span>
+                        )}
                         {secilebilir.map((x) => (
                           <button key={x} onClick={() => durumSec(k, x)} title={`${FASON_LISTE_DURUM[x].label} olarak işaretle`}
                             style={{
-                              background: d === x ? FASON_LISTE_DURUM[x].renk : "transparent",
-                              color: d === x ? "#142a30" : FASON_LISTE_DURUM[x].renk,
-                              border: `1px solid ${d === x ? FASON_LISTE_DURUM[x].renk : FASON_LISTE_DURUM[x].kenar}`,
+                              background: etkin === x ? FASON_LISTE_DURUM[x].renk : "transparent",
+                              color: etkin === x ? "#ffffff" : FASON_LISTE_DURUM[x].renk,
+                              border: `1px solid ${etkin === x ? FASON_LISTE_DURUM[x].renk : FASON_LISTE_DURUM[x].kenar}`,
                               borderRadius: 5, padding: "4px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
                             }}>
                             {FASON_LISTE_DURUM[x].label}
@@ -7298,11 +7409,11 @@ function FasonListesi({ fasonListesi, kullanici, gorunum = "liste" }) {
                     <td style={{ whiteSpace: "nowrap" }}>
                       {rapor && (
                         <button onClick={() => durumSec(k, "gonderilmedi")} title="Yanlışlıkla gönderildi dendiyse listeye geri al"
-                          style={{ background: "none", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 5, padding: "3px 7px", fontSize: 10.5, cursor: "pointer", marginRight: 5 }}>
+                          style={{ background: "none", border: "1px solid #b6c6da", color: "#5a6b80", borderRadius: 5, padding: "3px 7px", fontSize: 10.5, cursor: "pointer", marginRight: 5 }}>
                           ↩ Listeye al
                         </button>
                       )}
-                      <button onClick={() => sil(k)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                      <button onClick={() => sil(k)} title="Satırı sil" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
@@ -7394,8 +7505,8 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
-        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
-        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Hatırlatıcı Aç
         </button>
         <EvrakPenceresi
@@ -7403,14 +7514,14 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
           baslik="Hatırlatıcı Kartı" ikon={Bell} genislik={640}
           butonlar={
             <>
-              {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+              {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
               <button style={fisAltBtn} onClick={fisiTemizle}><RefreshCw size={14} /> Yeni</button>
               <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={ekle}><Save size={14} /> Kaydet</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Başlık</span><input style={fisInput} value={form.baslik} onChange={(e) => setForm((s) => ({ ...s, baslik: e.target.value }))} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={form.tarih} onChange={(e) => setForm((s) => ({ ...s, tarih: e.target.value }))} /></div>
             <div style={fisSatir}>
@@ -7427,28 +7538,28 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
 
       <div style={{ display: "flex", gap: 8 }}>
         {[{ id: "bekleyen", label: "Bekleyen" }, { id: "tamamlanan", label: "Tamamlanan" }, { id: "tumu", label: "Tümü" }].map((s) => (
-          <button key={s.id} onClick={() => setFiltre(s.id)} style={{ flex: 1, padding: "9px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12.5, background: filtre === s.id ? "#2dd4bf" : "#1b333c", color: filtre === s.id ? "#142a30" : "#c7cbd1", border: `1px solid ${filtre === s.id ? "#2dd4bf" : "#2a4b52"}` }}>{s.label}</button>
+          <button key={s.id} onClick={() => setFiltre(s.id)} style={{ flex: 1, padding: "9px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12.5, background: filtre === s.id ? "#1565c0" : "#ffffff", color: filtre === s.id ? "#f2f6fb" : "#31465f", border: `1px solid ${filtre === s.id ? "#1565c0" : "#d5dfec"}` }}>{s.label}</button>
         ))}
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         {filtrelenmis.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Hatırlatıcı bulunamadı.</div>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>Hatırlatıcı bulunamadı.</div>
         ) : (
           filtrelenmis.map((r) => {
             const gecikti = !r.tamamlandi && r.tarih && r.tarih < bugun;
             const bugunMu = !r.tamamlandi && r.tarih === bugun;
             const is = r.isId ? fasonIsler.find((j) => j.id === r.isId) : null;
             return (
-              <div key={r.id} style={{ padding: "14px 20px", borderBottom: "1px solid #223b42", display: "flex", alignItems: "flex-start", gap: 12, opacity: r.tamamlandi ? 0.6 : 1 }}>
-                <button onClick={() => toggle(r)} style={{ width: 20, height: 20, borderRadius: "999px", border: `1.5px solid ${r.tamamlandi ? "#4b8f5e" : "#2a4b52"}`, background: r.tamamlandi ? "#4b8f5e" : "transparent", color: "#fff", cursor: "pointer", flexShrink: 0, fontSize: 12 }}>{r.tamamlandi ? "✓" : ""}</button>
+              <div key={r.id} style={{ padding: "14px 20px", borderBottom: "1px solid #eef3f9", display: "flex", alignItems: "flex-start", gap: 12, opacity: r.tamamlandi ? 0.6 : 1 }}>
+                <button onClick={() => toggle(r)} style={{ width: 20, height: 20, borderRadius: "999px", border: `1.5px solid ${r.tamamlandi ? "#2e7d4f" : "#d5dfec"}`, background: r.tamamlandi ? "#2e7d4f" : "transparent", color: "#fff", cursor: "pointer", flexShrink: 0, fontSize: 12 }}>{r.tamamlandi ? "✓" : ""}</button>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13.5, textDecoration: r.tamamlandi ? "line-through" : "none" }}>{r.baslik}</div>
-                  <div style={{ fontSize: 11.5, color: gecikti ? "#e07a6b" : bugunMu ? "#e8a33d" : "#6b7178", marginTop: 2 }}>{r.tarih}{gecikti ? " · gecikti" : bugunMu ? " · bugün" : ""}</div>
-                  {is && <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 2 }}>{is.projeAdi}</div>}
-                  {r.not && <div style={{ fontSize: 12, color: "#8b929a", marginTop: 2 }}>{r.not}</div>}
+                  <div style={{ fontSize: 11.5, color: gecikti ? "#c62828" : bugunMu ? "#b06a00" : "#7b8a9d", marginTop: 2 }}>{r.tarih}{gecikti ? " · gecikti" : bugunMu ? " · bugün" : ""}</div>
+                  {is && <div style={{ fontSize: 11.5, color: "#7b8a9d", marginTop: 2 }}>{is.projeAdi}</div>}
+                  {r.not && <div style={{ fontSize: 12, color: "#5a6b80", marginTop: 2 }}>{r.not}</div>}
                 </div>
-                <button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                <button onClick={() => sil(r.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
               </div>
             );
           })
@@ -7460,16 +7571,16 @@ function FasonHatirlaticilar({ fasonIsler, fasonHatirlaticilar }) {
 
 // ---------- Satınalma ----------
 const TALEP_DURUM = {
-  bekliyor: { label: "Bekliyor", renk: "#e8a33d" },
-  onaylandi: { label: "Onaylandı", renk: "#2dd4bf" },
-  siparise_donustu: { label: "Siparişe Dönüştü", renk: "#4b8f5e" },
-  iptal: { label: "İptal", renk: "#e07a6b" },
+  bekliyor: { label: "Bekliyor", renk: "#b06a00" },
+  onaylandi: { label: "Onaylandı", renk: "#1565c0" },
+  siparise_donustu: { label: "Siparişe Dönüştü", renk: "#2e7d4f" },
+  iptal: { label: "İptal", renk: "#c62828" },
 };
 const SIPARIS_DURUM = {
-  acik: { label: "Açık", renk: "#e8a33d" },
-  kismi: { label: "Kısmi Teslim", renk: "#2dd4bf" },
-  tamamlandi: { label: "Tamamlandı", renk: "#4b8f5e" },
-  iptal: { label: "İptal", renk: "#e07a6b" },
+  acik: { label: "Açık", renk: "#b06a00" },
+  kismi: { label: "Kısmi Teslim", renk: "#1565c0" },
+  tamamlandi: { label: "Tamamlandı", renk: "#2e7d4f" },
+  iptal: { label: "İptal", renk: "#c62828" },
 };
 
 // Talep durumu manuel değil, TÜRETİLMİŞTİR: bağlı sipariş fiilen duruyorsa "Siparişe Dönüştü",
@@ -7577,9 +7688,9 @@ async function satinalmaExcelOku(dosya, alanlar) {
 }
 
 // Düzenlenmiş fişler listede farklı renkte görünür
-const duzenlenmisSatir = { background: "#332a16" };
-const duzenlenmisRozet = { display: "inline-block", marginLeft: 7, padding: "1px 6px", borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: "#4a3a17", color: "#e8a33d", border: "1px solid #6b5220", textTransform: "uppercase", letterSpacing: 0.3, fontFamily: "inherit", verticalAlign: "middle" };
-const duzenleButonu = { display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid #3d6169", color: "#c7cbd1", borderRadius: 5, padding: "4px 9px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", marginRight: 6, verticalAlign: "middle" };
+const duzenlenmisSatir = { background: "#fff6e2" };
+const duzenlenmisRozet = { display: "inline-block", marginLeft: 7, padding: "1px 6px", borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: "#4a3a17", color: "#b06a00", border: "1px solid #e6cd93", textTransform: "uppercase", letterSpacing: 0.3, fontFamily: "inherit", verticalAlign: "middle" };
+const duzenleButonu = { display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "1px solid #b6c6da", color: "#31465f", borderRadius: 5, padding: "4px 9px", fontWeight: 600, fontSize: 11.5, cursor: "pointer", marginRight: 6, verticalAlign: "middle" };
 
 const satirToplam = (r) => (Number(String(r.miktar || "").replace(",", ".")) || 0) * (Number(String(r.birimFiyat || "").replace(",", ".")) || 0);
 
@@ -7608,10 +7719,10 @@ const sayiTR = (n) => (Number(n) || 0).toLocaleString("tr-TR", { minimumFraction
 const tutarYaz = (n, pb) => `${sayiTR(n)} ${paraSembol(pb || "TRY")}`;
 const tutarTL = (n) => `${sayiTR(n)} ₺`;
 const TEKLIF_DURUM = {
-  acik: { label: "Açık", renk: "#e8a33d" },
-  kazandi: { label: "Kazandı", renk: "#4b8f5e" },
-  kaybetti: { label: "Kaybetti", renk: "#8b929a" },
-  iptal: { label: "İptal", renk: "#e07a6b" },
+  acik: { label: "Açık", renk: "#b06a00" },
+  kazandi: { label: "Kazandı", renk: "#2e7d4f" },
+  kaybetti: { label: "Kaybetti", renk: "#5a6b80" },
+  iptal: { label: "İptal", renk: "#c62828" },
 };
 const sayiCevir = (v) => Number(String(v == null ? "" : v).replace(/\s/g, "").replace(",", ".")) || 0;
 const bosTeklifSatiri = () => ({ key: Math.random().toString(36).slice(2), stokKodu: "", stokAdi: "", miktar: "", birim: "Adet", birimFiyat: "", kdv: "20", aciklama: "", aciklama2: "" });
@@ -7755,11 +7866,11 @@ function ParaBirimiAlani({ paraBirimi, kur, degistir, tcmb }) {
         )}
       </div>
       {dovizMi && (
-        <div style={{ fontSize: 11.5, color: tcmb.hata ? "#e8a33d" : "#6b7178", margin: "-4px 0 8px 118px" }}>
+        <div style={{ fontSize: 11.5, color: tcmb.hata ? "#b06a00" : "#7b8a9d", margin: "-4px 0 8px 118px" }}>
           {tcmb.hata
             ? tcmb.hata
             : tcmbKuru
-              ? <>TCMB satış kuru{tcmb.tarih ? ` (${tcmb.tarih})` : ""}: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{sayiTR(tcmbKuru)} ₺</b> — otomatik geldi, istersen değiştir.</>
+              ? <>TCMB satış kuru{tcmb.tarih ? ` (${tcmb.tarih})` : ""}: <b style={{ color: "#1565c0", fontFamily: "monospace" }}>{sayiTR(tcmbKuru)} ₺</b> — otomatik geldi, istersen değiştir.</>
               : "TCMB kuru alınıyor…"}
         </div>
       )}
@@ -7909,11 +8020,11 @@ function FormAyarlari({ formAyarlari }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Form Ayarları (Antet)</div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>
           Buraya girdiğin bilgiler Satınalma Talep, Teklif ve Sipariş formlarının üstünde antet olarak çıkar. Bir kere doldurman yeterli.
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(330px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}><span style={{ ...fisEtiket, width: 120 }}>Firma Adı</span><input style={fisInput} value={form.firmaAdi} onChange={set("firmaAdi")} placeholder="Örn: SAKLAZ Makina San. Tic. Ltd. Şti." /></div>
             <div style={fisSatir}><span style={{ ...fisEtiket, width: 120 }}>Adres</span><input style={fisInput} value={form.adres} onChange={set("adres")} placeholder="Açık adres" /></div>
@@ -7927,13 +8038,13 @@ function FormAyarlari({ formAyarlari }) {
           </div>
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
           <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Logo</div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ width: 150, height: 78, border: "1px dashed #3d6169", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", flexShrink: 0, overflow: "hidden" }}>
+            <div style={{ width: 150, height: 78, border: "1px dashed #b6c6da", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", flexShrink: 0, overflow: "hidden" }}>
               {form.logo
                 ? <img src={form.logo} alt="logo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-                : <span style={{ fontSize: 11.5, color: "#8b929a" }}>Logo yok</span>}
+                : <span style={{ fontSize: 11.5, color: "#5a6b80" }}>Logo yok</span>}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input ref={dosyaRef} type="file" accept="image/*" style={{ display: "none" }} onChange={logoSec} />
@@ -7943,17 +8054,17 @@ function FormAyarlari({ formAyarlari }) {
               {form.logo && <button className="btn-ghost" onClick={() => setForm((s) => ({ ...s, logo: "" }))}><Trash2 size={14} /> Logoyu Kaldır</button>}
             </div>
           </div>
-          <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: "#7b8a9d", marginTop: 10 }}>
             Görsel otomatik küçültülür (en fazla 420 piksel genişlik). PNG şeffaf arka planlı logo en iyi sonucu verir.
           </div>
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
           <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>Sipariş Formu Genel Şartları</div>
-          <div style={{ fontSize: 11.5, color: "#6b7178", marginBottom: 10, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 11.5, color: "#7b8a9d", marginBottom: 10, lineHeight: 1.6 }}>
             Bu metin <b>her sipariş formunun sonuna ayrı sayfa olarak otomatik basılır</b> — ayrıca bir şey yapmana gerek yok.
             Her satır bir madde sayılır. Boş bırakırsan fabrika ayarındaki 35 maddelik standart metin kullanılır.
-            Şu an <b style={{ color: "#2dd4bf" }}>{sartMaddeSayisi} madde</b> basılacak.
+            Şu an <b style={{ color: "#1565c0" }}>{sartMaddeSayisi} madde</b> basılacak.
           </div>
           <textarea
             className="input"
@@ -7973,9 +8084,9 @@ function FormAyarlari({ formAyarlari }) {
         </div>
 
         {/* AS9100 — kontrollü doküman bilgileri */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
           <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>AS9100 Doküman Bilgileri</div>
-          <div style={{ fontSize: 11.5, color: "#6b7178", marginBottom: 10, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 11.5, color: "#7b8a9d", marginBottom: 10, lineHeight: 1.6 }}>
             Kalite sisteminizdeki doküman numaralarını buraya yazın. Girdiğiniz bilgiler
             <b> her formun sağ üst köşesindeki kutuda</b> ve <b>her sayfanın altındaki kimlik şeridinde</b> basılır;
             sayfa numarası (Sayfa 1/2 gibi) program tarafından otomatik hesaplanır.
@@ -7998,11 +8109,11 @@ function FormAyarlari({ formAyarlari }) {
           </div>
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginTop: 12 }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
           <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>Teklif İsteme (RFQ) Formu Şartları</div>
-          <div style={{ fontSize: 11.5, color: "#6b7178", marginBottom: 10, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 11.5, color: "#7b8a9d", marginBottom: 10, lineHeight: 1.6 }}>
             Teklif isteme formunun sonuna basılan tedarikçi şartları. Boş bırakırsan AS9100 8.4 maddesine
-            karşılık gelen <b style={{ color: "#2dd4bf" }}>{teklifSartMaddeSayisi} maddelik</b> standart metin kullanılır.
+            karşılık gelen <b style={{ color: "#1565c0" }}>{teklifSartMaddeSayisi} maddelik</b> standart metin kullanılır.
           </div>
           <textarea
             className="input"
@@ -8022,7 +8133,7 @@ function FormAyarlari({ formAyarlari }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-          <button onClick={kaydet} disabled={kaydediliyor} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={kaydet} disabled={kaydediliyor} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Save size={16} /> {kaydediliyor ? "Kaydediliyor…" : "Ayarları Kaydet"}
           </button>
           <button className="btn-ghost" onClick={ornekYazdir} style={{ padding: "11px 18px" }}>
@@ -8031,18 +8142,18 @@ function FormAyarlari({ formAyarlari }) {
           <button className="btn-ghost" onClick={ornekSiparisYazdir} style={{ padding: "11px 18px" }}>
             <Printer size={15} /> Örnek Sipariş Formu (şartlar dahil)
           </button>
-          {msg && <span style={{ fontSize: 12.5, color: "#2dd4bf" }}>{msg}</span>}
+          {msg && <span style={{ fontSize: 12.5, color: "#1565c0" }}>{msg}</span>}
         </div>
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>PDF Nasıl Alınır?</div>
-        <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: "#c7cbd1", lineHeight: 1.9 }}>
+        <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: "#31465f", lineHeight: 1.9 }}>
           <li>Talep veya Sipariş fişinde <b>Yazdır</b> butonuna bas — form yeni sekmede açılır.</li>
           <li>Açılan sayfadaki <b>Yazdır / PDF Kaydet</b> butonuna (ya da Ctrl+P) bas.</li>
           <li>Yazıcı listesinden <b>"PDF olarak kaydet"</b> (Save as PDF) seç ve kaydet.</li>
         </ol>
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 12 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 12 }}>
           Form A4 boyutuna göre tasarlandı. Yazdırma penceresinde kenar boşluklarını "Varsayılan", ölçeği "%100" bırak.
         </div>
       </div>
@@ -8135,14 +8246,14 @@ function SatinalmaKartYonetimi({ baslikMetni, tekilAd, koleksiyon, kayitlar, iko
         ikon={Ikon} genislik={620}
         butonlar={
           <>
-            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
             <button style={fisAltBtn} onClick={kartiTemizle}><Plus size={14} /> Yeni</button>
             <button style={fisAltBtn} onClick={() => setFisAcik(false)}><X size={14} /> Kapat</button>
             <button style={fisAnaBtn} onClick={kaydet} disabled={kaydediliyor}><Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Kaydet"}</button>
           </>
         }
       >
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
           <div style={fisSatir}>
             <span style={{ ...fisEtiket, width: 100, fontWeight: 700 }}>Kod</span>
             <input style={fisInput} value={form.kod} onChange={set("kod")} placeholder={kodPlaceholder} />
@@ -8161,41 +8272,41 @@ function SatinalmaKartYonetimi({ baslikMetni, tekilAd, koleksiyon, kayitlar, iko
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <Ikon size={17} color="#2dd4bf" /> {baslikMetni}
+            <Ikon size={17} color="#1565c0" /> {baslikMetni}
           </div>
           <ExcelSeridi alanlar={XLS_ALAN.satinalma_kart} dosyaAdi={tekilAd.toLowerCase() + "-kartlari"} koleksiyon={koleksiyon} />
           <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
         </div>
-        <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni {tekilAd} Kartı Aç
         </button>
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
           Buraya eklediğin kayıtlar Satınalma Talep Fişi'ndeki {tekilAd.toLowerCase()} seçim listesinde çıkar.
         </div>
       </div>
 
       <div className="card" style={{ padding: "12px 16px" }}>
         <div style={{ position: "relative" }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Kod veya ad ara…" value={arama} onChange={(e) => setArama(e.target.value)} />
         </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>{baslikMetni} ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>{baslikMetni} ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 600, overflowY: "auto" }}>
           <table>
             <thead><tr><th>Kod</th><th>Ad</th><th>Açıklama</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt yok.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt yok.</td></tr>}
               {filtrelenmis.map((k) => (
                 <tr key={k.id}>
                   <td>
-                    <button onClick={() => kartiYukle(k)} title="Kartı aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf", cursor: "pointer", textDecoration: "underline" }}>{k.kod}</button>
+                    <button onClick={() => kartiYukle(k)} title="Kartı aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: "#1565c0", cursor: "pointer", textDecoration: "underline" }}>{k.kod}</button>
                   </td>
                   <td>{k.ad}</td>
-                  <td style={{ fontSize: 12.5, color: "#8b929a" }}>{k.aciklama || "—"}</td>
-                  <td><button onClick={() => sil(k)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                  <td style={{ fontSize: 12.5, color: "#5a6b80" }}>{k.aciklama || "—"}</td>
+                  <td><button onClick={() => sil(k)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -8611,7 +8722,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
         ikon={FileText} genislik={1080}
         butonlar={
           <>
-            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
             <button style={fisAltBtn} onClick={onceki} disabled={sirali.length === 0} title="Önceki fiş"><ChevronLeft size={14} /> Önceki</button>
             <button style={fisAltBtn} onClick={sonraki} disabled={sirali.length === 0} title="Sonraki fiş">Sonraki <ChevronRight size={14} /></button>
             <button style={fisAltBtn} onClick={acikFisiSil}><Trash2 size={14} /> Sil</button>
@@ -8622,7 +8733,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
         }
       >
         {/* ---- Fiş başlığı: Mikro Satın Alma Talep Fişi düzeni ---- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "minmax(250px,1fr) minmax(210px,0.85fr) minmax(300px,1.15fr)", gap: "0 24px" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#f4f7fc", display: "grid", gridTemplateColumns: "minmax(250px,1fr) minmax(210px,0.85fr) minmax(300px,1.15fr)", gap: "0 24px" }}>
           {/* Sol: Evrak No / Belge No */}
           <div>
             <div style={fisSatir}>
@@ -8684,7 +8795,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
               </select>
             </div>
             {(projeler.length === 0 || depolar.length === 0) && (
-              <div style={{ fontSize: 11.5, color: "#e8a33d", marginTop: 8 }}>
+              <div style={{ fontSize: 11.5, color: "#b06a00", marginTop: 8 }}>
                 {projeler.length === 0 && depolar.length === 0
                   ? "Önce Proje Kartları ve Depo Kartları ekranlarından kayıt ekleyin."
                   : projeler.length === 0 ? "Önce Proje Kartları ekranından proje ekleyin."
@@ -8695,7 +8806,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
         </div>
 
         {/* ---- Satır grid'i: Cinsi | Kodu | İsmi | Proje kodu | Miktar | Birim | Teslim tarihi ---- */}
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 960 }}>
               <thead>
@@ -8716,7 +8827,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
               <tbody>
                 {satirlar.map((r, i) => (
                   <tr key={r.key}>
-                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#7b8a9d", background: "#f4f7fc", padding: "0 4px" }}>{i + 1}</td>
                     <td style={fisGridTd}>
                       <select style={{ ...fisHucreInput, cursor: "pointer" }} value={r.cinsi} onChange={(e) => satirGuncelle(r.key, "cinsi", e.target.value)}>
                         {CINS_SECENEKLERI.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -8741,20 +8852,20 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama || ""} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} placeholder="açıklama 1" /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama2 || ""} onChange={(e) => satirGuncelle(r.key, "aciklama2", e.target.value)} placeholder="açıklama 2" /></td>
                     <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
-                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#c2cddc" : "#7b8a9d", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={11} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
-                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
+                  <td colSpan={11} style={{ padding: 7, background: "#f4f7fc", borderTop: "1px solid #d5dfec" }}>
+                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #b6c6da", color: "#5a6b80", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={11} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
-                    Toplam Kalem: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{doluSatirSayisi}</span>
+                  <td colSpan={11} style={{ padding: "9px 12px", background: "#e6edf7", borderTop: "1px solid #d5dfec", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                    Toplam Kalem: <span style={{ fontFamily: "monospace", color: "#1565c0", marginLeft: 6 }}>{doluSatirSayisi}</span>
                   </td>
                 </tr>
               </tfoot>
@@ -8775,19 +8886,19 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
-        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Talep Fişi Aç
         </button>
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
-          Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Evrak No'yu elle değiştirirsen sonraki fiş onu takip eder (SEN-0001 → SEN-0002).
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
+          Sıradaki numara: <b style={{ color: "#1565c0", fontFamily: "monospace" }}>{yeniNo()}</b> — Evrak No'yu elle değiştirirsen sonraki fiş onu takip eder (SEN-0001 → SEN-0002).
         </div>
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, proje, depo, malzeme, personel ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -8815,12 +8926,12 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Talepler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Talepler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
             <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Talep Eden</th><th>Proje Kodu</th><th>Depo</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={12} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={12} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Talep bulunamadı.</td></tr>}
               {filtrelenmis.map((t) => {
                 const bagliSiparis = bagliSiparisBul(t, satinalmaSiparisler);
                 const etkinDurum = talepEtkinDurum(t, satinalmaSiparisler);
@@ -8866,7 +8977,7 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
                         onClick={() => teklifOlustur && teklifOlustur(t)}
                         disabled={iptalli}
                         title={iptalli ? "İptal edilmiş talebe teklif girilemez" : "Bu talep için firmalardan teklif gir"}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: iptalli ? "#3a4a50" : "#e8a33d", border: `1px solid ${iptalli ? "#2a4b52" : "#6b5220"}`, borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: iptalli ? "default" : "pointer", marginRight: 6 }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: iptalli ? "#c2cddc" : "#b06a00", border: `1px solid ${iptalli ? "#d5dfec" : "#e6cd93"}`, borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: iptalli ? "default" : "pointer", marginRight: 6 }}
                       >
                         <FileText size={12} /> Teklif Ekle
                       </button>
@@ -8874,12 +8985,12 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
                         onClick={() => siparisOlustur(t)}
                         disabled={donustu || iptalli}
                         title={donustu ? `Bu talep ${bagliSiparis.evrakNo} siparişine bağlı. Sipariş silinirse buton tekrar aktif olur.` : iptalli ? "İptal edilmiş talep siparişe çevrilemez" : "Tek tıkla siparişe çevir"}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: (donustu || iptalli) ? "transparent" : "#2dd4bf", color: (donustu || iptalli) ? "#3a4a50" : "#142a30", border: (donustu || iptalli) ? "1px solid #2a4b52" : "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: (donustu || iptalli) ? "default" : "pointer", marginRight: 6 }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: (donustu || iptalli) ? "transparent" : "#1565c0", color: (donustu || iptalli) ? "#c2cddc" : "#f2f6fb", border: (donustu || iptalli) ? "1px solid #d5dfec" : "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: (donustu || iptalli) ? "default" : "pointer", marginRight: 6 }}
                       >
                         <ArrowRightLeft size={12} /> Siparişe Çevir
                       </button>
-                      <button onClick={() => talepYazdir(t)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Printer size={14} /></button>
-                      <button onClick={() => sil(t)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
+                      <button onClick={() => talepYazdir(t)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Printer size={14} /></button>
+                      <button onClick={() => sil(t)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
@@ -8893,10 +9004,10 @@ function SatinalmaTalep({ satinalmaTalepler, satinalmaSiparisler, satinalmaTekli
 }
 // ---------- Cariler ----------
 const CARI_TIPLERI = {
-  tedarikci: { label: "Tedarikçi", renk: "#2dd4bf" },
+  tedarikci: { label: "Tedarikçi", renk: "#1565c0" },
   musteri: { label: "Müşteri", renk: "#7fb0e0" },
-  fason: { label: "Fason", renk: "#e8a33d" },
-  diger: { label: "Diğer", renk: "#8b929a" },
+  fason: { label: "Fason", renk: "#b06a00" },
+  diger: { label: "Diğer", renk: "#5a6b80" },
 };
 const cariTipEtiket = (t) => CARI_TIPLERI[t]?.label || CARI_TIPLERI.diger.label;
 const bosCari = () => ({
@@ -9113,7 +9224,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontWeight: 700, fontSize: 16 }}>Cari Kartları</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>
               Buraya girdiğin cariler tüm programda (Satınalma Siparişi, Teklif, Fason Takip, Hammadde) cari seçim listelerinde çıkar.
             </div>
           </div>
@@ -9121,11 +9232,11 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
           <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
           <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
           <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> {disaAktarEtiket(secililer)}</button>
-          <button onClick={kartAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={kartAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Cari
           </button>
         </div>
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: iceMsg.startsWith("Hata") ? "#e07a6b" : "#2dd4bf" }}>{iceMsg}</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: iceMsg.startsWith("Hata") ? "#c62828" : "#1565c0" }}>{iceMsg}</div>}
       </div>
 
       <EvrakPenceresi
@@ -9141,7 +9252,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
         }
       >
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "13px 15px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Cari Kod</span><input style={fisInput} placeholder="Örn: 120.01.001" value={form.kod} onChange={set("kod")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Cari İsmi</span><input style={fisInput} placeholder="Firma ünvanı" value={form.ad} onChange={set("ad")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Tip</span>
@@ -9153,7 +9264,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
             <div style={fisSatir}><span style={fisEtiket}>Telefon</span><input style={fisInput} placeholder="0332 000 00 00" value={form.telefon} onChange={set("telefon")} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>E-posta</span><input style={fisInput} value={form.eposta} onChange={set("eposta")} /></div>
           </div>
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "13px 15px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Vergi Dairesi</span><input style={fisInput} value={form.vergiDairesi} onChange={set("vergiDairesi")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Vergi / TC No</span><input style={fisInput} value={form.vergiNo} onChange={set("vergiNo")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>IBAN</span><input style={fisInput} value={form.iban} onChange={set("iban")} /></div>
@@ -9162,11 +9273,11 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
             <label style={{ ...fisSatir, marginBottom: 0, cursor: "pointer" }}>
               <span style={fisEtiket}>Durum</span>
               <input type="checkbox" checked={form.aktif !== false} onChange={(e) => setForm((s) => ({ ...s, aktif: e.target.checked }))} />
-              <span style={{ fontSize: 12.5, color: "#c7cbd1", marginLeft: 8 }}>Aktif (pasif cariler seçim listelerinde gösterilmez)</span>
+              <span style={{ fontSize: 12.5, color: "#31465f", marginLeft: 8 }}>Aktif (pasif cariler seçim listelerinde gösterilmez)</span>
             </label>
           </div>
         </div>
-        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("zorunlu") || msg.includes("kullanılıyor") || msg.includes("zaten") || msg.includes("Kaydedilemedi") ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("zorunlu") || msg.includes("kullanılıyor") || msg.includes("zaten") || msg.includes("Kaydedilemedi") ? "#c62828" : "#1565c0" }}>{msg}</div>}
       </EvrakPenceresi>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
@@ -9178,7 +9289,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
 
       <div className="card" style={{ padding: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari kodu / ismi / yetkili / telefon / vergi no ara…" value={f.arama} onChange={setF2("arama")} />
         </div>
         <select className="input" style={{ width: 160 }} value={f.tip} onChange={setF2("tip")}>
@@ -9207,7 +9318,7 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Cariler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Cariler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
             <thead><tr>
@@ -9215,28 +9326,28 @@ function CariKartlari({ fasonFirmalar, kullanici }) {
               <th>Cari Kod</th><th>Cari İsmi</th><th>Tip</th><th>Yetkili</th><th>Telefon</th><th>Vergi No</th><th>Durum</th><th></th>
             </tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Cari bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Cari bulunamadı.</td></tr>}
               {filtrelenmis.map((c) => {
                 const pasif = c.aktif === false;
                 return (
                   <tr key={c.id} style={pasif ? { opacity: 0.55 } : undefined}>
                     <td><input type="checkbox" checked={secililer.has(c.id)} onChange={() => birSecToggle(c.id)} /></td>
-                    <td style={{ fontFamily: "monospace", color: c.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{c.kod || "—"}</td>
+                    <td style={{ fontFamily: "monospace", color: c.kod ? "#1565c0" : "#aab6c6", whiteSpace: "nowrap" }}>{c.kod || "—"}</td>
                     <td>
-                      <button onClick={() => kartiYukle(c)} title="Kartı aç" style={{ background: "none", border: "none", padding: 0, color: "#e7e5e0", cursor: "pointer", textAlign: "left", fontSize: 13.5, textDecoration: "underline" }}>{c.ad}</button>
+                      <button onClick={() => kartiYukle(c)} title="Kartı aç" style={{ background: "none", border: "none", padding: 0, color: "#152a45", cursor: "pointer", textAlign: "left", fontSize: 13.5, textDecoration: "underline" }}>{c.ad}</button>
                     </td>
                     <td><span className="pill" style={{ background: "transparent", color: CARI_TIPLERI[c.tip || "tedarikci"]?.renk, borderColor: CARI_TIPLERI[c.tip || "tedarikci"]?.renk }}>{cariTipEtiket(c.tip)}</span></td>
                     <td style={{ fontSize: 12.5 }}>{c.yetkili || "—"}</td>
                     <td style={{ fontSize: 12.5, fontFamily: "monospace" }}>{c.telefon || "—"}</td>
                     <td style={{ fontSize: 12.5, fontFamily: "monospace" }}>{c.vergiNo || "—"}</td>
                     <td>
-                      <button onClick={() => aktiflikDegistir(c)} title={pasif ? "Aktife al" : "Pasife al"} style={{ background: "none", border: `1px solid ${pasif ? "#3d6169" : "#1f4d47"}`, color: pasif ? "#8b929a" : "#2dd4bf", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      <button onClick={() => aktiflikDegistir(c)} title={pasif ? "Aktife al" : "Pasife al"} style={{ background: "none", border: `1px solid ${pasif ? "#b6c6da" : "#bcd8f7"}`, color: pasif ? "#5a6b80" : "#1565c0", borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                         {pasif ? "Pasif" : "Aktif"}
                       </button>
                     </td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button onClick={() => kartiYukle(c)} title="Düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
-                      <button onClick={() => sil(c)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
+                      <button onClick={() => sil(c)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
@@ -9334,7 +9445,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontWeight: 700, fontSize: 16 }}>Cari Raporu</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Her carinin sipariş, teklif, fason iş ve hammadde hareketleri tek tabloda.</div>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>Her carinin sipariş, teklif, fason iş ve hammadde hareketleri tek tabloda.</div>
           </div>
                     <ExcelSeridi alanlar={XLS_ALAN.cariler} dosyaAdi="cariler" koleksiyon="fason_firmalar" />
           <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> Excele Aktar</button>
@@ -9344,7 +9455,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
 
       <div className="card" style={{ padding: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Cari kodu / ismi ara…" value={f.arama} onChange={setF2("arama")} />
         </div>
         <select className="input" style={{ width: 160 }} value={f.tip} onChange={setF2("tip")}>
@@ -9366,7 +9477,7 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Cari Hareket Özeti ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Cari Hareket Özeti ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
             <thead><tr>
@@ -9377,18 +9488,18 @@ function CariRaporu({ fasonFirmalar, satinalmaSiparisler, satinalmaTeklifler, fa
               <th style={{ textAlign: "right" }}>Hammadde</th>
             </tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={10} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmis.map((r) => (
                 <tr key={r.cari.id} style={r.cari.aktif === false ? { opacity: 0.55 } : undefined}>
-                  <td style={{ fontFamily: "monospace", color: r.cari.kod ? "#2dd4bf" : "#4a5560", whiteSpace: "nowrap" }}>{r.cari.kod || "—"}</td>
+                  <td style={{ fontFamily: "monospace", color: r.cari.kod ? "#1565c0" : "#aab6c6", whiteSpace: "nowrap" }}>{r.cari.kod || "—"}</td>
                   <td>{r.cari.ad}</td>
                   <td><span className="pill" style={{ background: "transparent", color: CARI_TIPLERI[r.cari.tip || "tedarikci"]?.renk, borderColor: CARI_TIPLERI[r.cari.tip || "tedarikci"]?.renk }}>{cariTipEtiket(r.cari.tip)}</span></td>
                   <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.siparisSayisi || "—"}</td>
-                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.siparisTutar ? "#2dd4bf" : "#4a5560" }}>{r.siparisTutar ? tutarTL(r.siparisTutar) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.siparisTutar ? "#1565c0" : "#aab6c6" }}>{r.siparisTutar ? tutarTL(r.siparisTutar) : "—"}</td>
                   <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.teklifSayisi || "—"}</td>
-                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.teklifTutar ? "#e8a33d" : "#4a5560" }}>{r.teklifTutar ? tutarTL(r.teklifTutar) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", color: r.teklifTutar ? "#b06a00" : "#aab6c6" }}>{r.teklifTutar ? tutarTL(r.teklifTutar) : "—"}</td>
                   <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.isSayisi ? `${r.isSayisi}${r.aktifIsSayisi ? ` (${r.aktifIsSayisi} açık)` : ""}` : "—"}</td>
-                  <td style={{ textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.fasonBakiye > 0 ? "#2dd4bf" : r.fasonBakiye < 0 ? "#e07a6b" : "#4a5560" }}>{r.fasonBakiye ? tutarTL(r.fasonBakiye) : "—"}</td>
+                  <td style={{ textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: r.fasonBakiye > 0 ? "#1565c0" : r.fasonBakiye < 0 ? "#c62828" : "#aab6c6" }}>{r.fasonBakiye ? tutarTL(r.fasonBakiye) : "—"}</td>
                   <td style={{ textAlign: "right", fontFamily: "monospace" }}>{r.hammaddeSayisi || "—"}</td>
                 </tr>
               ))}
@@ -9753,7 +9864,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
         }
       >
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18, marginBottom: 14 }}>
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "13px 15px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Teklif No</span>
               <input style={fisInput} value={baslik.evrakNo} onChange={(e) => setB("evrakNo")(e.target.value)} />
               <button style={{ ...fisAltBtn, padding: "4px 8px", marginLeft: 6 }} title="Sıradaki numarayı ver" onClick={numarayiGuncelle}><RefreshCw size={13} /></button>
@@ -9776,13 +9887,13 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Cari Kod</span>
-              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#6b7178" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
+              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#1565c0" : "#7b8a9d" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
             </div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Geçerlilik Tarihi</span>
               <input style={fisInput} type="date" value={baslik.gecerlilikTarihi} onChange={(e) => setB("gecerlilikTarihi")(e.target.value)} />
             </div>
           </div>
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "13px 15px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "13px 15px", background: "#f4f7fc" }}>
             <ParaBirimiAlani
               paraBirimi={baslik.paraBirimi} kur={baslik.kur} tcmb={tcmb}
               degistir={(d) => setBaslik((x) => ({ ...x, ...(d.paraBirimi !== undefined ? { paraBirimi: d.paraBirimi } : {}), ...(d.kur !== undefined ? { kur: d.kur } : {}) }))}
@@ -9802,7 +9913,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
           </div>
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -9820,7 +9931,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
             <tbody>
               {satirlar.map((r, i) => (
                 <tr key={r.key}>
-                  <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178" }}>{i + 1}</td>
+                  <td style={{ ...fisGridTd, textAlign: "center", color: "#7b8a9d" }}>{i + 1}</td>
                   <td style={fisGridTd}>
                     <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
                       ac={() => setSecici({ tur: "stok", key: r.key })}
@@ -9831,9 +9942,9 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
                   <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
                   <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={r.birimFiyat} onChange={(e) => satirGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
                   <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={r.kdv} onChange={(e) => satirGuncelle(r.key, "kdv", e.target.value)} /></td>
-                  <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf" }}>{sayiTR(teklifSatirToplam(r))}</td>
+                  <td style={{ ...fisGridTd, textAlign: "right", fontFamily: "monospace", color: "#1565c0" }}>{sayiTR(teklifSatirToplam(r))}</td>
                   <td style={{ ...fisGridTd, textAlign: "center" }}>
-                    <button onClick={() => satirSil(r.key)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 2 }}><X size={13} /></button>
+                    <button onClick={() => satirSil(r.key)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 2 }}><X size={13} /></button>
                   </td>
                 </tr>
               ))}
@@ -9853,23 +9964,23 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
           <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
           <textarea style={{ ...fisInput, flex: 1, minWidth: 220, minHeight: 62, resize: "vertical" }} placeholder="Açıklama / notlar" value={baslik.aciklama} onChange={(e) => setB("aciklama")(e.target.value)} />
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, background: "#16232a", padding: "10px 14px", minWidth: 250 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, background: "#f4f7fc", padding: "10px 14px", minWidth: 250 }}>
             {[["Ara Toplam", toplamlar.ara], ["KDV", toplamlar.kdv]].map(([l, v]) => (
-              <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 12.5, color: "#8b929a", marginBottom: 4 }}>
+              <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 12.5, color: "#5a6b80", marginBottom: 4 }}>
                 <span>{l}</span><span style={{ fontFamily: "monospace" }}>{tutarYaz(v, baslik.paraBirimi)}</span>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 14, fontWeight: 700, color: "#2dd4bf", borderTop: "1px solid #2a4b52", paddingTop: 6, marginTop: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 14, fontWeight: 700, color: "#1565c0", borderTop: "1px solid #d5dfec", paddingTop: 6, marginTop: 4 }}>
               <span>Genel Toplam</span><span style={{ fontFamily: "monospace" }}>{tutarYaz(toplamlar.genel, baslik.paraBirimi)}</span>
             </div>
             {baslik.paraBirimi !== "TRY" && (
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 12, color: "#e8a33d", marginTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 12, color: "#b06a00", marginTop: 4 }}>
                 <span>TL Karşılığı</span><span style={{ fontFamily: "monospace" }}>{tutarTL(toplamlar.genel * kurDegeri)}</span>
               </div>
             )}
           </div>
         </div>
-        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("Kaydedilemedi") || msg.includes("zorunlu") || msg.includes("girin") || msg.includes("seçmelisiniz") ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+        {msg && <div style={{ marginTop: 12, fontSize: 12.5, color: msg.includes("Kaydedilemedi") || msg.includes("zorunlu") || msg.includes("girin") || msg.includes("seçmelisiniz") ? "#c62828" : "#1565c0" }}>{msg}</div>}
       </EvrakPenceresi>
 
       <div style={belgeBaslikKutu}>
@@ -9877,17 +9988,17 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontWeight: 700, fontSize: 16 }}>Teklifler</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Bir talebe istediğin kadar firmadan teklif gir, sonra Teklif Karşılaştırma ekranından en uygununu siparişe çevir.</div>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>Bir talebe istediğin kadar firmadan teklif gir, sonra Teklif Karşılaştırma ekranından en uygununu siparişe çevir.</div>
           </div>
           <button className="btn-ghost" onClick={sablonuIndir}><FileDown size={14} /> Şablon İndir</button>
           <button className="btn-ghost" onClick={() => dosyaRef.current?.click()} disabled={iceAktariliyor}><Upload size={14} /> {iceAktariliyor ? "Aktarılıyor…" : "Excelden İçeri Al"}</button>
           <input ref={dosyaRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={iceAktar} />
           <button className="btn-ghost" onClick={disaAktar}><FileSpreadsheet size={14} /> {disaAktarEtiket(secililer)}</button>
-          <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+          <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
             <Plus size={16} /> Yeni Teklif
           </button>
         </div>
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: iceMsg.startsWith("Hata") ? "#e07a6b" : "#2dd4bf" }}>{iceMsg}</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: iceMsg.startsWith("Hata") ? "#c62828" : "#1565c0" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -9921,7 +10032,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Teklifler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Teklifler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
             <thead><tr>
@@ -9931,7 +10042,7 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
               <th>Teslim</th><th>Ödeme</th><th>Geçerlilik</th><th>Durum</th><th></th>
             </tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={13} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Teklif bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={13} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Teklif bulunamadı.</td></tr>}
               {filtrelenmis.map((t) => {
                 const duzenlendi = (t.guncellemeSayisi || 0) > 0;
                 const gecti = gecerlilikGecti(t);
@@ -9939,21 +10050,21 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
                   <tr key={t.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
                     <td><input type="checkbox" checked={secililer.has(t.id)} onChange={() => birSecToggle(t.id)} /></td>
                     <td style={{ whiteSpace: "nowrap" }}>
-                      <button onClick={() => fisiYukle(t)} title="Fişi aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : "#2dd4bf", cursor: "pointer", textDecoration: "underline" }}>{t.evrakNo}</button>
+                      <button onClick={() => fisiYukle(t)} title="Fişi aç" style={{ background: "none", border: "none", padding: 0, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#b06a00" : "#1565c0", cursor: "pointer", textDecoration: "underline" }}>{t.evrakNo}</button>
                       {duzenlendi && <span style={duzenlenmisRozet} title={`${t.guncellemeSayisi} kez düzenlendi`}>düzenlendi</span>}
                     </td>
                     <td style={{ fontFamily: "monospace" }}>{t.tarih}</td>
                     <td style={{ fontFamily: "monospace", fontSize: 12 }}>{t.talepEvrakNo || "—"}</td>
                     <td style={{ fontSize: 12.5 }}>
-                      {t.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{t.tedarikciKod}</span>}
+                      {t.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{t.tedarikciKod}</span>}
                       {t.tedarikci || "—"}
                     </td>
                     <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
                     <td style={{ textAlign: "right", fontFamily: "monospace" }}>{tutarYaz(sayiCevir(t.genelToplam), t.paraBirimi)}</td>
-                    <td style={{ textAlign: "right", fontFamily: "monospace", color: "#2dd4bf" }}>{tutarTL(teklifTL(t))}</td>
+                    <td style={{ textAlign: "right", fontFamily: "monospace", color: "#1565c0" }}>{tutarTL(teklifTL(t))}</td>
                     <td style={{ fontSize: 12 }}>{t.teslimSuresi ? `${t.teslimSuresi} gün` : (t.teslimTarihi || "—")}</td>
                     <td style={{ fontSize: 12 }}>{[t.odemeSekli, t.vade ? `${t.vade} gün` : ""].filter(Boolean).join(" · ") || "—"}</td>
-                    <td style={{ fontFamily: "monospace", fontSize: 12, color: gecti ? "#e07a6b" : "#c7cbd1" }}>
+                    <td style={{ fontFamily: "monospace", fontSize: 12, color: gecti ? "#c62828" : "#31465f" }}>
                       {t.gecerlilikTarihi || "—"}{gecti && <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700 }}>SÜRESİ GEÇTİ</span>}
                     </td>
                     <td>
@@ -9964,11 +10075,11 @@ function SatinalmaTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSipar
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button onClick={() => fisiYukle(t)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
                       <button onClick={() => siparisOlustur(t)} title="Bu teklifi tek tıkla siparişe çevir"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: "pointer", marginRight: 6 }}>
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 5, padding: "5px 10px", fontWeight: 700, fontSize: 11.5, cursor: "pointer", marginRight: 6 }}>
                         <ArrowRightLeft size={12} /> Siparişe Çevir
                       </button>
-                      <button onClick={() => teklifYazdir(t)} title="Teklif formunu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Printer size={14} /></button>
-                      <button onClick={() => sil(t)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
+                      <button onClick={() => teklifYazdir(t)} title="Teklif formunu yazdır / PDF" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Printer size={14} /></button>
+                      <button onClick={() => sil(t)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4, verticalAlign: "middle" }}><Trash2 size={14} /></button>
                     </td>
                   </tr>
                 );
@@ -10076,10 +10187,10 @@ function IzlenebilirlikPenceresi({
     });
   };
 
-  const kutu = { border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden", minWidth: 0 };
-  const kutuBas = { display: "flex", alignItems: "center", gap: 10, padding: "9px 13px", borderBottom: "1px solid #2a4b52", flexWrap: "wrap" };
-  const etiket = { fontSize: 11, color: "#6b7178", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700 };
-  const bosluk = { padding: 16, fontSize: 12.5, color: "#6b7178" };
+  const kutu = { border: "1px solid #d5dfec", borderRadius: 6, background: "#f4f7fc", overflow: "hidden", minWidth: 0 };
+  const kutuBas = { display: "flex", alignItems: "center", gap: 10, padding: "9px 13px", borderBottom: "1px solid #d5dfec", flexWrap: "wrap" };
+  const etiket = { fontSize: 11, color: "#7b8a9d", textTransform: "uppercase", letterSpacing: 0.4, fontWeight: 700 };
+  const bosluk = { padding: 16, fontSize: 12.5, color: "#7b8a9d" };
 
   return (
     <EvrakPenceresi
@@ -10100,11 +10211,11 @@ function IzlenebilirlikPenceresi({
           { ad: "SİPARİŞ", deger: z.siparisler.length > 1 ? `${z.siparisler.length} sipariş` : (odak?.evrakNo || z.siparisler[0]?.evrakNo || "—"), alt: odak ? trTarih(odak.tarih) : "" },
         ].map((a, i) => (
           <React.Fragment key={a.ad}>
-            {i > 0 && <ChevronRight size={16} color="#3d6169" />}
+            {i > 0 && <ChevronRight size={16} color="#b6c6da" />}
             <div style={{ ...kutu, padding: "8px 14px", minWidth: 150 }}>
               <div style={etiket}>{a.ad}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: "#2dd4bf", marginTop: 2 }}>{a.deger}</div>
-              <div style={{ fontSize: 11, color: "#6b7178" }}>{a.alt}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "monospace", color: "#1565c0", marginTop: 2 }}>{a.deger}</div>
+              <div style={{ fontSize: 11, color: "#7b8a9d" }}>{a.alt}</div>
             </div>
           </React.Fragment>
         ))}
@@ -10113,9 +10224,9 @@ function IzlenebilirlikPenceresi({
       {/* 1) Talep */}
       <div style={{ ...kutu, marginBottom: 14 }}>
         <div style={kutuBas}>
-          <FileText size={14} color="#e8a33d" />
+          <FileText size={14} color="#b06a00" />
           <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>1. Satınalma Talebi</span>
-          {z.talep && <span style={{ fontSize: 11.5, color: "#6b7178" }}>
+          {z.talep && <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>
             {[z.talep.talepEdenPersonel, z.talep.proje && `Proje: ${z.talep.proje}`, z.talep.depo && `Depo: ${z.talep.depo}`].filter(Boolean).join(" · ")}
           </span>}
         </div>
@@ -10137,12 +10248,12 @@ function IzlenebilirlikPenceresi({
               <tbody>
                 {(z.talep.satirlar || []).map((r, i) => (
                   <tr key={i}>
-                    <td style={{ ...fisGridTd, padding: "6px 8px", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
-                    <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf" }}>{r.kodu || r.stokKodu || "—"}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", color: "#7b8a9d", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#1565c0" }}>{r.kodu || r.stokKodu || "—"}</td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.ismi || r.stokAdi || "—"}</td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{r.miktar} {r.birim}</td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.teslimTarihi ? trTarih(r.teslimTarihi) : (z.talep.terminTarihi ? trTarih(z.talep.terminTarihi) : "—")}</td>
-                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12, color: "#8b929a" }}>{[r.aciklama, r.aciklama2].filter(Boolean).join(" · ") || "—"}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12, color: "#5a6b80" }}>{[r.aciklama, r.aciklama2].filter(Boolean).join(" · ") || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -10154,9 +10265,9 @@ function IzlenebilirlikPenceresi({
       {/* 2) Teklifler */}
       <div style={{ ...kutu, marginBottom: 14 }}>
         <div style={kutuBas}>
-          <ClipboardList size={14} color="#e8a33d" />
-          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>2. Alınan Teklifler <span style={{ color: "#6b7178", fontWeight: 400 }}>({z.teklifler.length})</span></span>
-          <span style={{ fontSize: 11.5, color: "#6b7178" }}>Tutarlar TL karşılığıdır, ucuzdan pahalıya sıralı.</span>
+          <ClipboardList size={14} color="#b06a00" />
+          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>2. Alınan Teklifler <span style={{ color: "#7b8a9d", fontWeight: 400 }}>({z.teklifler.length})</span></span>
+          <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>Tutarlar TL karşılığıdır, ucuzdan pahalıya sıralı.</span>
         </div>
         {!z.teklifler.length ? (
           <div style={bosluk}>Bu talep için kayıtlı teklif yok.</div>
@@ -10181,23 +10292,23 @@ function IzlenebilirlikPenceresi({
                     const kazanan = t.durum === "kazandi" || (odak && odak.teklifId === t.id);
                     const d = TEKLIF_DURUM[t.durum] || TEKLIF_DURUM.acik;
                     return (
-                      <tr key={t.id} style={{ background: kazanan ? "#123a2c" : undefined }}>
-                        <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf" }}>{t.evrakNo}</td>
+                      <tr key={t.id} style={{ background: kazanan ? "#e2f4ea" : undefined }}>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#1565c0" }}>{t.evrakNo}</td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, fontWeight: kazanan ? 700 : 400 }}>
                           {[t.tedarikciKod, t.tedarikci].filter(Boolean).join(" · ")}
                         </td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{t.tarih ? trTarih(t.tarih) : "—"}</td>
-                        <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: i === 0 ? "#4ade80" : "#e7e5e0" }}>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: i === 0 ? "#1b7f4b" : "#152a45" }}>
                           {tutarTL(teklifTL(t))}{i === 0 ? " ★" : ""}
-                          {t.paraBirimi && t.paraBirimi !== "TRY" && <div style={{ fontSize: 10.5, color: "#6b7178" }}>{t.paraBirimi} @ {sayiTR(teklifKuru(t))}</div>}
+                          {t.paraBirimi && t.paraBirimi !== "TRY" && <div style={{ fontSize: 10.5, color: "#7b8a9d" }}>{t.paraBirimi} @ {sayiTR(teklifKuru(t))}</div>}
                         </td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{t.teslimSuresi ? `${t.teslimSuresi} gün` : (t.teslimTarihi ? trTarih(t.teslimTarihi) : "—")}</td>
                         <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12 }}>{[t.odemeSekli, t.vade ? `${t.vade} gün` : ""].filter(Boolean).join(" · ") || "—"}</td>
-                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, color: gecerlilikGecti(t) ? "#e07a6b" : "#c7cbd1" }}>
+                        <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, color: gecerlilikGecti(t) ? "#c62828" : "#31465f" }}>
                           {t.gecerlilikTarihi ? trTarih(t.gecerlilikTarihi) : "—"}
                         </td>
                         <td style={{ ...fisGridTd, padding: "6px 8px" }}>
-                          <span className="pill" style={{ background: "#22404a", color: d.renk, borderColor: "#3d6169" }}>{d.label}</span>
+                          <span className="pill" style={{ background: "#e6edf7", color: d.renk, borderColor: "#b6c6da" }}>{d.label}</span>
                         </td>
                       </tr>
                     );
@@ -10208,10 +10319,10 @@ function IzlenebilirlikPenceresi({
 
             {/* Kalem bazlı fiyat karşılaştırması */}
             {z.matris.length > 0 && (
-              <div style={{ borderTop: "1px solid #2a4b52" }}>
-                <div style={{ ...kutuBas, borderBottom: "1px solid #2a4b52" }}>
+              <div style={{ borderTop: "1px solid #d5dfec" }}>
+                <div style={{ ...kutuBas, borderBottom: "1px solid #d5dfec" }}>
                   <span style={{ fontWeight: 700, fontSize: 12.5, flex: 1 }}>Kalem Bazlı Fiyat Karşılaştırması (TL)</span>
-                  <span style={{ fontSize: 11.5, color: "#6b7178" }}>Hangi kalemin hangi firmadan alındığı en sağda.</span>
+                  <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>Hangi kalemin hangi firmadan alındığı en sağda.</span>
                 </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -10223,7 +10334,7 @@ function IzlenebilirlikPenceresi({
                         {z.teklifler.map((t) => (
                           <th key={t.id} style={{ ...fisGridTh, width: 130, textAlign: "right" }}>
                             <div style={{ fontSize: 11.5, fontWeight: 700 }}>{t.tedarikci}</div>
-                            <div style={{ fontSize: 10, color: "#6b7178", fontWeight: 400, fontFamily: "monospace" }}>{t.evrakNo}</div>
+                            <div style={{ fontSize: 10, color: "#7b8a9d", fontWeight: 400, fontFamily: "monospace" }}>{t.evrakNo}</div>
                           </th>
                         ))}
                         <th style={{ ...fisGridTh, width: 190 }}>Sipariş Verilen</th>
@@ -10232,10 +10343,10 @@ function IzlenebilirlikPenceresi({
                     <tbody>
                       {z.matris.map((m, i) => (
                         <tr key={m.kalem.anahtar}>
-                          <td style={{ ...fisGridTd, padding: "6px 8px", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                          <td style={{ ...fisGridTd, padding: "6px 8px", color: "#7b8a9d", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
                           <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>
                             <div>{m.kalem.ad}</div>
-                            {m.kalem.kod && <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{m.kalem.kod}</div>}
+                            {m.kalem.kod && <div style={{ fontSize: 11, color: "#7b8a9d", fontFamily: "monospace" }}>{m.kalem.kod}</div>}
                           </td>
                           <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{m.kalem.miktar} {m.kalem.birim}</td>
                           {m.hucreler.map((h, j) => {
@@ -10244,8 +10355,8 @@ function IzlenebilirlikPenceresi({
                             return (
                               <td key={z.teklifler[j].id} style={{
                                 ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5,
-                                background: alindi ? "#123a2c" : undefined,
-                                color: alindi ? "#4ade80" : (h && h.birimTL > 0 ? "#c7cbd1" : "#4a5560"),
+                                background: alindi ? "#e2f4ea" : undefined,
+                                color: alindi ? "#1b7f4b" : (h && h.birimTL > 0 ? "#31465f" : "#aab6c6"),
                                 fontWeight: alindi ? 700 : 400,
                               }}>
                                 {h && h.birimTL > 0 ? `${sayiTR(h.birimTL)}${alindi ? " ✔" : (enUcuz ? " ★" : "")}` : "—"}
@@ -10254,8 +10365,8 @@ function IzlenebilirlikPenceresi({
                           })}
                           <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12 }}>
                             {m.alinan
-                              ? <><span style={{ color: "#4ade80" }}>{m.alinan.tedarikci}</span><div style={{ fontFamily: "monospace", fontSize: 11, color: "#6b7178" }}>{m.alinan.evrakNo}</div></>
-                              : <span style={{ color: "#6b7178" }}>sipariş açılmadı</span>}
+                              ? <><span style={{ color: "#1b7f4b" }}>{m.alinan.tedarikci}</span><div style={{ fontFamily: "monospace", fontSize: 11, color: "#7b8a9d" }}>{m.alinan.evrakNo}</div></>
+                              : <span style={{ color: "#7b8a9d" }}>sipariş açılmadı</span>}
                           </td>
                         </tr>
                       ))}
@@ -10271,9 +10382,9 @@ function IzlenebilirlikPenceresi({
       {/* 3) Siparişler */}
       <div style={kutu}>
         <div style={kutuBas}>
-          <ShoppingCart size={14} color="#e8a33d" />
-          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>3. Açılan Siparişler <span style={{ color: "#6b7178", fontWeight: 400 }}>({z.siparisler.length})</span></span>
-          {hmd.length > 0 && <span style={{ fontSize: 11.5, color: "#6b7178" }}>{hmd.length} kalem hammadde takibinde</span>}
+          <ShoppingCart size={14} color="#b06a00" />
+          <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>3. Açılan Siparişler <span style={{ color: "#7b8a9d", fontWeight: 400 }}>({z.siparisler.length})</span></span>
+          {hmd.length > 0 && <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>{hmd.length} kalem hammadde takibinde</span>}
         </div>
         {!z.siparisler.length ? (
           <div style={bosluk}>Henüz sipariş açılmamış.</div>
@@ -10295,8 +10406,8 @@ function IzlenebilirlikPenceresi({
                 {z.siparisler.map((s) => {
                   const bu = odak && s.id === odak.id;
                   return (
-                    <tr key={s.id} style={{ background: bu ? "#22404a" : undefined }}>
-                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#2dd4bf", fontWeight: bu ? 700 : 400 }}>
+                    <tr key={s.id} style={{ background: bu ? "#e6edf7" : undefined }}>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#1565c0", fontWeight: bu ? 700 : 400 }}>
                         {s.evrakNo}{bu ? " ◄" : ""}
                       </td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{[s.tedarikciKod, s.tedarikci].filter(Boolean).join(" · ")}</td>
@@ -10304,7 +10415,7 @@ function IzlenebilirlikPenceresi({
                       <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontSize: 12.5 }}>{(s.satirlar || []).length}</td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5 }}>{tutarTL(siparisTL(s))}</td>
                       <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{s.teslimTarihi ? trTarih(s.teslimTarihi) : "—"}</td>
-                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#8b929a" }}>{s.teklifEvrakNo || "—"}</td>
+                      <td style={{ ...fisGridTd, padding: "6px 8px", fontFamily: "monospace", fontSize: 12, color: "#5a6b80" }}>{s.teklifEvrakNo || "—"}</td>
                     </tr>
                   );
                 })}
@@ -10778,7 +10889,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontWeight: 700, fontSize: 16 }}>Toplu Teklif</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>
               Firmaları seç, tek ekrandan hepsine teklif sor ve gelen fiyatları aynı tabloya gir.
               Kaydedince her firma için ayrı teklif fişi oluşur; formları firma firma yazdırabilirsin.
             </div>
@@ -10789,20 +10900,20 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
           <button
             onClick={dagitimiOnizle} disabled={!Object.keys(etkinAtama).length}
             title="Kalemleri seçtiğin firmalara göre siparişe çevir"
-            style={{ display: "flex", alignItems: "center", gap: 7, background: "#e8a33d", color: "#142a30", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", opacity: Object.keys(etkinAtama).length ? 1 : 0.5 }}
+            style={{ display: "flex", alignItems: "center", gap: 7, background: "#b06a00", color: "#ffffff", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer", opacity: Object.keys(etkinAtama).length ? 1 : 0.5 }}
           >
             <ArrowRightLeft size={14} /> Siparişe Dönüştür
           </button>
           <button
             onClick={kaydet} disabled={kaydediliyor}
-            style={{ display: "flex", alignItems: "center", gap: 7, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}
           >
             <Save size={14} /> {kaydediliyor ? "Kaydediliyor…" : "Teklifleri Kaydet"}
           </button>
         </div>
       </div>
 
-      {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: hataMi ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+      {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: hataMi ? "#c62828" : "#1565c0" }}>{msg}</div>}
 
       {/* Başlık bilgileri */}
       <div className="card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
@@ -10836,19 +10947,19 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
       {/* Firmalar */}
       <div className="card" style={{ padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: firmalar.length ? 12 : 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Teklif İstenecek Firmalar <span style={{ color: "#6b7178", fontWeight: 400 }}>({firmalar.length})</span></span>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Teklif İstenecek Firmalar <span style={{ color: "#7b8a9d", fontWeight: 400 }}>({firmalar.length})</span></span>
           <button style={fisAltBtn} onClick={() => setSecici({ tur: "cari" })}><Plus size={13} /> Firma Ekle</button>
         </div>
         {firmalar.length === 0 ? (
-          <div style={{ fontSize: 12.5, color: "#6b7178" }}>Henüz firma seçilmedi. "Firma Ekle" ile cari kartlarından seç.</div>
+          <div style={{ fontSize: 12.5, color: "#7b8a9d" }}>Henüz firma seçilmedi. "Firma Ekle" ile cari kartlarından seç.</div>
         ) : (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {firmalar.map((f) => (
-              <span key={f.key} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#22404a", border: "1px solid #3d6169", borderRadius: 20, padding: "5px 6px 5px 12px", fontSize: 12.5 }}>
+              <span key={f.key} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#e6edf7", border: "1px solid #b6c6da", borderRadius: 20, padding: "5px 6px 5px 12px", fontSize: 12.5 }}>
                 <b>{f.ad}</b>
-                <span style={{ color: "#6b7178", fontFamily: "monospace", fontSize: 11 }}>{f.evrakNo}</span>
-                {f.kayitliId && <span style={{ color: "#4ade80", fontSize: 11 }}>kayıtlı</span>}
-                <button onClick={() => firmaCikar(f.key)} title="Listeden çıkar" style={{ background: "none", border: "none", color: "#8b929a", cursor: "pointer", display: "flex", padding: 2 }}><X size={13} /></button>
+                <span style={{ color: "#7b8a9d", fontFamily: "monospace", fontSize: 11 }}>{f.evrakNo}</span>
+                {f.kayitliId && <span style={{ color: "#1b7f4b", fontSize: 11 }}>kayıtlı</span>}
+                <button onClick={() => firmaCikar(f.key)} title="Listeden çıkar" style={{ background: "none", border: "none", color: "#5a6b80", cursor: "pointer", display: "flex", padding: 2 }}><X size={13} /></button>
               </span>
             ))}
           </div>
@@ -10857,8 +10968,8 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
 
       {/* Kalemler */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Kalemler <span style={{ color: "#6b7178", fontWeight: 400 }}>({doluKalemler.length})</span></span>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Kalemler <span style={{ color: "#7b8a9d", fontWeight: 400 }}>({doluKalemler.length})</span></span>
           <button style={fisAltBtn} onClick={kalemEkle}><Plus size={13} /> Satır Ekle</button>
         </div>
         <div style={{ overflowX: "auto" }}>
@@ -10878,7 +10989,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
             <tbody>
               {kalemler.map((k, i) => (
                 <tr key={k.key}>
-                  <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                  <td style={{ ...fisGridTd, textAlign: "center", color: "#7b8a9d", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
                   <td style={fisGridTd}>
                     <SecimAlani hucre deger={k.stokKodu} ipucu="Stok seç" ac={() => setSecici({ tur: "stok", key: k.key })} temizle={() => kalemGuncelle(k.key, "stokKodu", "")} />
                   </td>
@@ -10888,7 +10999,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                   <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right" }} value={k.kdv} onChange={(e) => kalemGuncelle(k.key, "kdv", e.target.value)} /></td>
                   <td style={fisGridTd}><input style={fisHucreInput} value={k.aciklama} onChange={(e) => kalemGuncelle(k.key, "aciklama", e.target.value)} /></td>
                   <td style={{ ...fisGridTd, textAlign: "center" }}>
-                    <button onClick={() => kalemSil(k.key)} title="Satırı sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={13} /></button>
+                    <button onClick={() => kalemSil(k.key)} title="Satırı sil" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={13} /></button>
                   </td>
                 </tr>
               ))}
@@ -10899,15 +11010,15 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
 
       {/* Fiyat matrisi */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Gelen Teklif Fiyatları</span>
-          <span style={{ fontSize: 11.5, color: "#6b7178" }}>
+          <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>
             En ucuz fiyat otomatik seçilir (★). Farklı firmadan almak istersen kutucuğa tıkla{elleSecilen ? ` — ${elleSecilen} kalem elle değiştirildi` : ""}.
           </span>
           {elleSecilen > 0 && <button style={fisAltBtn} onClick={() => setAtama({})}><RefreshCw size={13} /> En Ucuzlara Dön</button>}
         </div>
         {!firmalar.length || !doluKalemler.length ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#6b7178", fontSize: 13.5 }}>
+          <div style={{ padding: 40, textAlign: "center", color: "#7b8a9d", fontSize: 13.5 }}>
             Fiyat girmek için önce en az bir firma ve bir kalem gir.
           </div>
         ) : (
@@ -10920,8 +11031,8 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                   <th style={{ ...fisGridTh, width: 110, textAlign: "right" }}>Miktar</th>
                   {firmalar.map((f) => (
                     <th key={f.key} style={{ ...fisGridTh, width: sutunGen, textAlign: "right" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#c7cbd1" }}>{f.ad}</div>
-                      <div style={{ fontSize: 10, color: "#6b7178", fontWeight: 400, fontFamily: "monospace" }}>{f.evrakNo}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#31465f" }}>{f.ad}</div>
+                      <div style={{ fontSize: 10, color: "#7b8a9d", fontWeight: 400, fontFamily: "monospace" }}>{f.evrakNo}</div>
                     </th>
                   ))}
                 </tr>
@@ -10929,10 +11040,10 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
               <tbody>
                 {doluKalemler.map((k, i) => (
                   <tr key={k.key}>
-                    <td style={{ ...fisGridTd, textAlign: "center", color: "#6b7178", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
+                    <td style={{ ...fisGridTd, textAlign: "center", color: "#7b8a9d", fontFamily: "monospace", fontSize: 12 }}>{i + 1}</td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>
                       <div>{k.stokAdi}</div>
-                      {k.stokKodu && <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{k.stokKodu}</div>}
+                      {k.stokKodu && <div style={{ fontSize: 11, color: "#7b8a9d", fontFamily: "monospace" }}>{k.stokKodu}</div>}
                     </td>
                     <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, whiteSpace: "nowrap" }}>{k.miktar} {k.birim}</td>
                     {firmalar.map((f) => {
@@ -10941,22 +11052,22 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                       const fiyatVar = sayiCevir(f.fiyatlar[k.key]) > 0;
                       return (
                         <td key={f.key} style={{
-                          ...fisGridTd, background: secili ? "#123a2c" : undefined,
-                          boxShadow: secili ? "inset 0 0 0 1px #2dd4bf" : undefined,
+                          ...fisGridTd, background: secili ? "#e2f4ea" : undefined,
+                          boxShadow: secili ? "inset 0 0 0 1px #1565c0" : undefined,
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 4, paddingLeft: 5 }}>
                             <input
                               type="radio" name={`ata-${k.key}`} checked={!!secili} disabled={!fiyatVar}
                               title={fiyatVar ? `${k.stokAdi} kalemini ${f.ad} firmasından al` : "Fiyat girilmedi"}
                               onChange={() => fiyatVar && kalemAta(k.key, f.key)}
-                              style={{ cursor: fiyatVar ? "pointer" : "default", accentColor: "#2dd4bf", margin: 0 }}
+                              style={{ cursor: fiyatVar ? "pointer" : "default", accentColor: "#1565c0", margin: 0 }}
                             />
                             <input
-                              style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace", color: secili ? "#4ade80" : "#e7e5e0", fontWeight: secili ? 700 : 400 }}
+                              style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace", color: secili ? "#1b7f4b" : "#152a45", fontWeight: secili ? 700 : 400 }}
                               value={f.fiyatlar[k.key] || ""} placeholder="—"
                               onChange={(e) => fiyatYaz(f.key, k.key, e.target.value)}
                             />
-                            <span style={{ width: 10, fontSize: 11, color: "#e8a33d" }}>{enUcuz && fiyatVar ? "★" : ""}</span>
+                            <span style={{ width: 10, fontSize: 11, color: "#b06a00" }}>{enUcuz && fiyatVar ? "★" : ""}</span>
                           </div>
                         </td>
                       );
@@ -10965,7 +11076,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                 ))}
 
                 <tr>
-                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>Para Birimi / Kur</td>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#5a6b80" }}>Para Birimi / Kur</td>
                   {firmalar.map((f) => (
                     <td key={f.key} style={{ ...fisGridTd, padding: 4 }}>
                       <div style={{ display: "flex", gap: 4 }}>
@@ -10997,7 +11108,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                   ["Vade (gün)", "vade", "30"],
                 ].map(([etiket, alan, ipucu]) => (
                   <tr key={alan}>
-                    <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>{etiket}</td>
+                    <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#5a6b80" }}>{etiket}</td>
                     {firmalar.map((f) => (
                       <td key={f.key} style={fisGridTd}>
                         <input style={fisHucreInput} value={f[alan]} placeholder={ipucu} onChange={(e) => firmaGuncelle(f.key, { [alan]: e.target.value })} />
@@ -11006,7 +11117,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>Teklif Geçerlilik Tarihi</td>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#5a6b80" }}>Teklif Geçerlilik Tarihi</td>
                   {firmalar.map((f) => (
                     <td key={f.key} style={fisGridTd}>
                       <input type="date" style={fisHucreInput} value={f.gecerlilikTarihi} onChange={(e) => firmaGuncelle(f.key, { gecerlilikTarihi: e.target.value })} />
@@ -11014,11 +11125,11 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                   ))}
                 </tr>
                 <tr>
-                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#8b929a" }}>Siparişe Gidecek Kalem</td>
+                  <td colSpan={3} style={{ ...fisGridTd, padding: "6px 8px", fontWeight: 700, fontSize: 12, color: "#5a6b80" }}>Siparişe Gidecek Kalem</td>
                   {firmalar.map((f) => {
                     const adet = firmaKalemSayisi(f.key);
                     return (
-                      <td key={f.key} style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontSize: 12.5, color: adet ? "#2dd4bf" : "#6b7178", fontWeight: adet ? 700 : 400 }}>
+                      <td key={f.key} style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontSize: 12.5, color: adet ? "#1565c0" : "#7b8a9d", fontWeight: adet ? 700 : 400 }}>
                         {adet ? `${adet} kalem` : "—"}
                       </td>
                     );
@@ -11031,7 +11142,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
                     const enAz = Math.min(...firmalar.map((x) => firmaToplamTL(x)).filter((x) => x > 0), Infinity);
                     const kazanan = tl > 0 && tl === enAz;
                     return (
-                      <td key={f.key} style={{ ...fisGridTd, padding: "8px", textAlign: "right", fontFamily: "monospace", fontWeight: 800, fontSize: 13.5, background: kazanan ? "#123a2c" : undefined, color: kazanan ? "#4ade80" : "#e7e5e0" }}>
+                      <td key={f.key} style={{ ...fisGridTd, padding: "8px", textAlign: "right", fontFamily: "monospace", fontWeight: 800, fontSize: 13.5, background: kazanan ? "#e2f4ea" : undefined, color: kazanan ? "#1b7f4b" : "#152a45" }}>
                         {tl > 0 ? `${tutarTL(tl)}${kazanan ? " ★" : ""}` : "—"}
                       </td>
                     );
@@ -11077,7 +11188,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
           </>
         }
       >
-        <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 14, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12.5, color: "#5a6b80", marginBottom: 14, lineHeight: 1.6 }}>
           Kalemler seçtiğin firmalara göre gruplandı. Onaylarsan her firma için ayrı sipariş fişi açılır,
           numaralar sırayla verilir. Teklifler henüz kaydedilmediyse önce kaydedilir; kazanan teklifler
           "Kazandı", diğerleri "Kaybetti" olur. HMD ile başlayan kalemler hammadde takibine düşer.
@@ -11087,17 +11198,17 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
             const kur = firmaKuru(g.firma);
             const toplam = g.satirlar.reduce((t, r) => t + teklifSatirAra(r) * kur, 0);
             return (
-              <div key={g.firmaKey} style={{ border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #2a4b52" }}>
+              <div key={g.firmaKey} style={{ border: "1px solid #d5dfec", borderRadius: 6, background: "#f4f7fc", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #d5dfec" }}>
                   <span style={{ flex: 1, fontWeight: 700, fontSize: 13 }}>{[g.firma.kod, g.firma.ad].filter(Boolean).join(" · ")}</span>
-                  <span style={{ fontSize: 11.5, color: "#6b7178" }}>{g.satirlar.length} kalem</span>
-                  <span style={{ fontSize: 11.5, color: "#6b7178", fontFamily: "monospace" }}>{g.firma.evrakNo}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{tutarTL(toplam)}</span>
+                  <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>{g.satirlar.length} kalem</span>
+                  <span style={{ fontSize: 11.5, color: "#7b8a9d", fontFamily: "monospace" }}>{g.firma.evrakNo}</span>
+                  <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{tutarTL(toplam)}</span>
                 </div>
                 {g.satirlar.map((r, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, padding: "7px 14px", borderBottom: "1px solid #1f3b42", fontSize: 12.5 }}>
-                    <span style={{ flex: 1 }}>{r.stokAdi}{r.stokKodu ? <span style={{ color: "#6b7178", fontFamily: "monospace" }}> · {r.stokKodu}</span> : null}</span>
-                    <span style={{ fontFamily: "monospace", color: "#8b929a" }}>{r.miktar} {r.birim}</span>
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "7px 14px", borderBottom: "1px solid #eef3f9", fontSize: 12.5 }}>
+                    <span style={{ flex: 1 }}>{r.stokAdi}{r.stokKodu ? <span style={{ color: "#7b8a9d", fontFamily: "monospace" }}> · {r.stokKodu}</span> : null}</span>
+                    <span style={{ fontFamily: "monospace", color: "#5a6b80" }}>{r.miktar} {r.birim}</span>
                     <span style={{ fontFamily: "monospace", width: 120, textAlign: "right" }}>{tutarTL(sayiCevir(r.birimFiyat) * kur)}</span>
                   </div>
                 ))}
@@ -11112,7 +11223,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
         baslik="Firma Seç (cari kartları)" ikon={Building2} genislik={760}
         kayitlar={cariler.filter((c) => !firmalar.some((f) => (f.kod && f.kod === String(c.kod || "").trim()) || f.ad === String(c.ad || "").trim()))}
         sutunlar={[
-          { baslik: "Cari Kodu", al: (c) => c.kod, genislik: 140, mono: true, renk: "#2dd4bf" },
+          { baslik: "Cari Kodu", al: (c) => c.kod, genislik: 140, mono: true, renk: "#1565c0" },
           { baslik: "Firma Adı", al: (c) => c.ad },
           { baslik: "Tip", al: (c) => (c.tip === "musteri" ? "Müşteri" : c.tip === "tedarikci" ? "Tedarikçi" : c.tip || ""), genislik: 110 },
           { baslik: "Telefon", al: (c) => c.telefon, genislik: 130 },
@@ -11126,7 +11237,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
         baslik="Stok Kartı Seç" ikon={Boxes} genislik={820}
         kayitlar={depoStok || []}
         sutunlar={[
-          { baslik: "Stok Kodu", al: (s) => s.stokKodu, genislik: 150, mono: true, renk: "#2dd4bf" },
+          { baslik: "Stok Kodu", al: (s) => s.stokKodu, genislik: 150, mono: true, renk: "#1565c0" },
           { baslik: "Stok Adı", al: (s) => s.stokAdi },
           { baslik: "Birim", al: (s) => s.birim, genislik: 80 },
         ]}
@@ -11361,7 +11472,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontWeight: 700, fontSize: 16 }}>Teklif Karşılaştırma</div>
-            <div style={{ fontSize: 12, color: "#6b7178", marginTop: 2 }}>Firmaları yan yana gör, en uygun olanı tek tıkla siparişe çevir. Tüm fiyatlar TL karşılığı üzerinden karşılaştırılır.</div>
+            <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 2 }}>Firmaları yan yana gör, en uygun olanı tek tıkla siparişe çevir. Tüm fiyatlar TL karşılığı üzerinden karşılaştırılır.</div>
           </div>
                     <ExcelSeridi alanlar={XLS_ALAN.satinalma_teklifler} dosyaAdi="teklifler" koleksiyon="satinalma_teklifler" hazirla={(k) => evrakaCevir(k, { olusturanEposta: kullanici?.email || "—" })} />
           <button className="btn-ghost" onClick={disaAktar} disabled={!teklifler.length}><FileSpreadsheet size={14} /> Excele Aktar</button>
@@ -11370,7 +11481,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
       </div>
 
       <div className="card" style={{ padding: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 12.5, color: "#8b929a", fontWeight: 600 }}>Talep</span>
+        <span style={{ fontSize: 12.5, color: "#5a6b80", fontWeight: 600 }}>Talep</span>
         <select className="input" style={{ flex: 1, minWidth: 260 }} value={talepId} onChange={(e) => { setTalepId(e.target.value); setDagitim(null); }}>
           <option value="">— Talep seç —</option>
           {teklifliTalepler.map((t) => (
@@ -11379,20 +11490,20 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
             </option>
           ))}
         </select>
-        <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#c7cbd1", cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#31465f", cursor: "pointer" }}>
           <input type="checkbox" checked={sadeceGecerli} onChange={(e) => setSadeceGecerli(e.target.checked)} />
           Süresi geçmiş teklifleri gizle
         </label>
       </div>
 
-      {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: msg.startsWith("Oluşturulamadı") ? "#e07a6b" : "#2dd4bf" }}>{msg}</div>}
+      {msg && <div className="card" style={{ padding: 14, fontSize: 13, color: msg.startsWith("Oluşturulamadı") ? "#c62828" : "#1565c0" }}>{msg}</div>}
 
       {!talepId ? (
-        <div className="card" style={{ padding: 40, textAlign: "center", color: "#6b7178", fontSize: 13.5 }}>
+        <div className="card" style={{ padding: 40, textAlign: "center", color: "#7b8a9d", fontSize: 13.5 }}>
           Karşılaştırmak için yukarıdan bir talep seç. Listede sadece en az bir teklifi olan talepler görünür.
         </div>
       ) : teklifler.length === 0 ? (
-        <div className="card" style={{ padding: 40, textAlign: "center", color: "#6b7178", fontSize: 13.5 }}>
+        <div className="card" style={{ padding: 40, textAlign: "center", color: "#7b8a9d", fontSize: 13.5 }}>
           Bu talep için görüntülenecek teklif yok. (Süresi geçmişleri gizlemiş olabilirsin.)
         </div>
       ) : (
@@ -11405,9 +11516,9 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
           </div>
 
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Karşılaştırma Tablosu — {talep?.evrakNo}</span>
-              <span style={{ fontSize: 11.5, color: "#6b7178" }}>
+              <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>
                 Fiyat hücresine tıklayarak o kalemi hangi firmadan alacağını seçebilirsin{elleSecilen ? ` — ${elleSecilen} kalem elle değiştirildi` : ""}.
               </span>
               {elleSecilen > 0 && (
@@ -11416,7 +11527,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                 </button>
               )}
               <button onClick={kalemBazliDagitim}
-                style={{ display: "flex", alignItems: "center", gap: 7, background: "#e8a33d", color: "#142a30", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+                style={{ display: "flex", alignItems: "center", gap: 7, background: "#b06a00", color: "#ffffff", border: "none", borderRadius: 6, padding: "9px 15px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 <ArrowRightLeft size={14} /> Seçime Göre Siparişe Dönüştür
               </button>
             </div>
@@ -11428,9 +11539,9 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                     <th style={{ minWidth: 200 }}>Malzeme / Hizmet</th>
                     <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Miktar</th>
                     {teklifler.map((t) => (
-                      <th key={t.id} style={{ textAlign: "right", minWidth: 140, borderLeft: "1px solid #2a4b52" }}>
-                        <div style={{ color: t.id === enUcuzTeklif?.id ? "#2dd4bf" : "#c7cbd1", fontSize: 12, fontWeight: 700, textTransform: "none", letterSpacing: 0 }}>{t.tedarikci}</div>
-                        <div style={{ fontSize: 10, color: "#6b7178", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                      <th key={t.id} style={{ textAlign: "right", minWidth: 140, borderLeft: "1px solid #d5dfec" }}>
+                        <div style={{ color: t.id === enUcuzTeklif?.id ? "#1565c0" : "#31465f", fontSize: 12, fontWeight: 700, textTransform: "none", letterSpacing: 0 }}>{t.tedarikci}</div>
+                        <div style={{ fontSize: 10, color: "#7b8a9d", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
                           {t.evrakNo}{t.paraBirimi && t.paraBirimi !== "TRY" ? ` · ${t.paraBirimi} @ ${sayiTR(teklifKuru(t))}` : ""}
                         </div>
                       </th>
@@ -11440,10 +11551,10 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                 <tbody>
                   {matris.map((m, i) => (
                     <tr key={m.kalem.anahtar}>
-                      <td style={{ color: "#6b7178", fontFamily: "monospace" }}>{i + 1}</td>
+                      <td style={{ color: "#7b8a9d", fontFamily: "monospace" }}>{i + 1}</td>
                       <td>
                         <div style={{ fontSize: 13 }}>{m.kalem.ad}</div>
-                        {m.kalem.kod && <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{m.kalem.kod}</div>}
+                        {m.kalem.kod && <div style={{ fontSize: 11, color: "#7b8a9d", fontFamily: "monospace" }}>{m.kalem.kod}</div>}
                       </td>
                       <td style={{ textAlign: "right", fontFamily: "monospace", whiteSpace: "nowrap" }}>{m.kalem.miktar} {m.kalem.birim}</td>
                       {m.hucreler.map((h, j) => {
@@ -11455,15 +11566,15 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                             onClick={() => tiklanir && kalemSec(m.kalem.anahtar, h.teklif.id)}
                             title={tiklanir ? `${m.kalem.ad} kalemini ${h.teklif.tedarikci} firmasından al` : ""}
                             style={{
-                              textAlign: "right", fontFamily: "monospace", borderLeft: "1px solid #2a4b52",
+                              textAlign: "right", fontFamily: "monospace", borderLeft: "1px solid #d5dfec",
                               cursor: tiklanir ? "pointer" : "default",
-                              background: secili ? "#123a2c" : undefined, color: secili ? "#4ade80" : (tiklanir ? "#c7cbd1" : "#4a5560"),
+                              background: secili ? "#e2f4ea" : undefined, color: secili ? "#1b7f4b" : (tiklanir ? "#31465f" : "#aab6c6"),
                               fontWeight: secili ? 700 : 400,
-                              boxShadow: secili ? "inset 0 0 0 1px #2dd4bf" : undefined,
+                              boxShadow: secili ? "inset 0 0 0 1px #1565c0" : undefined,
                             }}>
                             {tiklanir ? <>
                               {sayiTR(h.birimTL)}{secili && " ✔"}{enUcuzMu && !secili && " ★"}
-                              <div style={{ fontSize: 10.5, color: "#6b7178", fontWeight: 400 }}>{tutarTL(h.tutarTL)}</div>
+                              <div style={{ fontSize: 10.5, color: "#7b8a9d", fontWeight: 400 }}>{tutarTL(h.tutarTL)}</div>
                             </> : "—"}
                           </td>
                         );
@@ -11477,9 +11588,9 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                     ["Geçerlilik", teklifler.map((t) => (t.gecerlilikTarihi ? (gecerlilikGecti(t) ? `${t.gecerlilikTarihi} (geçti)` : t.gecerlilikTarihi) : "—"))],
                   ].map(([etiket, degerler]) => (
                     <tr key={etiket}>
-                      <td colSpan={3} style={{ fontWeight: 700, fontSize: 12, color: "#8b929a" }}>{etiket}</td>
+                      <td colSpan={3} style={{ fontWeight: 700, fontSize: 12, color: "#5a6b80" }}>{etiket}</td>
                       {degerler.map((d, j) => (
-                        <td key={teklifler[j].id} style={{ textAlign: "right", fontSize: 12, borderLeft: "1px solid #2a4b52", color: String(d).includes("geçti") ? "#e07a6b" : "#c7cbd1" }}>{d}</td>
+                        <td key={teklifler[j].id} style={{ textAlign: "right", fontSize: 12, borderLeft: "1px solid #d5dfec", color: String(d).includes("geçti") ? "#c62828" : "#31465f" }}>{d}</td>
                       ))}
                     </tr>
                   ))}
@@ -11488,9 +11599,9 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                     {teklifler.map((t) => (
                       <td key={t.id} style={{
                         textAlign: "right", fontFamily: "monospace", fontWeight: 800, fontSize: 14,
-                        borderLeft: "1px solid #2a4b52",
-                        background: t.id === enUcuzTeklif?.id ? "#123a2c" : undefined,
-                        color: t.id === enUcuzTeklif?.id ? "#4ade80" : "#e7e5e0",
+                        borderLeft: "1px solid #d5dfec",
+                        background: t.id === enUcuzTeklif?.id ? "#e2f4ea" : undefined,
+                        color: t.id === enUcuzTeklif?.id ? "#1b7f4b" : "#152a45",
                       }}>
                         {tutarTL(teklifTL(t))}{t.id === enUcuzTeklif?.id && " ★"}
                       </td>
@@ -11499,9 +11610,9 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
                   <tr>
                     <td colSpan={3}></td>
                     {teklifler.map((t) => (
-                      <td key={t.id} style={{ borderLeft: "1px solid #2a4b52", textAlign: "right" }}>
+                      <td key={t.id} style={{ borderLeft: "1px solid #d5dfec", textAlign: "right" }}>
                         <button onClick={() => siparisOlustur(t, talep)} title={`${t.tedarikci} firmasına bu teklifle sipariş aç`}
-                          style={{ display: "inline-flex", alignItems: "center", gap: 5, background: t.id === enUcuzTeklif?.id ? "#2dd4bf" : "transparent", color: t.id === enUcuzTeklif?.id ? "#142a30" : "#c7cbd1", border: t.id === enUcuzTeklif?.id ? "none" : "1px solid #3d6169", borderRadius: 5, padding: "6px 11px", fontWeight: 700, fontSize: 11.5, cursor: "pointer" }}>
+                          style={{ display: "inline-flex", alignItems: "center", gap: 5, background: t.id === enUcuzTeklif?.id ? "#1565c0" : "transparent", color: t.id === enUcuzTeklif?.id ? "#f2f6fb" : "#31465f", border: t.id === enUcuzTeklif?.id ? "none" : "1px solid #b6c6da", borderRadius: 5, padding: "6px 11px", fontWeight: 700, fontSize: 11.5, cursor: "pointer" }}>
                           <ArrowRightLeft size={12} /> Siparişe Çevir
                         </button>
                       </td>
@@ -11526,7 +11637,7 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
           </>
         }
       >
-        <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 14, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12.5, color: "#5a6b80", marginBottom: 14, lineHeight: 1.6 }}>
           Kalemler seçtiğin firmalara göre gruplandı (varsayılan: en ucuz). Onaylarsan aşağıdaki siparişler otomatik
           oluşturulur, numaralar sırayla verilir. Kazanan teklifler "Kazandı", diğerleri "Kaybetti" olarak işaretlenir;
           kaynak talep "siparişe dönüştü" olur ve HMD kalemleri hammadde takibine düşer.
@@ -11535,16 +11646,16 @@ function TeklifKarsilastirma({ satinalmaTeklifler, satinalmaTalepler, satinalmaS
           {(dagitim || []).map((g) => {
             const toplam = g.satirlar.reduce((t, r) => t + teklifSatirAra(r) * teklifKuru(g.teklif), 0);
             return (
-              <div key={g.teklif.id} style={{ border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #2a4b52" }}>
+              <div key={g.teklif.id} style={{ border: "1px solid #d5dfec", borderRadius: 6, background: "#f4f7fc", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid #d5dfec" }}>
                   <span style={{ flex: 1, fontWeight: 700, fontSize: 13 }}>{g.teklif.tedarikci}</span>
-                  <span style={{ fontSize: 11.5, color: "#6b7178", fontFamily: "monospace" }}>{g.teklif.evrakNo}</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{tutarTL(toplam)}</span>
+                  <span style={{ fontSize: 11.5, color: "#7b8a9d", fontFamily: "monospace" }}>{g.teklif.evrakNo}</span>
+                  <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{tutarTL(toplam)}</span>
                 </div>
                 {g.satirlar.map((r, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, padding: "7px 14px", borderBottom: "1px solid #1f3b42", fontSize: 12.5 }}>
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "7px 14px", borderBottom: "1px solid #eef3f9", fontSize: 12.5 }}>
                     <span style={{ flex: 1 }}>{r.stokAdi}</span>
-                    <span style={{ fontFamily: "monospace", color: "#8b929a" }}>{r.miktar} {r.birim}</span>
+                    <span style={{ fontFamily: "monospace", color: "#5a6b80" }}>{r.miktar} {r.birim}</span>
                     <span style={{ fontFamily: "monospace", width: 110, textAlign: "right" }}>{tutarTL(birimFiyatTL(r, g.teklif))}</span>
                   </div>
                 ))}
@@ -12048,7 +12159,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
         ikon={ShoppingCart} genislik={1120}
         butonlar={
           <>
-            {msg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
+            {msg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{msg}</span>}
             <button style={fisAltBtn} onClick={onceki} disabled={sirali.length === 0} title="Önceki fiş"><ChevronLeft size={14} /> Önceki</button>
             <button style={fisAltBtn} onClick={sonraki} disabled={sirali.length === 0} title="Sonraki fiş">Sonraki <ChevronRight size={14} /></button>
             <button style={fisAltBtn} onClick={satirEkle}><Plus size={14} /> Satır Ekle</button>
@@ -12065,7 +12176,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
           </>
         }
       >
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#f4f7fc", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
           <div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Evrak No</span>
@@ -12087,7 +12198,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Cari Kod</span>
-              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#2dd4bf" : "#6b7178" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
+              <input style={{ ...fisInput, fontFamily: "monospace", color: baslik.tedarikciKod ? "#1565c0" : "#7b8a9d" }} readOnly value={baslik.tedarikciKod || "— cari seçince otomatik gelir —"} />
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Proje Kodu</span>
@@ -12131,7 +12242,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
           </div>
         </div>
 
-        <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1280 }}>
               <thead>
@@ -12153,8 +12264,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
               <tbody>
                 {satirlar.map((r, i) => (
                   <tr key={r.key}>
-                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#6b7178", background: "#16232a", padding: "0 4px" }}>{i + 1}</td>
-                    <td style={fisGridTd}><input style={{ ...fisHucreInput, color: "#e8a33d" }} list="sa-proje-kodlari-sip" value={r.projeKodu || ""} onChange={(e) => satirGuncelle(r.key, "projeKodu", e.target.value)} placeholder={baslik.projeKodu || "seç / yaz"} /></td>
+                    <td style={{ ...fisGridTd, textAlign: "center", fontSize: 11.5, color: "#7b8a9d", background: "#f4f7fc", padding: "0 4px" }}>{i + 1}</td>
+                    <td style={fisGridTd}><input style={{ ...fisHucreInput, color: "#b06a00" }} list="sa-proje-kodlari-sip" value={r.projeKodu || ""} onChange={(e) => satirGuncelle(r.key, "projeKodu", e.target.value)} placeholder={baslik.projeKodu || "seç / yaz"} /></td>
                     <td style={fisGridTd}>
                       <SecimAlani hucre deger={r.stokKodu} ipucu="stok kartı seç"
                         ac={() => setSecici({ tur: "stok", key: r.key })}
@@ -12164,28 +12275,28 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.miktar} onChange={(e) => satirGuncelle(r.key, "miktar", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.birim} onChange={(e) => satirGuncelle(r.key, "birim", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={{ ...fisHucreInput, textAlign: "right", fontFamily: "monospace" }} type="number" step="0.01" value={r.birimFiyat} onChange={(e) => satirGuncelle(r.key, "birimFiyat", e.target.value)} /></td>
-                    <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: "#2dd4bf" }}>{tutarYaz(satirToplam(r), baslik.paraBirimi)}</td>
+                    <td style={{ ...fisGridTd, padding: "6px 8px", textAlign: "right", fontFamily: "monospace", fontSize: 12.5, color: "#1565c0" }}>{tutarYaz(satirToplam(r), baslik.paraBirimi)}</td>
                     <td style={fisGridTd}><input style={fisHucreInput} type="date" value={r.teslimTarihi} onChange={(e) => satirGuncelle(r.key, "teslimTarihi", e.target.value)} /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama || ""} onChange={(e) => satirGuncelle(r.key, "aciklama", e.target.value)} placeholder="açıklama 1" /></td>
                     <td style={fisGridTd}><input style={fisHucreInput} value={r.aciklama2 || ""} onChange={(e) => satirGuncelle(r.key, "aciklama2", e.target.value)} placeholder="açıklama 2" /></td>
                     <td style={{ ...fisGridTd, textAlign: "center", borderRight: "none" }}>
-                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#3a4a50" : "#6b7178", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
+                      <button onClick={() => satirSil(r.key)} disabled={satirlar.length === 1} title="Satırı sil" style={{ background: "none", border: "none", color: satirlar.length === 1 ? "#c2cddc" : "#7b8a9d", cursor: satirlar.length === 1 ? "default" : "pointer", padding: 4, display: "flex" }}><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={12} style={{ padding: 7, background: "#16232a", borderTop: "1px solid #2a4b52" }}>
-                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #3d6169", color: "#8b929a", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
+                  <td colSpan={12} style={{ padding: 7, background: "#f4f7fc", borderTop: "1px solid #d5dfec" }}>
+                    <button onClick={satirEkle} style={{ background: "none", border: "1px dashed #b6c6da", color: "#5a6b80", borderRadius: 3, padding: "5px 11px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}><Plus size={12} /> Satır Ekle</button>
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={12} style={{ padding: "9px 12px", background: "#22404a", borderTop: "1px solid #2a4b52", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
-                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginLeft: 6 }}>{tutarYaz(genelToplam, baslik.paraBirimi)}</span>
+                  <td colSpan={12} style={{ padding: "9px 12px", background: "#e6edf7", borderTop: "1px solid #d5dfec", textAlign: "right", fontSize: 13, fontWeight: 700 }}>
+                    Genel Toplam: <span style={{ fontFamily: "monospace", color: "#1565c0", marginLeft: 6 }}>{tutarYaz(genelToplam, baslik.paraBirimi)}</span>
                     {baslik.paraBirimi !== "TRY" && (
-                      <span style={{ fontWeight: 600, fontSize: 12, color: "#8b929a", marginLeft: 14 }}>
-                        (TL karşılığı: <span style={{ fontFamily: "monospace", color: "#e8a33d" }}>{tutarTL(genelToplam * fisKuru)}</span> · 1 {baslik.paraBirimi} = {sayiTR(fisKuru)} ₺)
+                      <span style={{ fontWeight: 600, fontSize: 12, color: "#5a6b80", marginLeft: 14 }}>
+                        (TL karşılığı: <span style={{ fontFamily: "monospace", color: "#b06a00" }}>{tutarTL(genelToplam * fisKuru)}</span> · 1 {baslik.paraBirimi} = {sayiTR(fisKuru)} ₺)
                       </span>
                     )}
                   </td>
@@ -12217,20 +12328,20 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> {disaAktarEtiket(secililer)}</button>
           </div>
         </div>
-        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Sipariş Fişi Aç
         </button>
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
-          Sıradaki numara: <b style={{ color: "#2dd4bf", fontFamily: "monospace" }}>{yeniNo()}</b> — Talep sayfasındaki "Siparişe Çevir" ile gelen fişler otomatik dolar.
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
+          Sıradaki numara: <b style={{ color: "#1565c0", fontFamily: "monospace" }}>{yeniNo()}</b> — Talep sayfasındaki "Siparişe Çevir" ile gelen fişler otomatik dolar.
         </div>
-        {cariler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Tedarikçi listesi boş — Fason Takip → Firmalar ekranından cari ekleyin.</div>}
-        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        {cariler.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#b06a00" }}>Tedarikçi listesi boş — Fason Takip → Firmalar ekranından cari ekleyin.</div>}
+        {iceMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, tedarikçi, malzeme, talep no ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -12258,12 +12369,12 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Siparişler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Siparişler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
           <table>
             <thead><tr><th style={{ width: 36 }}><input type="checkbox" checked={hepsiSecili} onChange={tumunuSecToggle} /></th><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={11} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={11} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Sipariş bulunamadı.</td></tr>}
               {filtrelenmis.map((s) => {
                 const duzenlendi = (s.guncellemeSayisi || 0) > 0;
                 return (
@@ -12271,15 +12382,15 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                   <td><input type="checkbox" checked={secililer.has(s.id)} onChange={() => birSecToggle(s.id)} /></td>
                   <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                   <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
-                  <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                  <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
                   <AciklamaHucresi kayit={s} alan="aciklama" />
                   <AciklamaHucresi kayit={s} alan="aciklama2" />
                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
                   <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
-                  <td style={{ fontFamily: "monospace", color: "#2dd4bf", whiteSpace: "nowrap" }}>
+                  <td style={{ fontFamily: "monospace", color: "#1565c0", whiteSpace: "nowrap" }}>
                     {tutarYaz(s.genelToplam || 0, s.paraBirimi)}
                     {String(s.paraBirimi || "TRY") !== "TRY" && (
-                      <div style={{ fontSize: 11, color: "#8b929a" }}>{tutarTL(siparisTL(s))}</div>
+                      <div style={{ fontSize: 11, color: "#5a6b80" }}>{tutarTL(siparisTL(s))}</div>
                     )}
                   </td>
                   <td>
@@ -12291,8 +12402,8 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
                     <button onClick={() => setDetay({ tip: "siparis", kayit: s })} title="Fişin detayını görüntüle" style={duzenleButonu}><Search size={12} /> Görüntüle</button>
                     <button onClick={() => fisiYukle(s)} title="Fişi aç / düzenle" style={duzenleButonu}><Pencil size={12} /> Düzelt</button>
                     <button onClick={() => setIzleme({ siparis: s })} title="Talep ve teklif geçmişi" style={duzenleButonu}><History size={12} /> Geçmiş</button>
-                    <button onClick={() => siparisYazdir(s)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Printer size={14} /></button>
-                    <button onClick={() => sil(s)} title="Sil" style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                    <button onClick={() => siparisYazdir(s)} title="Formu yazdır / PDF" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Printer size={14} /></button>
+                    <button onClick={() => sil(s)} title="Sil" style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
                   </td>
                 </tr>
                 );
@@ -12325,7 +12436,7 @@ function AciklamaHucresi({ kayit, alan }) {
   const hepsi = fisAciklamalari(kayit, alan);
   const metin = aciklamaOzeti(kayit, alan);
   return (
-    <td style={{ fontSize: 12.5, color: hepsi.length ? "#c7cbd1" : "#4a5560", maxWidth: 190 }} title={hepsi.join(" · ")}>
+    <td style={{ fontSize: 12.5, color: hepsi.length ? "#31465f" : "#aab6c6", maxWidth: 190 }} title={hepsi.join(" · ")}>
       {metin}
     </td>
   );
@@ -12339,7 +12450,7 @@ function EvrakNoHucresi({ evrakNo, duzenlendi, guncellemeSayisi, guncelleyen, ac
         role="button" tabIndex={0} title="Fişin detayını aç"
         onClick={ac}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ac(); } }}
-        style={{ color: duzenlendi ? "#e8a33d" : "#2dd4bf", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}
+        style={{ color: duzenlendi ? "#b06a00" : "#1565c0", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}
       >
         {evrakNo}
       </span>
@@ -12361,7 +12472,7 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
       >
         {detay && (
           <>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#16232a", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))", gap: "0 24px" }}>
+            <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "12px 14px", marginBottom: 12, background: "#f4f7fc", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))", gap: "0 24px" }}>
               {(detay.tip === "talep"
                 ? [["Evrak No", detay.kayit.evrakNo], ["Tarih", detay.kayit.tarih], ["Belge No", detay.kayit.belgeNo],
                    ["Proje Kodu", detay.kayit.proje], ["Depo", detay.kayit.depo], ["Talep Eden", detay.kayit.talepEdenPersonel],
@@ -12374,11 +12485,11 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
               ).map(([et, dg]) => (
                 <div key={et} style={fisSatir}>
                   <span style={{ ...fisEtiket, width: 118 }}>{et}</span>
-                  <span style={{ fontSize: 12.5, color: "#e7e5e0" }}>{dg || "—"}</span>
+                  <span style={{ fontSize: 12.5, color: "#152a45" }}>{dg || "—"}</span>
                 </div>
               ))}
             </div>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #d5dfec", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead><tr>
@@ -12390,7 +12501,7 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
                   <tbody>
                     {(detay.kayit.satirlar || []).map((r, i) => (
                       <tr key={i}>
-                        <td style={{ ...fisGridTd, textAlign: "center", padding: "6px 4px", fontSize: 11.5, color: "#6b7178", background: "#16232a" }}>{i + 1}</td>
+                        <td style={{ ...fisGridTd, textAlign: "center", padding: "6px 4px", fontSize: 11.5, color: "#7b8a9d", background: "#f4f7fc" }}>{i + 1}</td>
                         {detay.tip === "talep" ? (
                           <>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.cinsi}</td>
@@ -12411,7 +12522,7 @@ function FisDetayPenceresi({ detay, kapat, satinalmaSiparisler = [] }) {
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{r.miktar}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5 }}>{r.birim}</td>
                             <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace" }}>{paraTR(r.birimFiyat)}</td>
-                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace", color: "#2dd4bf", borderRight: "none" }}>{paraTR(r.satirTutar || 0)}</td>
+                            <td style={{ ...fisGridTd, padding: "6px 8px", fontSize: 12.5, textAlign: "right", fontFamily: "monospace", color: "#1565c0", borderRight: "none" }}>{paraTR(r.satirTutar || 0)}</td>
                           </>
                         )}
                       </tr>
@@ -12576,8 +12687,8 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
             style={{
               flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               padding: "12px 16px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13.5,
-              background: altTab === k ? "#2dd4bf" : "#1b333c", color: altTab === k ? "#142a30" : "#c7cbd1",
-              border: `1px solid ${altTab === k ? "#2dd4bf" : "#2a4b52"}`,
+              background: altTab === k ? "#1565c0" : "#ffffff", color: altTab === k ? "#f2f6fb" : "#31465f",
+              border: `1px solid ${altTab === k ? "#1565c0" : "#d5dfec"}`,
             }}>
             {ad} <span style={{ opacity: 0.75 }}>({sayi})</span>
           </button>
@@ -12602,7 +12713,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Evrak no, malzeme, personel ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div><label className="field-label">Başlangıç</label><input className="input" type="date" value={f.baslangic} onChange={setF2("baslangic")} /></div>
@@ -12663,7 +12774,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
 
       {altTab === "siparis" && tedarikciOzet.length > 0 && (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Tedarikçi Bazlı Özet</div>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Tedarikçi Bazlı Özet</div>
           <div style={{ overflowX: "auto" }}>
             <table>
               <thead><tr><th>Tedarikçi</th><th>Sipariş</th><th>Kalem</th><th>Tutar</th></tr></thead>
@@ -12673,7 +12784,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                     <td>{o.tedarikci}</td>
                     <td style={{ fontFamily: "monospace" }}>{o.adet}</td>
                     <td style={{ fontFamily: "monospace" }}>{o.kalem}</td>
-                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{paraTR(o.tutar)}</td>
+                    <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{paraTR(o.tutar)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -12683,7 +12794,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>
           {altTab === "talep" ? `Talepler (${talepler.length})` : `Siparişler (${siparisler.length})`}
         </div>
         <div style={{ overflowX: "auto", maxHeight: 620, overflowY: "auto" }}>
@@ -12692,7 +12803,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
               <>
                 <thead><tr><th>Evrak No</th><th>Tarih</th><th>Proje</th><th>Depo</th><th>Talep Eden</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Kalem</th><th>Durum</th><th>Sipariş No</th><th></th></tr></thead>
                 <tbody>
-                  {talepler.length === 0 && <tr><td colSpan={11} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+                  {talepler.length === 0 && <tr><td colSpan={11} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
                   {talepler.map((t) => {
                     const duzenlendi = (t.guncellemeSayisi || 0) > 0;
                     return (
@@ -12705,7 +12816,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
                         <AciklamaHucresi kayit={t} alan="aciklama" />
                         <AciklamaHucresi kayit={t} alan="aciklama2" />
                         <td style={{ fontFamily: "monospace" }}>{(t.satirlar || []).length}</td>
-                        <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#8b929a", borderColor: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#2a4b52" }}>{TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "—"}</span></td>
+                        <td><span className="pill" style={{ background: "transparent", color: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#5a6b80", borderColor: TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.renk || "#d5dfec" }}>{TALEP_DURUM[talepEtkinDurum(t, satinalmaSiparisler)]?.label || "—"}</span></td>
                         <td style={{ fontFamily: "monospace", fontSize: 12 }}>{talepSiparisNo(t, satinalmaSiparisler) || "—"}</td>
                         <td><button onClick={() => setDetay({ tip: "talep", kayit: t })} style={duzenleButonu}><Search size={12} /> Görüntüle</button></td>
                       </tr>
@@ -12717,23 +12828,23 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
               <>
                 <thead><tr><th>Evrak No</th><th>Tarih</th><th>Tedarikçi</th><th>Açıklama 1</th><th>Açıklama 2</th><th>Talep No</th><th>Kalem</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
                 <tbody>
-                  {siparisler.length === 0 && <tr><td colSpan={10} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+                  {siparisler.length === 0 && <tr><td colSpan={10} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
                   {siparisler.map((s) => {
                     const duzenlendi = (s.guncellemeSayisi || 0) > 0;
                     return (
                       <tr key={s.id} style={duzenlendi ? duzenlenmisSatir : undefined}>
                         <EvrakNoHucresi evrakNo={s.evrakNo} duzenlendi={duzenlendi} guncellemeSayisi={s.guncellemeSayisi} guncelleyen={s.guncelleyen} ac={() => setDetay({ tip: "siparis", kayit: s })} />
                         <td style={{ fontFamily: "monospace" }}>{s.tarih}</td>
-                        <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#2dd4bf", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
+                        <td style={{ fontSize: 12.5 }}>{s.tedarikciKod && <span style={{ fontFamily: "monospace", color: "#1565c0", marginRight: 6 }}>{s.tedarikciKod}</span>}{s.tedarikci || "—"}</td>
                         <AciklamaHucresi kayit={s} alan="aciklama" />
                         <AciklamaHucresi kayit={s} alan="aciklama2" />
                         <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.talepEvrakNo || "—"}</td>
                         <td style={{ fontFamily: "monospace" }}>{(s.satirlar || []).length}</td>
-                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf", whiteSpace: "nowrap" }}>
+                        <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0", whiteSpace: "nowrap" }}>
                           {tutarYaz(s.genelToplam || 0, s.paraBirimi)}
-                          {String(s.paraBirimi || "TRY") !== "TRY" && <div style={{ fontSize: 11, fontWeight: 400, color: "#8b929a" }}>{tutarTL(siparisTL(s))}</div>}
+                          {String(s.paraBirimi || "TRY") !== "TRY" && <div style={{ fontSize: 11, fontWeight: 400, color: "#5a6b80" }}>{tutarTL(siparisTL(s))}</div>}
                         </td>
-                        <td><span className="pill" style={{ background: "transparent", color: SIPARIS_DURUM[s.durum]?.renk || "#8b929a", borderColor: SIPARIS_DURUM[s.durum]?.renk || "#2a4b52" }}>{SIPARIS_DURUM[s.durum]?.label || "—"}</span></td>
+                        <td><span className="pill" style={{ background: "transparent", color: SIPARIS_DURUM[s.durum]?.renk || "#5a6b80", borderColor: SIPARIS_DURUM[s.durum]?.renk || "#d5dfec" }}>{SIPARIS_DURUM[s.durum]?.label || "—"}</span></td>
                         <td><button onClick={() => setDetay({ tip: "siparis", kayit: s })} style={duzenleButonu}><Search size={12} /> Görüntüle</button></td>
                       </tr>
                     );
@@ -12820,45 +12931,45 @@ function YardimEkrani({ git }) {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div className="card" style={{ padding: 24, background: "linear-gradient(135deg, #1b333c 0%, #16232a 100%)" }}>
+      <div className="card" style={{ padding: 24, background: "linear-gradient(135deg, #ffffff 0%, #f4f7fc 100%)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <HelpCircle size={20} color="#2dd4bf" />
+          <HelpCircle size={20} color="#1565c0" />
           <div style={{ fontSize: 18, fontWeight: 800 }}>Yardım</div>
         </div>
-        <div style={{ fontSize: 13, color: "#8b929a", lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "#5a6b80", lineHeight: 1.6 }}>
           SAKLAZ · ÜRETİM ERP'yi ilk kez kullanıyorsan aşağıdan modül modül ne işe yaradığını okuyabilirsin. Bir konuyu ara ya da başlığa tıklayıp aç, "Bu Ekrana Git" ile doğrudan o sayfaya geç.
         </div>
       </div>
 
       <div className="card" style={{ padding: "12px 16px" }}>
         <div style={{ position: "relative" }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
           <input className="input" style={{ paddingLeft: 30 }} placeholder="Ne yapmak istiyorsun? Örn: makine ekleme, çıkış yapma, rapor…" value={arama} onChange={(e) => setArama(e.target.value)} />
         </div>
       </div>
 
       {filtrelenmis.length === 0 && (
-        <div className="card" style={{ padding: 24, textAlign: "center", color: "#6b7178", fontSize: 13 }}>Aramanla eşleşen bir konu bulunamadı.</div>
+        <div className="card" style={{ padding: 24, textAlign: "center", color: "#7b8a9d", fontSize: 13 }}>Aramanla eşleşen bir konu bulunamadı.</div>
       )}
 
       {filtrelenmis.map((g) => (
         <div key={g.grup} className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14, color: "#2dd4bf" }}>{g.grup}</div>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14, color: "#1565c0" }}>{g.grup}</div>
           {g.ogeler.map((o, i) => {
             const key = g.grup + i;
             const acik = acikGrup === key;
             return (
-              <div key={key} style={{ borderBottom: "1px solid #223b42" }}>
+              <div key={key} style={{ borderBottom: "1px solid #eef3f9" }}>
                 <button
                   onClick={() => setAcikGrup(acik ? null : key)}
                   style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
                 >
                   <span style={{ fontSize: 13.5, fontWeight: 500 }}>{o.baslik}</span>
-                  {acik ? <ChevronDown size={16} color="#6b7178" /> : <ChevronRight size={16} color="#6b7178" />}
+                  {acik ? <ChevronDown size={16} color="#7b8a9d" /> : <ChevronRight size={16} color="#7b8a9d" />}
                 </button>
                 {acik && (
                   <div style={{ padding: "0 20px 16px" }}>
-                    <div style={{ fontSize: 13, color: "#8b929a", lineHeight: 1.7, marginBottom: 10 }}>{o.detay}</div>
+                    <div style={{ fontSize: 13, color: "#5a6b80", lineHeight: 1.7, marginBottom: 10 }}>{o.detay}</div>
                     <button onClick={() => git(g.tab)} className="btn-ghost" style={{ fontSize: 12 }}>Bu Ekrana Git →</button>
                   </div>
                 )}
@@ -12868,7 +12979,7 @@ function YardimEkrani({ git }) {
         </div>
       ))}
 
-      <div className="card" style={{ padding: 18, fontSize: 12, color: "#6b7178" }}>
+      <div className="card" style={{ padding: 18, fontSize: 12, color: "#7b8a9d" }}>
         Aradığını bulamadın mı ya da bir sorun mu var? Programı geliştiren ekibe (Claude ile) ulaşıp anlat, hemen düzeltilir ya da eklenir.
       </div>
     </div>
@@ -13025,10 +13136,10 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Yeni Kullanıcı Oluştur (E-posta / Şifre)</div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>
           Kişinin kendi e-posta ve şifresiyle giriş yapabilmesi için hesap açar. Şifreyi kendine ya da kişiye iletmen gerekir.
         </div>
-        <button onClick={() => { setForm({ ad: "", email: "", sifre: "" }); setMsg(""); setSifreliAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={() => { setForm({ ad: "", email: "", sifre: "" }); setMsg(""); setSifreliAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <UserPlus size={16} /> Yeni Kullanıcı Kartı Aç
         </button>
         <EvrakPenceresi
@@ -13042,23 +13153,23 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Ad Soyad</span><input style={fisInput} placeholder="Örn: Ahmet Yılmaz (opsiyonel)" value={form.ad} onChange={set("ad")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>E-posta</span><input style={fisInput} type="email" placeholder="ornek@firma.com" value={form.email} onChange={set("email")} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Şifre</span><input style={fisInput} type="text" placeholder="En az 6 karakter" value={form.sifre} onChange={set("sifre")} /></div>
           </div>
           {msg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#c62828" : "#1565c0", background: msgTip === "hata" ? "#fdecea" : "#e3f0ff", border: `1px solid ${msgTip === "hata" ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
           )}
         </EvrakPenceresi>
       </div>
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Google ile Giriş İzni Ver</div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>
           Şifre oluşturmaz, sadece bu e-postanın kendi Google hesabıyla giriş yapmasına izin verir. Kişinin kullandığı Google hesabının e-postasını gir.
         </div>
-        <button onClick={() => { setGoogleForm({ ad: "", email: "" }); setMsg(""); setGoogleAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={() => { setGoogleForm({ ad: "", email: "" }); setMsg(""); setGoogleAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Chrome size={16} /> Google İzin Kartı Aç
         </button>
         <EvrakPenceresi
@@ -13072,20 +13183,20 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={fisSatir}><span style={fisEtiket}>Ad Soyad</span><input style={fisInput} placeholder="Örn: Ahmet Yılmaz (opsiyonel)" value={googleForm.ad} onChange={setG("ad")} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Google E-postası</span><input style={fisInput} type="email" placeholder="ornek@gmail.com" value={googleForm.email} onChange={setG("email")} /></div>
           </div>
           {msg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#c62828" : "#1565c0", background: msgTip === "hata" ? "#fdecea" : "#e3f0ff", border: `1px solid ${msgTip === "hata" ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
           )}
         </EvrakPenceresi>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Oluşturulan Kullanıcılar ({kullanicilar.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Oluşturulan Kullanıcılar ({kullanicilar.length})</div>
         {kullanicilar.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>Henüz kullanıcı oluşturulmadı.</div>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>Henüz kullanıcı oluşturulmadı.</div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table>
@@ -13105,15 +13216,15 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
                         : <span className="pill">Şifreli</span>}
                     </td>
                     <td>
-                      {oSahip ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Sahip — Tam Yetki</span>
-                        : oYonetici ? <span className="pill" style={{ background: "#113330", color: "#2dd4bf", borderColor: "#1f4d47" }}>Yönetici</span>
-                        : sayi === 0 ? <span className="pill" style={{ background: "#2a2320", color: "#8b929a", borderColor: "#3d3833" }}>Yetki yok</span>
-                        : <span className="pill" style={{ background: "#332a16", color: "#e8a33d", borderColor: "#6b5220" }}>{sayi} / {TUM_EKRANLAR.length} ekran</span>}
+                      {oSahip ? <span className="pill" style={{ background: "#e3f0ff", color: "#1565c0", borderColor: "#bcd8f7" }}>Sahip — Tam Yetki</span>
+                        : oYonetici ? <span className="pill" style={{ background: "#e3f0ff", color: "#1565c0", borderColor: "#bcd8f7" }}>Yönetici</span>
+                        : sayi === 0 ? <span className="pill" style={{ background: "#2a2320", color: "#5a6b80", borderColor: "#3d3833" }}>Yetki yok</span>
+                        : <span className="pill" style={{ background: "#fff6e2", color: "#b06a00", borderColor: "#e6cd93" }}>{sayi} / {TUM_EKRANLAR.length} ekran</span>}
                     </td>
                     <td style={{ fontFamily: "monospace" }}>{k.eklenmeTarihi ? new Date(k.eklenmeTarihi).toLocaleDateString("tr-TR") : "—"}</td>
                     <td>
                       {oSahip
-                        ? <span style={{ fontSize: 11.5, color: "#6b7178" }}>Değiştirilemez</span>
+                        ? <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>Değiştirilemez</span>
                         : <button onClick={() => yetkiAc(k)} className="btn-ghost" style={{ padding: "5px 10px", fontSize: 11.5 }}><Lock size={12} /> Yetkiler</button>}
                     </td>
                     <td>
@@ -13123,7 +13234,7 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
                         </button>
                       )}
                     </td>
-                    <td>{!oSahip && <button onClick={() => listedenKaldir(k.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>}</td>
+                    <td>{!oSahip && <button onClick={() => listedenKaldir(k.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>}</td>
                   </tr>
                   );
                 })}
@@ -13144,33 +13255,33 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
             </>
           }
         >
-          <div style={{ fontSize: 12.5, color: "#8b929a", marginBottom: 14, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12.5, color: "#5a6b80", marginBottom: 14, lineHeight: 1.6 }}>
             Bütün menüler herkese görünür; burada kapattığın bölümler o kişide soluk ve tıklanamaz olur.
-            <b style={{ color: "#e8a33d" }}> Görüntüle</b> = açar, okur, rapor alır, yazdırır ama hiçbir şey kaydedemez/silemez.
-            <b style={{ color: "#2dd4bf" }}> Düzenle</b> = her şeyi yapabilir. Ana Sayfa ve Yardım herkese açıktır.
+            <b style={{ color: "#b06a00" }}> Görüntüle</b> = açar, okur, rapor alır, yazdırır ama hiçbir şey kaydedemez/silemez.
+            <b style={{ color: "#1565c0" }}> Düzenle</b> = her şeyi yapabilir. Ana Sayfa ve Yardım herkese açıktır.
           </div>
 
           {benSahipMiyim && (
-            <label style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #2a4b52", borderRadius: 6, padding: "11px 14px", background: "#16232a", marginBottom: 14, cursor: "pointer" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid #d5dfec", borderRadius: 6, padding: "11px 14px", background: "#f4f7fc", marginBottom: 14, cursor: "pointer" }}>
               <input type="checkbox" checked={yetkiYonetici} onChange={(e) => setYetkiYonetici(e.target.checked)} />
               <span style={{ fontSize: 13, fontWeight: 700 }}>Yönetici yap</span>
-              <span style={{ fontSize: 11.5, color: "#6b7178" }}>— tüm ekranlarda tam yetki alır ve başka kullanıcılara yetki dağıtabilir.</span>
+              <span style={{ fontSize: 11.5, color: "#7b8a9d" }}>— tüm ekranlarda tam yetki alır ve başka kullanıcılara yetki dağıtabilir.</span>
             </label>
           )}
 
           {yetkiYonetici ? (
-            <div style={{ border: "1px solid #1f4d47", background: "#113330", borderRadius: 6, padding: "16px 18px", color: "#2dd4bf", fontSize: 13, fontWeight: 600 }}>
+            <div style={{ border: "1px solid #bcd8f7", background: "#e3f0ff", borderRadius: 6, padding: "16px 18px", color: "#1565c0", fontSize: 13, fontWeight: 600 }}>
               Bu kişi yönetici — tüm bölümlerde otomatik olarak tam yetkilidir, tek tek seçim gerekmez.
             </div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {YETKI_AGACI.map((grup) => (
-                <div key={grup.id} style={{ border: "1px solid #2a4b52", borderRadius: 6, background: "#16232a", overflow: "hidden" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderBottom: "1px solid #2a4b52" }}>
+                <div key={grup.id} style={{ border: "1px solid #d5dfec", borderRadius: 6, background: "#f4f7fc", overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", borderBottom: "1px solid #d5dfec" }}>
                     <span style={{ flex: 1, fontWeight: 700, fontSize: 12.5 }}>{grup.label}</span>
                     {YETKI_SEVIYELERI.map((sv) => (
                       <button key={sv.id} onClick={() => grubaUygula(grup, sv.id)}
-                        style={{ background: "transparent", border: "1px solid #3d6169", color: "#8b929a", borderRadius: 4, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}>
+                        style={{ background: "transparent", border: "1px solid #b6c6da", color: "#5a6b80", borderRadius: 4, padding: "3px 8px", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}>
                         Tümü: {sv.label}
                       </button>
                     ))}
@@ -13178,14 +13289,14 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
                   {grup.children.map((c) => {
                     const secili = yetkiTaslak[c.id] === "duzenle" || yetkiTaslak[c.id] === "goruntule" ? yetkiTaslak[c.id] : "yok";
                     return (
-                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: "1px solid #1f3b42" }}>
-                        <span style={{ flex: 1, fontSize: 13, color: "#c7cbd1" }}>{c.label}</span>
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderBottom: "1px solid #eef3f9" }}>
+                        <span style={{ flex: 1, fontSize: 13, color: "#31465f" }}>{c.label}</span>
                         {YETKI_SEVIYELERI.map((sv) => (
                           <button key={sv.id} onClick={() => yetkiSec(c.id, sv.id)}
                             style={{
                               background: secili === sv.id ? sv.renk : "transparent",
-                              color: secili === sv.id ? "#142a30" : "#8b929a",
-                              border: `1px solid ${secili === sv.id ? sv.renk : "#3d6169"}`,
+                              color: secili === sv.id ? "#f2f6fb" : "#5a6b80",
+                              border: `1px solid ${secili === sv.id ? sv.renk : "#b6c6da"}`,
                               borderRadius: 4, padding: "4px 12px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", minWidth: 84,
                             }}>
                             {sv.label}
@@ -13199,11 +13310,11 @@ function KullaniciYonetimi({ mevcutKullanici, yonetici }) {
             </div>
           )}
           {yetkiMsg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: yetkiMsg.startsWith("Kaydedilemedi") ? "#e07a6b" : "#2dd4bf", background: yetkiMsg.startsWith("Kaydedilemedi") ? "#3a1f1f" : "#113330", border: `1px solid ${yetkiMsg.startsWith("Kaydedilemedi") ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{yetkiMsg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: yetkiMsg.startsWith("Kaydedilemedi") ? "#c62828" : "#1565c0", background: yetkiMsg.startsWith("Kaydedilemedi") ? "#fdecea" : "#e3f0ff", border: `1px solid ${yetkiMsg.startsWith("Kaydedilemedi") ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{yetkiMsg}</div>
           )}
         </EvrakPenceresi>
 
-        <div style={{ padding: "12px 20px", fontSize: 11.5, color: "#6b7178", borderTop: "1px solid #2a4b52" }}>
+        <div style={{ padding: "12px 20px", fontSize: 11.5, color: "#7b8a9d", borderTop: "1px solid #d5dfec" }}>
           Not: "Sil" butonu kişiyi sadece bu listeden kaldırır, giriş yapma hakkını iptal etmez. Şifreli hesap girişini tamamen kapatmak için Firebase Console → Authentication → Users sekmesinden o hesabı devre dışı bırakman gerekir; Google izinlerinde listeden silmek girişi anında keser.
         </div>
       </div>
@@ -13407,8 +13518,8 @@ function DepoStokKart({ depoStok, kullanici }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excel'e Aktar</button>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Bu ekran sadece yeni stok kartı (kimlik) tanımlamak içindir. Mevcut bir stoğa miktar eklemek/düşmek için "Depo Giriş" / "Depo Çıkış" ekranlarını kullan.</div>
-        <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>Bu ekran sadece yeni stok kartı (kimlik) tanımlamak içindir. Mevcut bir stoğa miktar eklemek/düşmek için "Depo Giriş" / "Depo Çıkış" ekranlarını kullan.</div>
+        <button onClick={kartiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni Stok Kartı Aç
         </button>
         <EvrakPenceresi
@@ -13422,7 +13533,7 @@ function DepoStokKart({ depoStok, kullanici }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12 }}>
             <div style={fisSatir}><span style={fisEtiket}>Stok Kodu</span><input style={fisInput} placeholder="Örn: BTK-DDK-0001" value={form.stokKodu} onChange={set("stokKodu")} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Stok İsmi</span><input style={fisInput} placeholder="Malzeme / parça adı" value={form.stokAdi} onChange={set("stokAdi")} /></div>
             <div style={fisSatir}>
@@ -13434,7 +13545,7 @@ function DepoStokKart({ depoStok, kullanici }) {
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Başlangıç Miktarı</span><input style={fisInput} type="number" min="0" step="0.01" placeholder="0" value={form.miktar} onChange={set("miktar")} /></div>
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Grup Bilgileri</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", gap: "0 26px" }}>
               <div>
@@ -13463,13 +13574,13 @@ function DepoStokKart({ depoStok, kullanici }) {
             </div>
           </div>
           {msg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#c62828" : "#1565c0", background: msgTip === "hata" ? "#fdecea" : "#e3f0ff", border: `1px solid ${msgTip === "hata" ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
           )}
         </EvrakPenceresi>
         {iceMsg && (
-          <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
+          <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>
         )}
-        <div style={{ fontSize: 12, color: "#6b7178", marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
           Excel'den içe aktarırken başlık satırındaki isimlere bakılır (sütun sırası veya araya başka sütun eklenmiş olması önemli değil): Stok Kodu, Stok İsmi, Birim, Ana Grup Kodu, Ana Grup İsmi, Alt Grup Kodu, Alt Grup İsmi, Miktar (opsiyonel). Aynı stok kodu zaten varsa satır atlanır (mükerrer eklenmez).
         </div>
       </div>
@@ -13482,20 +13593,20 @@ function DepoStokKart({ depoStok, kullanici }) {
 
       <div className="card" style={{ padding: 20, borderColor: "#5a4a1f" }}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Toplu Miktar Ayarla (Tüm Kalemler)</div>
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 12 }}>Listedeki <b>tüm {depoStok.length} stok kartının</b> miktarını girdiğin sayıya eşitler (mevcut değerin üzerine eklemez, doğrudan değiştirir). Geri alınamaz.</div>
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 12 }}>Listedeki <b>tüm {depoStok.length} stok kartının</b> miktarını girdiğin sayıya eşitler (mevcut değerin üzerine eklemez, doğrudan değiştirir). Geri alınamaz.</div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <input className="input" style={{ maxWidth: 140 }} type="number" step="0.01" placeholder="Örn: 10" value={topluAyarDeger} onChange={(e) => setTopluAyarDeger(e.target.value)} />
-          <button onClick={topluMiktarAyarla} disabled={topluAyarCalisiyor} style={{ background: "#e8a33d", color: "#142a30", border: "none", borderRadius: 7, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          <button onClick={topluMiktarAyarla} disabled={topluAyarCalisiyor} style={{ background: "#b06a00", color: "#ffffff", border: "none", borderRadius: 7, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
             {topluAyarCalisiyor ? "Uygulanıyor…" : "Tüm Kalemlere Uygula"}
           </button>
         </div>
-        {topluAyarMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#2dd4bf" }}>{topluAyarMsg}</div>}
+        {topluAyarMsg && <div style={{ marginTop: 10, fontSize: 12.5, color: "#1565c0" }}>{topluAyarMsg}</div>}
       </div>
 
       <div className="card" style={{ padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: "2 1 240px" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu, ismi veya alt grup ara…" value={arama} onChange={(e) => setArama(e.target.value)} />
           </div>
           <select className="input" style={{ flex: "1 1 180px" }} value={altGrupFiltre} onChange={(e) => setAltGrupFiltre(e.target.value)}>
@@ -13506,15 +13617,15 @@ function DepoStokKart({ depoStok, kullanici }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14 }}>Stok Listesi ({filtrelenmis.length.toLocaleString("tr-TR")})</div>
-            <div style={{ fontSize: 11.5, color: "#6b7178", marginTop: 2 }}>Miktar hücresine tıklayıp doğrudan değiştirebilirsin, birden fazla satırı düzenleyip tek seferde kaydet.</div>
+            <div style={{ fontSize: 11.5, color: "#7b8a9d", marginTop: 2 }}>Miktar hücresine tıklayıp doğrudan değiştirebilirsin, birden fazla satırı düzenleyip tek seferde kaydet.</div>
           </div>
           {duzeltmeSayisi > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {duzeltmeMsg && <span style={{ fontSize: 12, color: "#2dd4bf" }}>{duzeltmeMsg}</span>}
-              <button onClick={duzeltmeleriKaydet} disabled={duzeltmeKaydediliyor} style={{ background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+              {duzeltmeMsg && <span style={{ fontSize: 12, color: "#1565c0" }}>{duzeltmeMsg}</span>}
+              <button onClick={duzeltmeleriKaydet} disabled={duzeltmeKaydediliyor} style={{ background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 7, padding: "8px 14px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
                 {duzeltmeKaydediliyor ? "Kaydediliyor…" : `Değişiklikleri Kaydet (${duzeltmeSayisi})`}
               </button>
               <button onClick={() => setDuzeltmeler({})} className="btn-ghost" style={{ padding: "8px 12px", fontSize: 12.5 }}>Vazgeç</button>
@@ -13525,11 +13636,11 @@ function DepoStokKart({ depoStok, kullanici }) {
           <table>
             <thead><tr><th>Stok Kodu</th><th>Stok İsmi</th><th>Ana Grup</th><th>Alt Grup</th><th>Miktar</th><th>Birim</th><th></th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Henüz stok kartı yok.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={7} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Henüz stok kartı yok.</td></tr>}
               {filtrelenmis.slice(0, 500).map((s) => {
                 const duzenlendi = duzeltmeler[s.id] !== undefined;
                 return (
-                  <tr key={s.id} style={duzenlendi ? { background: "#16232a" } : undefined}>
+                  <tr key={s.id} style={duzenlendi ? { background: "#f4f7fc" } : undefined}>
                     <td style={{ fontFamily: "monospace" }}>{s.stokKodu}</td>
                     <td>{s.stokAdi}</td>
                     <td style={{ fontSize: 12 }}>{s.anaGrupAdi || "—"}</td>
@@ -13537,19 +13648,19 @@ function DepoStokKart({ depoStok, kullanici }) {
                     <td>
                       <input
                         className="input" type="number" step="0.01"
-                        style={{ padding: "5px 8px", fontSize: 12.5, width: 90, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#e8a33d" : (s.miktar <= 0 ? "#e07a6b" : "#2dd4bf"), borderColor: duzenlendi ? "#e8a33d" : undefined }}
+                        style={{ padding: "5px 8px", fontSize: 12.5, width: 90, fontFamily: "monospace", fontWeight: 700, color: duzenlendi ? "#b06a00" : (s.miktar <= 0 ? "#c62828" : "#1565c0"), borderColor: duzenlendi ? "#b06a00" : undefined }}
                         value={duzeltmeler[s.id] !== undefined ? duzeltmeler[s.id] : s.miktar}
                         onChange={(e) => duzeltmeDegistir(s.id, e.target.value)}
                       />
                     </td>
                     <td>{s.birim || "Adet"}</td>
-                    <td><button onClick={() => sil(s.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
+                    <td><button onClick={() => sil(s.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button></td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {filtrelenmis.length > 500 && <div style={{ padding: 12, textAlign: "center", fontSize: 12, color: "#6b7178" }}>İlk 500 kalem gösteriliyor — daha dar bir aralık görmek için arama/filtre kullan.</div>}
+          {filtrelenmis.length > 500 && <div style={{ padding: 12, textAlign: "center", fontSize: 12, color: "#7b8a9d" }}>İlk 500 kalem gösteriliyor — daha dar bir aralık görmek için arama/filtre kullan.</div>}
         </div>
       </div>
     </div>
@@ -13703,18 +13814,18 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
-        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Var olan bir stok kartına gelen malzemeyi/ürünü ekle.</div>
+        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>Var olan bir stok kartına gelen malzemeyi/ürünü ekle.</div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button onClick={fisiAc} disabled={depoStok.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: depoStok.length === 0 ? "default" : "pointer", opacity: depoStok.length === 0 ? 0.5 : 1 }}>
+          <button onClick={fisiAc} disabled={depoStok.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: depoStok.length === 0 ? "default" : "pointer", opacity: depoStok.length === 0 ? 0.5 : 1 }}>
             <Plus size={16} /> Yeni Giriş Fişi Aç
           </button>
           <button onClick={topluAc} disabled={depoStok.length === 0} className="btn-ghost" style={{ padding: "11px 18px" }}>
             <Boxes size={15} /> Toplu Giriş Fişi Aç
           </button>
         </div>
-        {depoStok.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Stok Kartı Oluştur" ekranından bir stok kartı ekle.</div>}
+        {depoStok.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#b06a00" }}>Önce "Stok Kartı Oluştur" ekranından bir stok kartı ekle.</div>}
 
         {/* ---- Tekli giriş fişi penceresi ---- */}
         <EvrakPenceresi
@@ -13728,7 +13839,7 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12 }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Stok Seçimi</div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Alt Grup</span>
@@ -13743,46 +13854,46 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
             </div>
 
             {(arama.trim() || altGrupFiltre) && (
-              <div style={{ marginTop: 12, border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
-                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
+              <div style={{ marginTop: 12, border: "1px solid #d5dfec", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
+                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#7b8a9d", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
                 {filtrelenmisStok.slice(0, 50).map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setStokId(s.id)}
                     style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
-                      padding: "9px 13px", background: stokId === s.id ? "#113330" : "transparent",
-                      border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
+                      padding: "9px 13px", background: stokId === s.id ? "#e3f0ff" : "transparent",
+                      border: "none", borderBottom: "1px solid #eef3f9", cursor: "pointer", textAlign: "left",
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
-                      <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
+                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#1565c0" : "#152a45", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
+                      <div style={{ fontSize: 11, color: "#7b8a9d", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
                     </div>
-                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#c62828" : "#5a6b80", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
                   </button>
                 ))}
-                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
+                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#7b8a9d", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
               </div>
             )}
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Giriş Bilgileri</div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Stok Adı</span>
-              <input style={{ ...fisInput, background: "#16232a", color: secilenStok ? "#2dd4bf" : "#6b7178" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
+              <input style={{ ...fisInput, background: "#f4f7fc", color: secilenStok ? "#1565c0" : "#7b8a9d" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Mevcut Miktar</span>
-              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
+              <input style={{ ...fisInput, background: "#f4f7fc", color: "#5a6b80", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
             </div>
             <div style={fisSatir}><span style={fisEtiket}>Giriş Miktarı</span><input style={fisInput} type="number" min="0" step="0.01" value={miktar} onChange={(e) => setMiktar(e.target.value)} /></div>
             <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} /></div>
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Açıklama</span><input style={fisInput} placeholder="Opsiyonel" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
           </div>
           {msg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#c62828" : "#1565c0", background: msgTip === "hata" ? "#fdecea" : "#e3f0ff", border: `1px solid ${msgTip === "hata" ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
           )}
         </EvrakPenceresi>
 
@@ -13792,14 +13903,14 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
           baslik="Toplu Depo Giriş Fişi" ikon={Boxes} genislik={980}
           butonlar={
             <>
-              {topluMsg && <span style={{ fontSize: 12.5, color: "#e8a33d", alignSelf: "center", marginRight: "auto" }}>{topluMsg}</span>}
+              {topluMsg && <span style={{ fontSize: 12.5, color: "#b06a00", alignSelf: "center", marginRight: "auto" }}>{topluMsg}</span>}
               <button style={fisAltBtn} onClick={() => setTopluMiktarlar({})}><RefreshCw size={14} /> Temizle</button>
               <button style={fisAltBtn} onClick={() => setTopluAcik(false)}><X size={14} /> Kapat</button>
               <button style={fisAnaBtn} onClick={topluKaydet} disabled={topluKaydediliyor}><Save size={14} /> {topluKaydediliyor ? "Kaydediliyor…" : "Toplu Kaydet"}</button>
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "0 26px" }}>
             <div>
               <div style={fisSatir}>
                 <span style={fisEtiket}>Alt Grup</span>
@@ -13817,22 +13928,22 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
               <div style={fisSatir}><span style={fisEtiket}>Tarih</span><input style={fisInput} type="date" value={topluTarih} onChange={(e) => setTopluTarih(e.target.value)} /></div>
               <div style={{ ...fisSatir, marginBottom: 0 }}>
                 <span style={fisEtiket}>Dolu Satır</span>
-                <input style={{ ...fisInput, background: "#16232a", color: "#2dd4bf", fontFamily: "monospace" }} value={Object.values(topluMiktarlar).filter((v) => Number(v) > 0).length} readOnly />
+                <input style={{ ...fisInput, background: "#f4f7fc", color: "#1565c0", fontFamily: "monospace" }} value={Object.values(topluMiktarlar).filter((v) => Number(v) > 0).length} readOnly />
               </div>
             </div>
           </div>
           {(arama.trim() || altGrupFiltre) ? (
           <>
-            <div style={{ border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 340, overflowY: "auto" }}>
+            <div style={{ border: "1px solid #d5dfec", borderRadius: 4, maxHeight: 340, overflowY: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr><th style={fisGridTh}>Stok Adı</th><th style={fisGridTh}>Stok Kodu</th><th style={fisGridTh}>Mevcut</th><th style={{ ...fisGridTh, width: 120, borderRight: "none" }}>Giriş Miktarı</th></tr></thead>
                 <tbody>
-                  {filtrelenmisStok.length === 0 && <tr><td colSpan={4} style={{ color: "#6b7178", textAlign: "center", padding: 18 }}>Eşleşen stok bulunamadı.</td></tr>}
+                  {filtrelenmisStok.length === 0 && <tr><td colSpan={4} style={{ color: "#7b8a9d", textAlign: "center", padding: 18 }}>Eşleşen stok bulunamadı.</td></tr>}
                   {filtrelenmisStok.slice(0, 100).map((s) => (
                     <tr key={s.id}>
                       <td style={{ fontSize: 13 }}>{s.stokAdi}</td>
                       <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.stokKodu}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a" }}>{s.miktar} {s.birim || "Adet"}</td>
+                      <td style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#c62828" : "#5a6b80" }}>{s.miktar} {s.birim || "Adet"}</td>
                       <td>
                         <input
                           className="input" type="number" min="0" step="0.01" placeholder="0"
@@ -13845,27 +13956,27 @@ function DepoGiris({ depoStok, kullanici, depoHareketler }) {
                   ))}
                 </tbody>
               </table>
-              {filtrelenmisStok.length > 100 && <div style={{ padding: 10, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 100 sonuç gösteriliyor, daraltmak için ara.</div>}
+              {filtrelenmisStok.length > 100 && <div style={{ padding: 10, fontSize: 11.5, color: "#7b8a9d", textAlign: "center" }}>İlk 100 sonuç gösteriliyor, daraltmak için ara.</div>}
             </div>
           </>
         ) : (
-          <div style={{ fontSize: 12.5, color: "#6b7178", padding: "18px 0", textAlign: "center", border: "1px dashed #2a4b52", borderRadius: 4 }}>Listeyi görmek için yukarıdan bir Alt Grup seç ya da arama yap.</div>
+          <div style={{ fontSize: 12.5, color: "#7b8a9d", padding: "18px 0", textAlign: "center", border: "1px dashed #d5dfec", borderRadius: 4 }}>Listeyi görmek için yukarıdan bir Alt Grup seç ya da arama yap.</div>
         )}
         </EvrakPenceresi>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Son Girişler</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Son Girişler</div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead><tr><th>Tarih</th><th>Stok</th><th>Miktar</th><th>Kullanıcı</th><th>Açıklama</th></tr></thead>
             <tbody>
-              {sonGirisler.length === 0 && <tr><td colSpan={5} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Henüz kayıtlı giriş yok.</td></tr>}
+              {sonGirisler.length === 0 && <tr><td colSpan={5} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Henüz kayıtlı giriş yok.</td></tr>}
               {sonGirisler.map((h) => (
                 <tr key={h.id}>
                   <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>{h.tarih ? new Date(h.tarih).toLocaleString("tr-TR") : "—"}</td>
-                  <td>{h.stokAdi} <span style={{ color: "#6b7178", fontSize: 11.5 }}>({h.stokKodu})</span></td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#2dd4bf" }}>{h.miktar} {h.birim || ""}</td>
+                  <td>{h.stokAdi} <span style={{ color: "#7b8a9d", fontSize: 11.5 }}>({h.stokKodu})</span></td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#1565c0" }}>{h.miktar} {h.birim || ""}</td>
                   <td style={{ fontSize: 12 }}>{h.kullanici}</td>
                   <td style={{ fontSize: 12.5 }}>{h.aciklama || "—"}</td>
                 </tr>
@@ -13994,13 +14105,13 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
             <button className="btn-ghost" onClick={disaAktar}><Download size={14} /> Excele Aktar</button>
           </div>
         </div>
-        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#2dd4bf", background: "#113330", border: "1px solid #1f4d47", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
-        <div style={{ fontSize: 12, color: "#6b7178", marginBottom: 16 }}>Verilen ürünü ve hangi makineye gittiğini seç, adedini yaz, çıkışı kaydet — ilgili stoktan otomatik düşer.</div>
+        {iceMsg && <div style={{ marginBottom: 14, fontSize: 12.5, color: "#1565c0", background: "#e3f0ff", border: "1px solid #bcd8f7", borderRadius: 7, padding: "9px 12px" }}>{iceMsg}</div>}
+        <div style={{ fontSize: 12, color: "#7b8a9d", marginBottom: 16 }}>Verilen ürünü ve hangi makineye gittiğini seç, adedini yaz, çıkışı kaydet — ilgili stoktan otomatik düşer.</div>
 
         <button onClick={fisiAc} disabled={depoStok.length === 0} style={{ display: "flex", alignItems: "center", gap: 8, background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: depoStok.length === 0 ? "default" : "pointer", opacity: depoStok.length === 0 ? 0.5 : 1 }}>
           <Plus size={16} /> Yeni Çıkış Fişi Aç
         </button>
-        {machines.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#e8a33d" }}>Önce "Makineler" ekranından makine ekle.</div>}
+        {machines.length === 0 && <div style={{ marginTop: 10, fontSize: 12, color: "#b06a00" }}>Önce "Makineler" ekranından makine ekle.</div>}
 
         <EvrakPenceresi
           acik={fisAcik} kapat={() => setFisAcik(false)}
@@ -14013,7 +14124,7 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginBottom: 12 }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Stok Seçimi</div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Alt Grup</span>
@@ -14028,39 +14139,39 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
             </div>
 
             {(arama.trim() || altGrupFiltre) && (
-              <div style={{ marginTop: 12, border: "1px solid #2a4b52", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
-                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#6b7178", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
+              <div style={{ marginTop: 12, border: "1px solid #d5dfec", borderRadius: 4, maxHeight: 220, overflowY: "auto" }}>
+                {filtrelenmisStok.length === 0 && <div style={{ padding: 14, fontSize: 12.5, color: "#7b8a9d", textAlign: "center" }}>Eşleşen stok bulunamadı.</div>}
                 {filtrelenmisStok.slice(0, 50).map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setStokId(s.id)}
                     style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
-                      padding: "9px 13px", background: stokId === s.id ? "#113330" : "transparent",
-                      border: "none", borderBottom: "1px solid #223b42", cursor: "pointer", textAlign: "left",
+                      padding: "9px 13px", background: stokId === s.id ? "#e3f0ff" : "transparent",
+                      border: "none", borderBottom: "1px solid #eef3f9", cursor: "pointer", textAlign: "left",
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#2dd4bf" : "#e7e5e0", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
-                      <div style={{ fontSize: 11, color: "#6b7178", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
+                      <div style={{ fontSize: 12.5, color: stokId === s.id ? "#1565c0" : "#152a45", fontWeight: stokId === s.id ? 700 : 500 }}>{s.stokAdi}</div>
+                      <div style={{ fontSize: 11, color: "#7b8a9d", fontFamily: "monospace" }}>{s.stokKodu}{s.altGrupAdi ? ` · ${s.altGrupAdi}` : ""}</div>
                     </div>
-                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#e07a6b" : "#8b929a", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 12, color: s.miktar <= 0 ? "#c62828" : "#5a6b80", flexShrink: 0, marginLeft: 10 }}>{s.miktar} {s.birim || "Adet"}</div>
                   </button>
                 ))}
-                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#6b7178", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
+                {filtrelenmisStok.length > 50 && <div style={{ padding: 9, fontSize: 11.5, color: "#7b8a9d", textAlign: "center" }}>İlk 50 sonuç gösteriliyor, daraltmak için ara.</div>}
               </div>
             )}
           </div>
 
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={{ ...belgeBaslikEtiket, marginBottom: 10 }}>Çıkış Bilgileri</div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Stok Adı</span>
-              <input style={{ ...fisInput, background: "#16232a", color: secilenStok ? "#2dd4bf" : "#6b7178" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
+              <input style={{ ...fisInput, background: "#f4f7fc", color: secilenStok ? "#1565c0" : "#7b8a9d" }} value={secilenStok ? `${secilenStok.stokAdi} (${secilenStok.stokKodu})` : ""} placeholder="Yukarıdan bir stok seç" readOnly />
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Mevcut Miktar</span>
-              <input style={{ ...fisInput, background: "#16232a", color: "#8b929a", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
+              <input style={{ ...fisInput, background: "#f4f7fc", color: "#5a6b80", fontFamily: "monospace" }} value={secilenStok ? `${secilenStok.miktar} ${secilenStok.birim || "Adet"}` : "—"} readOnly />
             </div>
             <div style={fisSatir}>
               <span style={fisEtiket}>Hedef Makine</span>
@@ -14074,24 +14185,24 @@ function DepoStokCikis({ depoStok, machines, kullanici, depoHareketler }) {
             <div style={{ ...fisSatir, marginBottom: 0 }}><span style={fisEtiket}>Açıklama</span><input style={fisInput} placeholder="Opsiyonel" value={aciklama} onChange={(e) => setAciklama(e.target.value)} /></div>
           </div>
           {msg && (
-            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#e07a6b" : "#2dd4bf", background: msgTip === "hata" ? "#3a1f1f" : "#113330", border: `1px solid ${msgTip === "hata" ? "#5a2a2a" : "#1f4d47"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: msgTip === "hata" ? "#c62828" : "#1565c0", background: msgTip === "hata" ? "#fdecea" : "#e3f0ff", border: `1px solid ${msgTip === "hata" ? "#f3c4c0" : "#bcd8f7"}`, borderRadius: 4, padding: "9px 12px" }}>{msg}</div>
           )}
         </EvrakPenceresi>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Son Çıkışlar</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Son Çıkışlar</div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead><tr><th>Tarih</th><th>Stok</th><th>Hedef Makine</th><th>Miktar</th><th>Kullanıcı</th></tr></thead>
             <tbody>
-              {sonCikislar.length === 0 && <tr><td colSpan={5} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Henüz kayıtlı çıkış yok.</td></tr>}
+              {sonCikislar.length === 0 && <tr><td colSpan={5} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Henüz kayıtlı çıkış yok.</td></tr>}
               {sonCikislar.map((h) => (
                 <tr key={h.id}>
                   <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>{h.tarih ? new Date(h.tarih).toLocaleString("tr-TR") : "—"}</td>
-                  <td>{h.stokAdi} <span style={{ color: "#6b7178", fontSize: 11.5 }}>({h.stokKodu})</span></td>
+                  <td>{h.stokAdi} <span style={{ color: "#7b8a9d", fontSize: 11.5 }}>({h.stokKodu})</span></td>
                   <td><span className="pill">{h.hedefMakine}</span></td>
-                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#e07a6b" }}>{h.miktar} {h.birim || ""}</td>
+                  <td style={{ fontFamily: "monospace", fontWeight: 700, color: "#c62828" }}>{h.miktar} {h.birim || ""}</td>
                   <td style={{ fontSize: 12 }}>{h.kullanici}</td>
                 </tr>
               ))}
@@ -14175,7 +14286,7 @@ function DepoHareketleri({ depoHareketler }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1", position: "relative" }}>
-            <Search size={14} color="#6b7178" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+            <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
             <input className="input" style={{ paddingLeft: 30 }} placeholder="Stok kodu, adı, kullanıcı, açıklama ara…" value={f.arama} onChange={setF2("arama")} />
           </div>
           <div>
@@ -14205,12 +14316,12 @@ function DepoHareketleri({ depoHareketler }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid #2a4b52", fontWeight: 700, fontSize: 14 }}>Hareketler ({filtrelenmis.length})</div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #d5dfec", fontWeight: 700, fontSize: 14 }}>Hareketler ({filtrelenmis.length})</div>
         <div style={{ overflowX: "auto", maxHeight: 600, overflowY: "auto" }}>
           <table>
             <thead><tr><th>Tarih</th><th>Stok Kodu</th><th>Stok Adı</th><th>Tip</th><th>Miktar</th><th>Hedef Makine</th><th>Önceki → Sonraki</th><th>Kullanıcı</th><th>Açıklama</th></tr></thead>
             <tbody>
-              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#6b7178", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
+              {filtrelenmis.length === 0 && <tr><td colSpan={9} style={{ color: "#7b8a9d", textAlign: "center", padding: 24 }}>Kayıt bulunamadı.</td></tr>}
               {filtrelenmis.map((h) => (
                 <tr key={h.id}>
                   <td style={{ fontFamily: "monospace", whiteSpace: "nowrap" }}>{h.tarih ? new Date(h.tarih).toLocaleString("tr-TR") : "—"}</td>
@@ -14219,11 +14330,11 @@ function DepoHareketleri({ depoHareketler }) {
                   <td>
                     {h.tip === "giris"
                       ? <span className="pill">+ Giriş</span>
-                      : <span className="pill" style={{ background: "#3a1f1f", color: "#e07a6b", borderColor: "#5a2a2a" }}>− Çıkış</span>}
+                      : <span className="pill" style={{ background: "#fdecea", color: "#c62828", borderColor: "#f3c4c0" }}>− Çıkış</span>}
                   </td>
                   <td style={{ fontFamily: "monospace", fontWeight: 700 }}>{h.miktar} {h.birim || ""}</td>
                   <td>{h.hedefMakine ? <span className="pill">{h.hedefMakine}</span> : "—"}</td>
-                  <td style={{ fontFamily: "monospace", color: "#8b929a" }}>{h.oncekiMiktar} → {h.sonrakiMiktar}</td>
+                  <td style={{ fontFamily: "monospace", color: "#5a6b80" }}>{h.oncekiMiktar} → {h.sonrakiMiktar}</td>
                   <td style={{ fontSize: 12 }}>{h.kullanici || "—"}</td>
                   <td style={{ fontSize: 12.5 }}>{h.aciklama || "—"}</td>
                 </tr>
@@ -14299,7 +14410,7 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon size={17} color="#2dd4bf" /> {baslikCogul} Listesi
+            <Icon size={17} color="#1565c0" /> {baslikCogul} Listesi
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
@@ -14320,7 +14431,7 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
           </div>
         </div>
 
-        <button onClick={() => { setVal(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#2dd4bf", color: "#142a30", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
+        <button onClick={() => { setVal(""); setFisAcik(true); }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
           <Plus size={16} /> Yeni {title} Kartı Aç
         </button>
         <EvrakPenceresi
@@ -14334,7 +14445,7 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
             </>
           }
         >
-          <div style={{ border: "1px solid #2a4b52", borderRadius: 4, padding: "14px 16px", background: "#16232a" }}>
+          <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc" }}>
             <div style={{ ...fisSatir, marginBottom: 0 }}>
               <span style={fisEtiket}>{title} Adı</span>
               <input
@@ -14347,14 +14458,14 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
             </div>
           </div>
         </EvrakPenceresi>
-        <div style={{ fontSize: 12, color: mesaj ? "#2dd4bf" : "#6b7178", marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: mesaj ? "#1565c0" : "#7b8a9d", marginTop: 10 }}>
           {mesaj || `Toplam ${items.length} kayıt. Excel dosyasında isimler tek sütunda alt alta olmalı (başlık satırı olabilir).`}
         </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2a4b52", position: "relative" }}>
-          <Search size={14} color="#6b7178" style={{ position: "absolute", left: 26, top: "50%", transform: "translateY(-50%)" }} />
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #d5dfec", position: "relative" }}>
+          <Search size={14} color="#7b8a9d" style={{ position: "absolute", left: 26, top: "50%", transform: "translateY(-50%)" }} />
           <input
             className="input"
             style={{ paddingLeft: 30 }}
@@ -14364,18 +14475,18 @@ function ListeYonetimi({ title, baslikCogul, koleksiyon, placeholder, items, ico
           />
         </div>
         {filtrelenmis.length === 0 ? (
-          <div style={{ color: "#6b7178", textAlign: "center", padding: 32, fontSize: 13.5 }}>
+          <div style={{ color: "#7b8a9d", textAlign: "center", padding: 32, fontSize: 13.5 }}>
             {arama ? "Sonuç bulunamadı." : `Henüz ${baslikCogul.toLowerCase()} eklenmedi.`}
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))" }}>
             {filtrelenmis.map((i, idx) => (
-              <div key={i.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #24424a", borderRight: "1px solid #24424a" }}>
+              <div key={i.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #e4ebf5", borderRight: "1px solid #e4ebf5" }}>
                 <span style={{ fontSize: 13.5, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontFamily: "monospace", color: "#8b929a", fontSize: 11 }}>{String(idx + 1).padStart(2, "0")}</span>
+                  <span style={{ fontFamily: "monospace", color: "#5a6b80", fontSize: 11 }}>{String(idx + 1).padStart(2, "0")}</span>
                   {i.name}
                 </span>
-                <button onClick={() => sil(i.id)} style={{ background: "none", border: "none", color: "#6b7178", cursor: "pointer", padding: 4 }}><X size={14} /></button>
+                <button onClick={() => sil(i.id)} style={{ background: "none", border: "none", color: "#7b8a9d", cursor: "pointer", padding: 4 }}><X size={14} /></button>
               </div>
             ))}
           </div>

@@ -121,8 +121,8 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
   return (
     <div>
       {rotaMevcut ? (
-        <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#22c55e") + "1a", border: `1px solid ${(s.renk?.iyi || "#22c55e")}55` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, color: s.renk?.iyi || "#22c55e", fontWeight: 600 }}>
+        <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: (s.renk?.iyi || "#15803d") + "1a", border: `1px solid ${(s.renk?.iyi || "#15803d")}55` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: s.renk?.iyi || "#15803d", fontWeight: 600 }}>
             <CheckCircle2 size={16} /> Bu parça/revizyon için onaylı rota kütüphanede mevcut.
           </div>
           <div style={{ fontSize: 12, color: s.renk?.soluk, marginTop: 4 }}>
@@ -135,7 +135,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
           )}
         </div>
       ) : (
-        <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: (s.renk?.uyari || "#facc15") + "1a", border: `1px solid ${(s.renk?.uyari || "#facc15")}55`, color: s.renk?.uyari || "#facc15", fontSize: 13 }}>
+        <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: (s.renk?.uyari || "#a16207") + "1a", border: `1px solid ${(s.renk?.uyari || "#a16207")}55`, color: s.renk?.uyari || "#a16207", fontSize: 13 }}>
           <AlertTriangle size={14} style={{ marginRight: 6 }} />
           Bu parça/revizyon için kayıtlı rota yok. Aşağıdan yeni rota tanımlayın — kaydedildikten sonra
           aynı parça+revizyon tekrar geldiğinde otomatik önerilecek ve sadece onay istenecektir.
@@ -181,7 +181,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
       </div>
 
       {yazabilir && !rotaMevcut && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", padding: 10, border: `1px dashed ${s.renk?.kenar || "#2a4b52"}`, borderRadius: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", padding: 10, border: `1px dashed ${s.renk?.kenar || "#d5dfec"}`, borderRadius: 8, marginBottom: 12 }}>
           <label className="field-label" style={{ minWidth: 200 }}>Operasyon
             <select className="input" style={s.giris} value={operasyonKod} onChange={(e) => opDegisti(e.target.value)}>
               {OPERASYON_TIPLERI.map((o) => <option key={o.kod} value={o.kod}>{o.ad}</option>)}
@@ -198,7 +198,7 @@ export default function RotaPaneli({ api, ui, veri, yazabilir, node, siparis, ro
                   ))}
                 </select>
               ) : (
-                <div style={{ fontSize: 12, color: s.renk?.hata || "#ef4444", padding: "6px 0" }}>
+                <div style={{ fontSize: 12, color: s.renk?.hata || "#dc2626", padding: "6px 0" }}>
                   Uygun makine yok — adım eklenemez
                 </div>
               )}
