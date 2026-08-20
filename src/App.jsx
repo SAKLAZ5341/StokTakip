@@ -927,7 +927,7 @@ const SIPARIS_SARTLARI_VARSAYILAN = `1. Tedarikçi, sevkiyat ile birlikte kendis
 34. Tedarikçi, ürün güvenliği (Product Safety) gerekliliklerine uymakla yükümlüdür.
 35. Tedarikçi, çalışanlarının ürün uygunluğuna katkısı, ürün güvenliği ve etik davranış konularında farkındalığını sağlamakla yükümlüdür.`;
 // AS9100 madde 8.4 (dışarıdan tedarik edilen proses, ürün ve hizmetlerin kontrolü)
-// karşılığı tedarikçi şartları. Teklif İsteme (RFQ) formunun sonuna basılır.
+// karşılığı tedarikçi şartları. Satınalma Teklif Talebi (RFQ) formunun sonuna basılır.
 const TEKLIF_SARTLARI_BASLIK = "TEDARİKÇİ ŞARTLARI (AS9100 Md. 8.4)";
 const TEKLIF_SARTLARI_VARSAYILAN = `1. Bu form bir teklif isteğidir; sipariş yerine geçmez ve satın alma taahhüdü doğurmaz.
 2. Teklifinizde birim fiyat, para birimi, KDV durumu, teslim süresi, teslim yeri ve teklifin geçerlilik süresi açıkça belirtilmelidir.
@@ -960,12 +960,22 @@ const siparisSartlariMetni = (ayarlar) => {
 // AS9100/ISO 9001 "dokümante edilmiş bilgi" maddeleri basılı formda şunları ister:
 // belgeyi tanımlayan doküman numarası, revizyon, yayın tarihi, sayfa x/y ve
 // hazırlayan/onaylayan. Bunlar Form Ayarları ekranından form türü bazında girilir.
+// Teklif talebi (RFQ) formunun altına DEĞİŞTİRİLEMEZ olarak basılan maddeler.
+// Ayarlardan düzenlenebilen "Teklif Şartları" metninden ayrıdır; bu dört madde
+// her RFQ çıktısında aynen basılır (AS9100 Md. 8.4).
+const RFQ_SABIT_NOTLAR = [
+  "Teklifler, ilgili kalemlerde belirtilen teknik şartname/çizim REVİZYONUNA göre verilecektir.",
+  "CoC, EN 10204 3.1/3.2 sertifikaları ve raporlar teslimatta zorunludur (kalem bazlı).",
+  "Sahte parça önleme gereklilikleri uygulanacaktır.",
+  "Bu RFQ bir satın alma siparişi değildir.",
+];
+
 const AS9100_FORMLARI = [
   { kod: "talep", ad: "Satınalma Talep Fişi", ornek: "SAT-FR-001" },
-  { kod: "teklifIsteme", ad: "Teklif İsteme Formu (RFQ)", ornek: "SAT-FR-002" },
+  { kod: "teklifIsteme", ad: "Satınalma Teklif Talebi Formu (RFQ)", ornek: "SAT-FR-002" },
   { kod: "teklif", ad: "Teklif Fişi", ornek: "SAT-FR-003" },
   { kod: "karsilastirma", ad: "Teklif Karşılaştırma Formu", ornek: "SAT-FR-004" },
-  { kod: "siparis", ad: "Satınalma Sipariş Fişi", ornek: "SAT-FR-005" },
+  { kod: "siparis", ad: "Satınalma Sipariş Formu", ornek: "SAT-FR-005" },
   { kod: "talepRaporu", ad: "Satınalma Talep Raporu", ornek: "SAT-FR-006" },
   { kod: "siparisRaporu", ad: "Satınalma Sipariş Raporu", ornek: "SAT-FR-007" },
   { kod: "fasonIs", ad: "Fason İş Emri", ornek: "FSN-FR-001" },
@@ -974,17 +984,37 @@ const AS9100_FORMLARI = [
   { kod: "planlama_isemri", ad: "İş Emri (Planlama)", ornek: "URT-FR-001" },
   { kod: "cariRaporu", ad: "Cari Hareket Raporu", ornek: "MUH-FR-001" },
 ];
-// Form türüne ait doküman bilgisi (yoksa boş döner — form yine basılır)
+// Form türüne ait doküman bilgisi (yoksa boş döner — form yine basılır).
+// "tarih" alanı yayım (ilk yayın) tarihidir; eski kayıtlarla uyumlu kalsın diye
+// adı değişmedi. "revizyonTarihi" son revizyonun tarihidir, boşsa basılmaz.
 function dokumanBilgisi(ayarlar, kod) {
   const d = (ayarlar && ayarlar.dokumanlar && ayarlar.dokumanlar[kod]) || {};
   return {
     no: String(d.no || "").trim(),
     revizyon: String(d.revizyon || "").trim(),
     tarih: String(d.tarih || "").trim(),
+    revizyonTarihi: String(d.revizyonTarihi || "").trim(),
   };
 }
 
-function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirlar, toplamSatirlari, notBasligi, notMetni, imzalar, sartlarBasligi, sartlarMetni, dokumanKodu, yazdiran }) {
+// Antetin sağ üstündeki AS9100 kontrollü doküman kutusunun satırları.
+// Tüm yazdırma fonksiyonları aynı kutuyu bastığı için tek yerde üretilir.
+function dokumanKutusuSatirlari(dok) {
+  return [
+    ["Doküman No", dok.no],
+    ["Revizyon No", dok.revizyon],
+    ["Yayım Tarihi", trTarih(dok.tarih)],
+    ["Revizyon Tarihi", trTarih(dok.revizyonTarihi)],
+  ].filter((x) => x[1]);
+}
+
+// Sayfa altındaki kimlik şeridi metni: "SAT-FR-005 · Rev. 01 · 12.03.2026"
+function dokumanKimligi(dok) {
+  return [dok.no, dok.revizyon ? `Rev. ${dok.revizyon}` : "", trTarih(dok.revizyonTarihi || dok.tarih)]
+    .filter(Boolean).join(" · ");
+}
+
+function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirlar, toplamSatirlari, notBasligi, notMetni, sabitNotBasligi, sabitNotlar, imzalar, sartlarBasligi, sartlarMetni, dokumanKodu, yazdiran }) {
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const a = ayarlar || {};
   const w = window.open("", "_blank", "width=1000,height=760");
@@ -995,17 +1025,15 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
 
   // AS9100 kontrollü doküman kimliği — antetin sağ üstünde kutu olarak basılır
   const dok = dokumanBilgisi(a, dokumanKodu);
-  const dokSatirlari = [
-    ["Doküman No", dok.no],
-    ["Revizyon No", dok.revizyon],
-    ["Yayın Tarihi", trTarih(dok.tarih)],
-  ].filter((x) => x[1]);
+  const dokSatirlari = dokumanKutusuSatirlari(dok);
   const dokKutu = dokSatirlari.length
     ? `<table class="dokKutu">${dokSatirlari.map((x) => `<tr><td class="e">${esc(x[0])}</td><td class="d">${esc(x[1])}</td></tr>`).join("")}<tr><td class="e">Sayfa</td><td class="d"><span class="sayfaYeri">—</span></td></tr></table>`
     : "";
 
   // Satır sayısı azsa tablo boş satırlarla doldurulur (matbu form görünümü)
-  const enAzSatir = 12;
+  // Sabit not bloğu basılan formlarda (RFQ) sayfanın altı zaten doluyor;
+  // boş dolgu satırı sayısı azaltılmazsa imza satırı ikinci sayfaya taşıyor.
+  const enAzSatir = (sabitNotlar || []).length ? 8 : 12;
   const bosSatirSayisi = Math.max(0, enAzSatir - satirlar.length);
 
   // Üst bilgi kutusu 3 sütunlu — son satırda boşluk kalmasın diye 3'ün katına tamamlanır
@@ -1064,6 +1092,13 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
   .not { margin-top: 12px; border: 1px solid #666; }
   .not .bas { background: #f1f1f1; border-bottom: 1px solid #666; padding: 4px 7px; font-size: 8.5pt; font-weight: 600; text-transform: uppercase; }
   .not .icerik { padding: 7px; font-size: 9.5pt; min-height: 14mm; white-space: pre-wrap; }
+
+  /* Formun altına sabit basılan not / şart maddeleri (RFQ gibi) */
+  .sabitNot { margin-top: 10px; border: 1px solid #666; page-break-inside: avoid; }
+  .sabitNot .bas { background: #f1f1f1; border-bottom: 1px solid #666; padding: 4px 7px;
+                   font-size: 8.5pt; font-weight: 600; text-transform: uppercase; }
+  .sabitNot ol { margin: 0; padding: 6px 7px 6px 20px; }
+  .sabitNot li { font-size: 8.4pt; line-height: 1.45; margin: 0 0 2px; text-align: justify; }
 
   /* İmzalar */
   .imzalar { display: grid; gap: 8mm; margin-top: 14mm; page-break-inside: avoid; }
@@ -1130,12 +1165,17 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
 
   ${notMetni !== undefined ? `<div class="not"><div class="bas">${esc(notBasligi || "Açıklama")}</div><div class="icerik">${esc(notMetni || "")}</div></div>` : ""}
 
+  ${(sabitNotlar || []).length ? `<div class="sabitNot">
+    <div class="bas">${esc(sabitNotBasligi || "Notlar / Şartlar")}</div>
+    <ol>${sabitNotlar.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+  </div>` : ""}
+
   ${(imzalar || []).length ? `<div class="imzalar" style="grid-template-columns:repeat(${imzalar.length},1fr)">
     ${imzalar.map((im) => `<div class="imza"><div class="cizgi"></div><div class="ad">${esc(im)}</div><div class="alt">Ad Soyad / Tarih / İmza</div></div>`).join("")}
   </div>` : ""}
 
   <div class="altBilgi">
-    <span>${esc(belgeAdi)}${dok.no ? ` · ${esc(dok.no)}` : ""}${dok.revizyon ? ` · Rev. ${esc(dok.revizyon)}` : ""}</span>
+    <span>${esc(belgeAdi)}${dokumanKimligi(dok) ? ` · ${esc(dokumanKimligi(dok))}` : ""}</span>
     <span>${yazdiran ? `Yazdıran: ${esc(yazdiran)} · ` : ""}${esc(new Date().toLocaleString("tr-TR"))}</span>
   </div>
 
@@ -1152,7 +1192,7 @@ function satinalmaFormYazdir({ ayarlar, belgeAdi, ustBilgiler, kolonlar, satirla
   try {
     var mm = 96 / 25.4;
     var sayfaYuk = 271 * mm;                     // A4 297mm - üst/alt kenar (12+14mm)
-    var kimlik = ${JSON.stringify((dok.no ? dok.no : "") + (dok.revizyon ? " · Rev. " + dok.revizyon : ""))};
+    var kimlik = ${JSON.stringify(dokumanKimligi(dok))};
     // Şartlar bloğu her zaman yeni sayfada başlar; bu yüzden sayfa sayısı
     // "şartlardan önce" ve "şartlar" olarak ayrı ayrı hesaplanır.
     var sartlar = document.querySelector(".sartlar");
@@ -8065,7 +8105,8 @@ function FormAyarlari({ formAyarlari }) {
 
   useEffect(() => { setForm({ ...bos, ...(formAyarlari || {}), dokumanlar: { ...((formAyarlari || {}).dokumanlar || {}) } }); /* eslint-disable-next-line */ }, [formAyarlari]);
 
-  // AS9100 doküman bilgisi: form türü bazında doküman no / revizyon / yayın tarihi
+  // AS9100 doküman bilgisi: form türü bazında doküman no / revizyon no /
+  // yayım tarihi / revizyon tarihi
   const dokSet = (kod, alan) => (e) => setForm((s) => ({
     ...s, dokumanlar: { ...(s.dokumanlar || {}), [kod]: { ...((s.dokumanlar || {})[kod] || {}), [alan]: e.target.value } },
   }));
@@ -8228,21 +8269,23 @@ function FormAyarlari({ formAyarlari }) {
         <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
           <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>AS9100 Doküman Bilgileri</div>
           <div style={{ fontSize: 11.5, color: "#7b8a9d", marginBottom: 10, lineHeight: 1.6 }}>
-            Kalite sisteminizdeki doküman numaralarını buraya yazın. Girdiğiniz bilgiler
-            <b> her formun sağ üst köşesindeki kutuda</b> ve <b>her sayfanın altındaki kimlik şeridinde</b> basılır;
-            sayfa numarası (Sayfa 1/2 gibi) program tarafından otomatik hesaplanır.
-            Boş bıraktığın form türünde kutu hiç basılmaz.
+            Kalite sisteminizdeki doküman numaralarını, <b>yayım tarihini</b> ve <b>revizyon tarihini</b>
+            buraya yazın. Girdiğiniz bilgiler <b>her formun sağ üst köşesindeki kutuda</b> ve
+            <b>her sayfanın altındaki kimlik şeridinde</b> basılır; sayfa numarası (Sayfa 1/2 gibi)
+            program tarafından otomatik hesaplanır. Boş bıraktığın alan hiç basılmaz —
+            hiçbir alanı doldurmazsan o form türünde kutu da çıkmaz.
           </div>
           <div style={{ overflowX: "auto" }}>
             <table>
-              <thead><tr><th>Form</th><th style={{ width: 170 }}>Doküman No</th><th style={{ width: 110 }}>Revizyon No</th><th style={{ width: 170 }}>Yayın / Rev. Tarihi</th></tr></thead>
+              <thead><tr><th>Form</th><th style={{ width: 160 }}>Doküman No</th><th style={{ width: 100 }}>Revizyon No</th><th style={{ width: 155 }}>Yayım Tarihi</th><th style={{ width: 155 }}>Revizyon Tarihi</th></tr></thead>
               <tbody>
                 {AS9100_FORMLARI.map((f) => (
                   <tr key={f.kod}>
                     <td style={{ fontSize: 12.5 }}>{f.ad}</td>
                     <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} value={dokDeger(f.kod, "no")} onChange={dokSet(f.kod, "no")} placeholder={f.ornek} /></td>
                     <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5, textAlign: "center" }} value={dokDeger(f.kod, "revizyon")} onChange={dokSet(f.kod, "revizyon")} placeholder="00" /></td>
-                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} type="date" value={dokDeger(f.kod, "tarih")} onChange={dokSet(f.kod, "tarih")} /></td>
+                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} type="date" value={dokDeger(f.kod, "tarih")} onChange={dokSet(f.kod, "tarih")} title="Formun ilk yayım tarihi" /></td>
+                    <td><input className="input" style={{ padding: "6px 8px", fontSize: 12.5 }} type="date" value={dokDeger(f.kod, "revizyonTarihi")} onChange={dokSet(f.kod, "revizyonTarihi")} title="Son revizyonun tarihi — boş bırakılırsa basılmaz" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -8251,7 +8294,7 @@ function FormAyarlari({ formAyarlari }) {
         </div>
 
         <div style={{ border: "1px solid #d5dfec", borderRadius: 4, padding: "14px 16px", background: "#f4f7fc", marginTop: 12 }}>
-          <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>Teklif İsteme (RFQ) Formu Şartları</div>
+          <div style={{ ...belgeBaslikEtiket, marginBottom: 6 }}>Satınalma Teklif Talebi (RFQ) Formu Şartları</div>
           <div style={{ fontSize: 11.5, color: "#7b8a9d", marginBottom: 10, lineHeight: 1.6 }}>
             Teklif isteme formunun sonuna basılan tedarikçi şartları. Boş bırakırsan AS9100 8.4 maddesine
             karşılık gelen <b style={{ color: "#1565c0" }}>{teklifSartMaddeSayisi} maddelik</b> standart metin kullanılır.
@@ -10787,9 +10830,9 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
   const rfqYazdir = (f) => {
     if (!doluKalemler.length) { bildir("Önce en az bir kalem girin.", true); return; }
     satinalmaFormYazdir({
-      ayarlar: formAyarlari, belgeAdi: "TEKLİF İSTEME FORMU", dokumanKodu: "teklifIsteme", yazdiran: kullanici?.email,
+      ayarlar: formAyarlari, belgeAdi: "SATINALMA TEKLİF TALEBİ FORMU", dokumanKodu: "teklifIsteme", yazdiran: kullanici?.email,
       ustBilgiler: [
-        ["Teklif İsteme No", f.evrakNo], ["Tarih", trTarih(tarih)], ["Kaynak Talep No", talep?.evrakNo || "—"],
+        ["Teklif Talep No", f.evrakNo], ["Tarih", trTarih(tarih)], ["Kaynak Talep No", talep?.evrakNo || "—"],
         ["Tedarikçi", [f.kod, f.ad].filter(Boolean).join(" · ") || "—"],
         ["Teklif Son Verme", sonTeklifTarihi ? trTarih(sonTeklifTarihi) : "—"],
         ["İstenen Termin", terminTarihi ? trTarih(terminTarihi) : "—"],
@@ -10808,6 +10851,7 @@ function TopluTeklif({ satinalmaTeklifler, satinalmaTalepler, satinalmaSiparisle
       ],
       satirlar: doluKalemler,
       notBasligi: "Açıklama / Özel Şartlar", notMetni: aciklama || "",
+      sabitNotBasligi: "Notlar / Şartlar", sabitNotlar: RFQ_SABIT_NOTLAR,
       imzalar: ["Hazırlayan (Satınalma)", "Onaylayan", "Tedarikçi Kaşe / İmza"],
       sartlarBasligi: TEKLIF_SARTLARI_BASLIK,
       sartlarMetni: teklifSartlariMetni(formAyarlari),
@@ -11395,6 +11439,13 @@ function karsilastirmaYazdir({ ayarlar, talep, teklifler, kalemler, enUcuzTeklif
   const antet = [a.adres, [a.telefon, a.eposta].filter(Boolean).join(" · "), [a.vergiDairesi, a.vergiNo].filter(Boolean).join(" / ")]
     .map((x) => String(x || "").trim()).filter(Boolean);
 
+  // AS9100 kontrollü doküman kutusu — diğer formlarla aynı bilgiler basılır
+  const dok = dokumanBilgisi(a, "karsilastirma");
+  const dokSatirlari = dokumanKutusuSatirlari(dok);
+  const dokKutu = dokSatirlari.length
+    ? `<table class="dokKutu">${dokSatirlari.map((x) => `<tr><td class="e">${esc(x[0])}</td><td class="d">${esc(x[1])}</td></tr>`).join("")}</table>`
+    : "";
+
   const basliklar = teklifler.map((t) => `<th class="firma">${esc(t.tedarikci)}<div class="alt">${esc(t.evrakNo)}${t.paraBirimi && t.paraBirimi !== "TRY" ? ` · ${esc(t.paraBirimi)} @ ${sayiTR(teklifKuru(t))}` : ""}</div></th>`).join("");
 
   const kalemSatirlari = kalemler.map((k, i) => {
@@ -11429,6 +11480,12 @@ function karsilastirmaYazdir({ ayarlar, talep, teklifler, kalemler, enUcuzTeklif
   .antet img{max-height:18mm;max-width:40mm;object-fit:contain}
   .firmaAd{font-size:13pt;font-weight:700}
   .antet .satir{font-size:8pt;color:#444;line-height:1.4}
+  .antet .bilgi{flex:1;min-width:0}
+  .dokKutu{border-collapse:collapse;font-size:7.6pt;flex:0 0 56mm;width:56mm !important;table-layout:fixed;margin:0 !important}
+  .dokKutu td{border:1px solid #666;padding:1.5px 5px;line-height:1.3;font-size:7.6pt}
+  .dokKutu td.e{background:#f1f1f1;font-weight:600;white-space:nowrap;width:24mm}
+  .dokKutu td.d{text-align:center;white-space:nowrap}
+  .altBilgi{margin-top:8mm;padding-top:4px;border-top:1px solid #ccc;display:flex;justify-content:space-between;font-size:7.5pt;color:#777}
   .belgeAd{margin-top:8px;padding:5px 0;text-align:center;font-size:12pt;font-weight:700;letter-spacing:2px;
            text-transform:uppercase;border-top:1px solid #111;border-bottom:1px solid #111}
   .ust{display:flex;gap:24px;margin:8px 0;font-size:9pt}
@@ -11456,7 +11513,8 @@ function karsilastirmaYazdir({ ayarlar, talep, teklifler, kalemler, enUcuzTeklif
 </style></head><body>
 <div class="antet">
   ${a.logo ? `<img src="${esc(a.logo)}" alt="">` : ""}
-  <div><div class="firmaAd">${esc(a.firmaAdi || "")}</div>${antet.map((x) => `<div class="satir">${esc(x)}</div>`).join("")}</div>
+  <div class="bilgi"><div class="firmaAd">${esc(a.firmaAdi || "")}</div>${antet.map((x) => `<div class="satir">${esc(x)}</div>`).join("")}</div>
+  ${dokKutu}
 </div>
 <div class="belgeAd">Teklif Karşılaştırma Formu</div>
 <div class="ust">
@@ -11479,6 +11537,10 @@ function karsilastirmaYazdir({ ayarlar, talep, teklifler, kalemler, enUcuzTeklif
 </table>
 <div class="imzalar">
   ${["Hazırlayan", "Kontrol Eden", "Onaylayan"].map((x) => `<div class="imza"><span>${esc(x)}</span></div>`).join("")}
+</div>
+<div class="altBilgi">
+  <span>Teklif Karşılaştırma Formu${dokumanKimligi(dok) ? ` · ${esc(dokumanKimligi(dok))}` : ""}</span>
+  <span>${esc(new Date().toLocaleString("tr-TR"))}</span>
 </div>
 <button class="yazdirBtn" onclick="window.print()">Yazdır / PDF Kaydet</button>
 </body></html>`);
@@ -12104,7 +12166,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
 
     satinalmaFormYazdir({
       ayarlar: formAyarlari, dokumanKodu: "siparis", yazdiran: kullanici?.email,
-      belgeAdi: "Satınalma Sipariş Fişi",
+      belgeAdi: "Satınalma Sipariş Formu",
       ustBilgiler: [
         ["Evrak No", b.evrakNo], ["Tarih", trTarih(b.tarih)], ["Tedarikçi", cariMetni(b.tedarikciKod, b.tedarikci)],
         ["Belge No", b.belgeNo], ["Termin Tarihi", trTarih(b.teslimTarihi)], ["Ödeme Şekli", b.odemeSekli],
@@ -12301,9 +12363,9 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
       <EvrakPenceresi
         acik={fisAcik} kapat={() => setFisAcik(false)}
         baslik={
-          duzenlenenId ? `Satınalma Sipariş Fişi — ${baslik.evrakNo} (düzenleniyor)`
-            : baslik.talepEvrakNo ? `Satınalma Sipariş Fişi — ${baslik.talepEvrakNo} talebinden`
-            : "Satınalma Sipariş Fişi (yeni)"
+          duzenlenenId ? `Satınalma Sipariş Formu — ${baslik.evrakNo} (düzenleniyor)`
+            : baslik.talepEvrakNo ? `Satınalma Sipariş Formu — ${baslik.talepEvrakNo} talebinden`
+            : "Satınalma Sipariş Formu (yeni)"
         }
         ikon={ShoppingCart} genislik={1120}
         butonlar={
@@ -12478,7 +12540,7 @@ function SatinalmaSiparis({ satinalmaSiparisler, satinalmaTalepler, satinalmaTek
           </div>
         </div>
         <button onClick={fisiAc} style={{ display: "flex", alignItems: "center", gap: 8, background: "#1565c0", color: "#ffffff", border: "none", borderRadius: 6, padding: "11px 18px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" }}>
-          <Plus size={16} /> Yeni Sipariş Fişi Aç
+          <Plus size={16} /> Yeni Sipariş Formu Aç
         </button>
         <div style={{ fontSize: 12, color: "#7b8a9d", marginTop: 10 }}>
           Sıradaki numara: <b style={{ color: "#1565c0", fontFamily: "monospace" }}>{yeniNo()}</b> — Talep sayfasındaki "Siparişe Çevir" ile gelen fişler otomatik dolar.
@@ -12922,7 +12984,7 @@ function SatinalmaRaporu({ satinalmaTalepler, satinalmaSiparisler, satinalmaProj
           </>
         ) : (
           <>
-            <Stat label="Sipariş Fişi" value={siparisler.length} highlight />
+            <Stat label="Sipariş Formu" value={siparisler.length} highlight />
             <Stat label="Toplam Kalem" value={siparisKalem} />
             <Stat label="Açık Sipariş" value={acikSiparis} />
             <Stat label="Toplam Tutar" value={paraTR(siparisTutar)} highlight />
